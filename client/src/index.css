@@ -4,39 +4,108 @@
 
 @layer base {
   :root {
-    /* Cyber Sport Palette */
-    --background: 220 40% 10%;   /* Deep Navy/Black */
-    --foreground: 0 0% 100%;     /* Pure White */
-    --card: 220 40% 13%;
-    --card-foreground: 0 0% 100%;
-    --popover: 220 40% 10%;
-    --popover-foreground: 0 0% 100%;
-    --primary: 142 70% 50%;      /* Neon Green */
-    --primary-foreground: 220 40% 10%;
-    --secondary: 48 90% 50%;     /* Electric Yellow */
-    --secondary-foreground: 220 40% 10%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 210 100% 50%;      /* Bright Blue */
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 142 70% 50%;
-    /* Shape & Typography */
-    --radius: 0px;               /* Sharp corners */
-    --skew: -10deg;              /* Rhomboid tilt */
-    --font-heading: "Oswald", sans-serif;
-  }
-}
+    /* Cyber Sport Palette - Refined */
+    --background: 222 47% 11%;
+    /* Deep Navy/Black #0f172a */
+    --foreground: 210 40% 98%;
+    /* Pure White #f8fafc */
 
-@layer components {
-  /* The Rhomboid Button Utility */
-  .btn-cyber {
-    @apply transform -skew-x-12 font-bold uppercase tracking-wider transition-all hover:skew-x-0;
-  }
-  .btn-cyber-content {
-    @apply transform skew-x-12 inline-block; /* Counter-skew text */
-  }
-}
+    --card: 217 33% 17%;
+    /* Darker, cleaner card background #1e293b */
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 142 76% 36%;
+    /* Bold Green #16a34a (High Contrast) */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 47 95% 57%;
+    /* Vivid Yellow #facc15 */
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 215 28% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 199 89% 48%;
+    /* Strong Blue #0ea5e9 */
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 215 28% 17%;
+    --input: 215 28% 17%;
+    --ring: 142 76% 36%;
+
+    /* Shape & Typography */
+    --radius: 0.25rem;
+    /* Slight rounding for professionalism */
+    --skew: -6deg;
+    /* Reduced skew for cleaner look */
+    --font-heading: "Inter", sans-serif;
+    /* Clean, modern sans-serif */
+    @tailwind base;
+    @tailwind components;
+    @tailwind utilities;
+
+    @layer base {
+      :root {
+        /* Cyber Sport Palette - Refined */
+        --background: 222 47% 11%;
+        /* Deep Navy/Black #0f172a */
+        --foreground: 210 40% 98%;
+        /* Pure White #f8fafc */
+
+        --card: 217 33% 17%;
+        /* Darker, cleaner card background #1e293b */
+        --card-foreground: 210 40% 98%;
+
+        --popover: 222 47% 11%;
+        --popover-foreground: 210 40% 98%;
+
+        --primary: 142 76% 36%;
+        /* Bold Green #16a34a (High Contrast) */
+        --primary-foreground: 210 40% 98%;
+
+        --secondary: 47 95% 57%;
+        /* Vivid Yellow #facc15 */
+        --secondary-foreground: 222 47% 11%;
+
+        --muted: 215 28% 17%;
+        --muted-foreground: 215 20% 65%;
+
+        --accent: 199 89% 48%;
+        /* Strong Blue #0ea5e9 */
+        --accent-foreground: 210 40% 98%;
+
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 210 40% 98%;
+
+        --border: 215 28% 17%;
+        --input: 215 28% 17%;
+        --ring: 142 76% 36%;
+
+        /* Shape & Typography */
+        --radius: 0.25rem;
+        /* Slight rounding for professionalism */
+        --skew: -6deg;
+        /* Reduced skew for cleaner look */
+        --font-heading: "Inter", sans-serif;
+        /* Clean, modern sans-serif */
+      }
+    }
+
+    @layer components {
+
+      /* The Rhomboid Button Utility */
+      .btn-cyber {
+        @apply transform -[transform:skewX(var(--skew))] font-bold uppercase tracking-wider transition-all hover:skew-x-0 shadow-lg hover:shadow-primary/20;
+      }
+
+      .btn-cyber-content {
+        @apply transform -[transform:skewX(calc(var(--skew)*-1))] inline-block;
+        /* Counter-skew text */
+      }
+    }
