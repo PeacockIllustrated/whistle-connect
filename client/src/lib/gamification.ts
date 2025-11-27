@@ -1,5 +1,5 @@
-import { userAchievements, achievements, profilesReferee } from "@shared/schema";
-import { eq, and } from "drizzle-orm";
+// import { userAchievements, achievements, profilesReferee } from "../shared/schema";
+// import { eq, and } from "drizzle-orm";
 // Note: In a real app, this would run on the server. 
 // For this prototype, we'll simulate the logic here or use Supabase Edge Functions.
 // We will define the logic class here.
@@ -7,7 +7,7 @@ import { eq, and } from "drizzle-orm";
 export type BadgeCode = 'iron_man' | 'century_club';
 
 export class GamificationEngine {
-    static async checkAchievements(userId: number, stats: { matchesOfficiated: number, consecutiveBookings: number }) {
+    static async checkAchievements(_userId: number, stats: { matchesOfficiated: number, consecutiveBookings: number }) {
         const newBadges: BadgeCode[] = [];
 
         // Iron Man: 5 consecutive bookings

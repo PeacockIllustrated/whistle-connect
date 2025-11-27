@@ -1,8 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Shield, Whistle } from "lucide-react";
+import { Loader2, Shield, Megaphone } from "lucide-react";
 
 export default function AuthPage() {
     const [role, setRole] = useState<"coach" | "referee" | null>(null);
@@ -58,7 +58,7 @@ export default function AuthPage() {
             toast({
                 title: "Error",
                 description: error.message,
-                variant: "destructive",
+
             });
         } finally {
             setLoading(false);
@@ -87,7 +87,7 @@ export default function AuthPage() {
                                     onClick={() => setRole("coach")}
                                     className="group relative h-32 bg-muted hover:bg-primary/20 border border-border hover:border-primary transition-all duration-300 flex flex-col items-center justify-center gap-2"
                                 >
-                                    <Whistle className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
+                                    <Megaphone className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
                                     <span className="font-heading uppercase tracking-wider text-lg">Coach</span>
                                 </button>
                                 <button

@@ -24,8 +24,7 @@ const MOCK_MATCHES = [
 ];
 
 export default function Dashboard() {
-    const [, setLocation] = useLocation();
-    // In a real app, fetch user from Supabase/Context
+    const [, _setLocation] = useLocation();
     const user = MOCK_USER;
     const [matches, setMatches] = useState(MOCK_MATCHES);
 
@@ -165,8 +164,8 @@ export default function Dashboard() {
                                         </>
                                     ) : (
                                         <span className={`px-3 py-1 text-xs font-bold uppercase tracking-wider border ${match.status === 'confirmed'
-                                                ? 'border-primary text-primary'
-                                                : 'border-secondary text-secondary'
+                                            ? 'border-primary text-primary'
+                                            : 'border-secondary text-secondary'
                                             }`}>
                                             {match.status}
                                         </span>
