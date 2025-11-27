@@ -18,7 +18,7 @@ export default defineConfig({
         port: 5173,
     },
     build: {
-        outDir: '../dist',
+        outDir: 'dist',
         emptyOutDir: true,
     }
 });

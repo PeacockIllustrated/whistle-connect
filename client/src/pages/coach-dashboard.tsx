@@ -1,15 +1,40 @@
-import { useState } from "react";
-import { Calendar, MapPin, Filter } from "lucide-react";
-
-// Mock Data for Coach View
-const MOCK_COACH_MATCHES = [
-    { id: 1, date: "2025-12-01T14:00:00", location: "Hackney Marshes", status: "pending", ageGroup: "U14", referee: null },
-    { id: 2, date: "2025-12-08T10:00:00", location: "Regent's Park", status: "confirmed", ageGroup: "U12", referee: "John Smith" },
-];
+import { useState, useEffect } from "react";
+import { Calendar, MapPin, Filter, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function CoachDashboard() {
+    const { profile } = useAuth();
     const [activeTab, setActiveTab] = useState<'search' | 'bookings' | 'messages'>('search');
-    const [matches] = useState(MOCK_COACH_MATCHES);
+    const [matches, setMatches] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (activeTab === 'bookings' && profile?.id) {
+            fetchMatches();
+        }
+    }, [activeTab, profile?.id]);
+
+    const fetchMatches = async () => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('matches')
+                .select(`
+                    *,
+                    referee:users!matches_referee_id_fkey(email) 
+                `)
+                .eq('coach_id', profile.id)
+                .order('date', { ascending: true });
+
+            if (error) throw error;
+            setMatches(data || []);
+        } catch (error) {
+            console.error("Error fetching matches:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background text-foreground pb-20 font-sans">
@@ -81,22 +106,32 @@ export default function CoachDashboard() {
                 {activeTab === 'bookings' && (
                     <div className="space-y-4">
                         <h3 className="font-heading text-lg font-bold text-white uppercase">My Matches</h3>
-                        {matches.map(match => (
-                            <div key={match.id} className="bg-card border border-border p-4 rounded-lg flex items-center justify-between hover:border-primary/50 transition-colors">
-                                <div>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                        <Calendar className="w-3 h-3" />
-                                        {new Date(match.date).toLocaleDateString()}
-                                    </div>
-                                    <h4 className="font-bold text-white text-sm">{match.location}</h4>
-                                    <span className="text-xs text-muted-foreground">{match.ageGroup} • {match.referee || "No Referee Assigned"}</span>
-                                </div>
-                                <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${match.status === 'confirmed' ? 'bg-primary/20 text-primary' : 'bg-secondary/20 text-secondary'
-                                    }`}>
-                                    {match.status}
-                                </span>
+                        {loading ? (
+                            <div className="flex justify-center p-8">
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
                             </div>
-                        ))}
+                        ) : matches.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">No matches found.</p>
+                        ) : (
+                            matches.map(match => (
+                                <div key={match.id} className="bg-card border border-border p-4 rounded-lg flex items-center justify-between hover:border-primary/50 transition-colors">
+                                    <div>
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                            <Calendar className="w-3 h-3" />
+                                            {new Date(match.date).toLocaleDateString()}
+                                        </div>
+                                        <h4 className="font-bold text-white text-sm">{match.location}</h4>
+                                        <span className="text-xs text-muted-foreground">
+                                            {match.age_group} • {match.referee ? "Referee Assigned" : "No Referee Assigned"}
+                                        </span>
+                                    </div>
+                                    <span className={`text-xs font-bold uppercase px-2 py-1 rounded ${match.status === 'confirmed' ? 'bg-primary/20 text-primary' : 'bg-secondary/20 text-secondary'
+                                        }`}>
+                                        {match.status}
+                                    </span>
+                                </div>
+                            ))
+                        )}
                     </div>
                 )}
 

@@ -1,19 +1,28 @@
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
 import CoachDashboard from "./coach-dashboard";
 import RefereeDashboard from "./referee-dashboard";
-
-// Mock User Role for Prototype - In a real app, this would come from Auth Context
-// Change this to 'coach' or 'referee' to test different views
-const MOCK_USER_ROLE = "coach";
+import { Loader2 } from "lucide-react";
 
 export default function Dashboard() {
-    const [, _setLocation] = useLocation();
+    const [, setLocation] = useLocation();
+    const { user, profile, loading } = useAuth();
 
-    // In a real app, we would check the user's role from the auth context
-    // const { user } = useAuth();
-    // const role = user?.role;
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background">
+                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+            </div>
+        );
+    }
 
-    const role = MOCK_USER_ROLE;
+    if (!user) {
+        setLocation("/");
+        return null;
+    }
+
+    // Role is stored in the 'users' table which we fetch into 'profile'
+    const role = profile?.role;
 
     if (role === "coach") {
         return <CoachDashboard />;
@@ -23,5 +32,12 @@ export default function Dashboard() {
         return <RefereeDashboard />;
     }
 
-    return <div>Unknown Role</div>;
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-background text-white">
+            <div className="text-center">
+                <h2 className="text-xl font-bold mb-2">Unknown Role</h2>
+                <p className="text-muted-foreground">Please contact support.</p>
+            </div>
+        </div>
+    );
 }

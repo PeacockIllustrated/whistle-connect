@@ -41,9 +41,10 @@ export const userAchievements = pgTable("user_achievements", {
 export const matches = pgTable("matches", {
   id: serial("id").primaryKey(),
   coachId: integer("coach_id").references(() => users.id).notNull(),
-  refereeId: integer("referee_id").references(() => users.id).notNull(),
+  refereeId: integer("referee_id").references(() => users.id), // Nullable for open requests
   date: timestamp("date").notNull(),
   location: text("location").notNull(),
   status: text("status", { enum: ["pending", "confirmed", "completed", "cancelled"] }).default("pending"),
   ageGroup: text("age_group"),
+  fee: text("fee"), // e.g. "£40"
 });

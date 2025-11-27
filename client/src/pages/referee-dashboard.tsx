@@ -1,26 +1,66 @@
-import { useState } from "react";
-import { Calendar, CheckCircle, XCircle } from "lucide-react";
-
-// Mock Data for Referee View
-const MOCK_REFEREE_USER = {
-    profile: {
-        matchesOfficiated: 98,
-        level: "Level 7",
-    }
-};
-
-const MOCK_REFEREE_MATCHES = [
-    { id: 1, date: "2025-12-01T14:00:00", location: "Hackney Marshes", status: "pending", ageGroup: "U14", fee: "£40" },
-    { id: 2, date: "2025-12-08T10:00:00", location: "Regent's Park", status: "confirmed", ageGroup: "U12", fee: "£35" },
-];
+import { useState, useEffect } from "react";
+import { Calendar, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RefereeDashboard() {
+    const { profile } = useAuth();
+    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'availability'>('overview');
-    const [matches, setMatches] = useState(MOCK_REFEREE_MATCHES);
-    const user = MOCK_REFEREE_USER;
+    const [matches, setMatches] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    const handleAcceptMatch = (id: number) => {
-        setMatches(matches.map(m => m.id === id ? { ...m, status: "confirmed" } : m));
+    useEffect(() => {
+        if (profile?.id) {
+            fetchMatches();
+        }
+    }, [profile?.id]);
+
+    const fetchMatches = async () => {
+        setLoading(true);
+        try {
+            // Fetch matches where referee is assigned OR open requests (referee_id is null)
+            // For this prototype, 'requests' will be open matches that any referee can see/accept
+            const { data, error } = await supabase
+                .from('matches')
+                .select('*')
+                .or(`referee_id.eq.${profile.id},referee_id.is.null`)
+                .order('date', { ascending: true });
+
+            if (error) throw error;
+            setMatches(data || []);
+        } catch (error) {
+            console.error("Error fetching matches:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAcceptMatch = async (id: number) => {
+        try {
+            const { error } = await supabase
+                .from('matches')
+                .update({
+                    status: 'confirmed',
+                    referee_id: profile.id
+                })
+                .eq('id', id);
+
+            if (error) throw error;
+
+            toast({
+                title: "Match Accepted",
+                description: "You have been assigned to this match.",
+            });
+            fetchMatches(); // Refresh list
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.message,
+                variant: "destructive"
+            });
+        }
     };
 
     return (
@@ -61,11 +101,11 @@ export default function RefereeDashboard() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-card border border-border p-4 rounded-lg shadow-sm">
                                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Matches</span>
-                                <div className="text-2xl font-bold text-white mt-1">{user.profile.matchesOfficiated}</div>
+                                <div className="text-2xl font-bold text-white mt-1">{profile?.matches_officiated || 0}</div>
                             </div>
                             <div className="bg-card border border-border p-4 rounded-lg shadow-sm">
                                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Level</span>
-                                <div className="text-2xl font-bold text-secondary mt-1">{user.profile.level}</div>
+                                <div className="text-2xl font-bold text-secondary mt-1">{profile?.level || "N/A"}</div>
                             </div>
                         </div>
 
@@ -73,21 +113,24 @@ export default function RefereeDashboard() {
                         <div>
                             <h3 className="font-heading text-lg font-bold text-white mb-4 uppercase">Upcoming Matches</h3>
                             <div className="space-y-3">
-                                {matches.filter(m => m.status === 'confirmed').map(match => (
-                                    <div key={match.id} className="bg-card border border-border p-4 rounded-lg flex items-center justify-between hover:border-secondary/50 transition-colors">
-                                        <div>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                                <Calendar className="w-3 h-3" />
-                                                {new Date(match.date).toLocaleDateString()}
-                                            </div>
-                                            <h4 className="font-bold text-white text-sm">{match.location}</h4>
-                                            <span className="text-xs text-muted-foreground">{match.ageGroup} • {match.fee}</span>
-                                        </div>
-                                        <div className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
-                                    </div>
-                                ))}
-                                {matches.filter(m => m.status === 'confirmed').length === 0 && (
+                                {loading ? (
+                                    <Loader2 className="w-6 h-6 animate-spin text-secondary" />
+                                ) : matches.filter(m => m.status === 'confirmed' && m.referee_id === profile.id).length === 0 ? (
                                     <p className="text-muted-foreground text-sm">No upcoming confirmed matches.</p>
+                                ) : (
+                                    matches.filter(m => m.status === 'confirmed' && m.referee_id === profile.id).map(match => (
+                                        <div key={match.id} className="bg-card border border-border p-4 rounded-lg flex items-center justify-between hover:border-secondary/50 transition-colors">
+                                            <div>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                                    <Calendar className="w-3 h-3" />
+                                                    {new Date(match.date).toLocaleDateString()}
+                                                </div>
+                                                <h4 className="font-bold text-white text-sm">{match.location}</h4>
+                                                <span className="text-xs text-muted-foreground">{match.age_group} • {match.fee}</span>
+                                            </div>
+                                            <div className="w-2 h-2 rounded-full bg-secondary shadow-[0_0_10px_rgba(250,204,21,0.5)]" />
+                                        </div>
+                                    ))
                                 )}
                             </div>
                         </div>
@@ -97,34 +140,37 @@ export default function RefereeDashboard() {
                 {activeTab === 'requests' && (
                     <div className="space-y-4">
                         <h3 className="font-heading text-lg font-bold text-white uppercase">Match Requests</h3>
-                        {matches.filter(m => m.status === 'pending').map(match => (
-                            <div key={match.id} className="bg-card border border-border p-4 rounded-lg space-y-4 hover:border-secondary/50 transition-colors">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
-                                            <Calendar className="w-3 h-3" />
-                                            {new Date(match.date).toLocaleDateString()}
-                                        </div>
-                                        <h4 className="font-bold text-white text-lg">{match.location}</h4>
-                                        <span className="text-sm text-muted-foreground">{match.ageGroup} • {match.fee}</span>
-                                    </div>
-                                    <span className="px-2 py-1 bg-secondary/10 text-secondary text-xs font-bold uppercase rounded">New Request</span>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        onClick={() => handleAcceptMatch(match.id)}
-                                        className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground py-2 rounded font-bold uppercase text-sm flex items-center justify-center gap-2 transition-colors"
-                                    >
-                                        <CheckCircle className="w-4 h-4" /> Accept
-                                    </button>
-                                    <button className="flex-1 bg-muted hover:bg-muted/80 text-white py-2 rounded font-bold uppercase text-sm flex items-center justify-center gap-2 transition-colors">
-                                        <XCircle className="w-4 h-4" /> Decline
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                        {matches.filter(m => m.status === 'pending').length === 0 && (
+                        {loading ? (
+                            <Loader2 className="w-6 h-6 animate-spin text-secondary" />
+                        ) : matches.filter(m => m.status === 'pending' && m.referee_id === null).length === 0 ? (
                             <p className="text-muted-foreground text-sm">No pending match requests.</p>
+                        ) : (
+                            matches.filter(m => m.status === 'pending' && m.referee_id === null).map(match => (
+                                <div key={match.id} className="bg-card border border-border p-4 rounded-lg space-y-4 hover:border-secondary/50 transition-colors">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                                                <Calendar className="w-3 h-3" />
+                                                {new Date(match.date).toLocaleDateString()}
+                                            </div>
+                                            <h4 className="font-bold text-white text-lg">{match.location}</h4>
+                                            <span className="text-sm text-muted-foreground">{match.age_group} • {match.fee}</span>
+                                        </div>
+                                        <span className="px-2 py-1 bg-secondary/10 text-secondary text-xs font-bold uppercase rounded">New Request</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => handleAcceptMatch(match.id)}
+                                            className="flex-1 bg-secondary hover:bg-secondary/90 text-secondary-foreground py-2 rounded font-bold uppercase text-sm flex items-center justify-center gap-2 transition-colors"
+                                        >
+                                            <CheckCircle className="w-4 h-4" /> Accept
+                                        </button>
+                                        <button className="flex-1 bg-muted hover:bg-muted/80 text-white py-2 rounded font-bold uppercase text-sm flex items-center justify-center gap-2 transition-colors">
+                                            <XCircle className="w-4 h-4" /> Decline
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 )}
