@@ -1,5 +1,5 @@
 {
-    "outputDirectory": "client/dist",
+    "outputDirectory": "dist",
     "framework": "vite",
     "rewrites": [
         {
