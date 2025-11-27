@@ -49,15 +49,39 @@ export default function AuthPage() {
                         title: "Verification Pending",
                         description: "Your application has been sent to the County FA for verification.",
                     });
+                    // Referees stay here or go to a 'pending' page. 
+                    // For now, let's redirect them to dashboard but they will see limited view if we implemented that.
+                    // Actually, let's keep them here or send to home.
+                    setLocation("/");
                 } else {
+                    // For Coaches, we want to auto-login if the session isn't established (e.g. if email confirm is on)
+                    // But if email confirm IS on, we can't login. 
+                    // Assuming for this prototype/rebuild we want immediate access.
+                    // If session is null, try to sign in (this works if email confirm is OFF).
+
+                    if (!authData.session) {
+                        const { error: signInError } = await supabase.auth.signInWithPassword({
+                            email,
+                            password,
+                        });
+                        if (signInError) {
+                            // If login fails (e.g. email not confirmed), warn user
+                            toast({
+                                title: "Check your email",
+                                description: "Please confirm your email address before logging in.",
+                            });
+                            return;
+                        }
+                    }
+
                     toast({
                         title: "Welcome Coach!",
                         description: "Account created successfully.",
                     });
-                }
 
-                // Redirect to dashboard
-                setLocation("/dashboard");
+                    // Small delay to allow auth state to propagate
+                    setTimeout(() => setLocation("/dashboard"), 500);
+                }
             }
         } catch (error: any) {
             toast({

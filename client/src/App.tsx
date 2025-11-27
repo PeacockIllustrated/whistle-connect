@@ -18,6 +18,7 @@ function Router() {
     );
 }
 
+import { NavigationToolbar } from "@/components/navigation-toolbar";
 import { AuthProvider } from "@/hooks/use-auth";
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
             <AuthProvider>
                 <Router />
+                <NavigationToolbar />
                 <Toaster />
             </AuthProvider>
         </QueryClientProvider>
