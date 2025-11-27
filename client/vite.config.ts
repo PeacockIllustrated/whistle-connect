@@ -8,7 +8,7 @@ export default defineConfig({
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
-            "@shared": path.resolve(__dirname, "./shared"), // If shared is inside client, or adjust if outside
+            "@shared": path.resolve(__dirname, "./src/shared"),
         },
     },
     server: {
