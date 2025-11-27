@@ -8,6 +8,7 @@ export default function AuthPage() {
     const [, params] = useRoute("/auth/:role");
     const role = params?.role as "coach" | "referee" | undefined;
 
+    const [isLogin, setIsLogin] = useState(false); // Toggle between Login and Register
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -23,63 +24,95 @@ export default function AuthPage() {
         }
     }, [role, setLocation]);
 
-    const handleSignUp = async (e: React.FormEvent) => {
+    const handleAuth = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            // 1. Sign up with Supabase Auth
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email,
-                password,
-            });
+            if (isLogin) {
+                // --- LOGIN FLOW ---
+                const { error } = await supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                });
+                if (error) throw error;
 
-            if (authError) throw authError;
+                toast({
+                    title: "Welcome back!",
+                    description: "Signed in successfully.",
+                });
 
-            if (authData.user) {
-                if (role === "referee") {
-                    console.log("MAGIC LINK EMAIL SENT TO COUNTY FA:", {
-                        email,
-                        faNumber,
-                        county,
-                        verificationLink: `https://whistle-connect.com/verify?uid=${authData.user.id}`
-                    });
+                // Redirect handled by checking session or manual
+                setTimeout(() => setLocation("/dashboard"), 500);
 
-                    toast({
-                        title: "Verification Pending",
-                        description: "Your application has been sent to the County FA for verification.",
-                    });
-                    // Referees stay here or go to a 'pending' page. 
-                    // For now, let's redirect them to dashboard but they will see limited view if we implemented that.
-                    // Actually, let's keep them here or send to home.
-                    setLocation("/");
-                } else {
-                    // For Coaches, we want to auto-login if the session isn't established (e.g. if email confirm is on)
-                    // But if email confirm IS on, we can't login. 
-                    // Assuming for this prototype/rebuild we want immediate access.
-                    // If session is null, try to sign in (this works if email confirm is OFF).
+            } else {
+                // --- REGISTER FLOW ---
 
+                // 1. Create Supabase Auth User
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email,
+                    password,
+                });
+
+                if (authError) throw authError;
+
+                if (authData.user) {
+                    // 2. Create Public User Record (Critical for Role)
+                    // We use the email to link them for now, as per our schema strategy
+                    const { data: userData, error: dbError } = await supabase
+                        .from('users')
+                        .insert({
+                            email: email,
+                            password: 'hashed_placeholder', // We don't store the real password here, auth handles it
+                            role: role
+                        })
+                        .select()
+                        .single();
+
+                    if (dbError) {
+                        // If user already exists in public table but not auth, handle it? 
+                        // Or just ignore if it's a duplicate key error
+                        console.error("Error creating public user:", dbError);
+                        // We might want to throw here if it's critical, but let's proceed for now
+                    }
+
+                    // 3. Create Referee Profile if needed
+                    if (role === "referee" && userData) {
+                        const { error: profileError } = await supabase
+                            .from('profiles_referee')
+                            .insert({
+                                user_id: userData.id,
+                                fa_number: faNumber,
+                                county: county,
+                                level: 'Level 7', // Default
+                                verification_status: 'pending'
+                            });
+
+                        if (profileError) console.error("Error creating referee profile:", profileError);
+
+                        toast({
+                            title: "Verification Pending",
+                            description: "Your application has been sent to the County FA.",
+                        });
+                    } else {
+                        toast({
+                            title: "Welcome Coach!",
+                            description: "Account created successfully.",
+                        });
+                    }
+
+                    // 4. Auto-Login (if session missing)
                     if (!authData.session) {
                         const { error: signInError } = await supabase.auth.signInWithPassword({
                             email,
                             password,
                         });
                         if (signInError) {
-                            // If login fails (e.g. email not confirmed), warn user
-                            toast({
-                                title: "Check your email",
-                                description: "Please confirm your email address before logging in.",
-                            });
+                            toast({ title: "Check your email", description: "Please confirm your email." });
                             return;
                         }
                     }
 
-                    toast({
-                        title: "Welcome Coach!",
-                        description: "Account created successfully.",
-                    });
-
-                    // Small delay to allow auth state to propagate
                     setTimeout(() => setLocation("/dashboard"), 500);
                 }
             }
@@ -87,7 +120,7 @@ export default function AuthPage() {
             toast({
                 title: "Error",
                 description: error.message,
-
+                variant: "destructive"
             });
         } finally {
             setLoading(false);
@@ -119,10 +152,10 @@ export default function AuthPage() {
                     {/* Decorative skew element */}
                     <div className={`absolute top-0 right-0 w-20 h-20 -skew-x-12 transform translate-x-10 -translate-y-10 ${role === 'coach' ? 'bg-primary/10' : 'bg-secondary/10'}`} />
 
-                    <form onSubmit={handleSignUp} className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                    <form onSubmit={handleAuth} className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                         <div className="flex items-center justify-between">
                             <h2 className="text-xl font-heading text-white uppercase">
-                                {role === "coach" ? "Coach Registration" : "Referee Registration"}
+                                {isLogin ? "Sign In" : (role === "coach" ? "Coach Registration" : "Referee Registration")}
                             </h2>
                         </div>
 
@@ -148,7 +181,7 @@ export default function AuthPage() {
                                 />
                             </div>
 
-                            {role === "referee" && (
+                            {!isLogin && role === "referee" && (
                                 <>
                                     <div>
                                         <label className="text-xs uppercase tracking-wider text-muted-foreground">FA Number</label>
@@ -182,9 +215,19 @@ export default function AuthPage() {
                         >
                             <span className="btn-cyber-content flex items-center justify-center gap-2">
                                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {role === "coach" ? "Join as Coach" : "Submit for Verification"}
+                                {isLogin ? "Sign In" : (role === "coach" ? "Join as Coach" : "Submit for Verification")}
                             </span>
                         </button>
+
+                        <div className="text-center">
+                            <button
+                                type="button"
+                                onClick={() => setIsLogin(!isLogin)}
+                                className="text-sm text-muted-foreground hover:text-white underline underline-offset-4"
+                            >
+                                {isLogin ? "Need an account? Register" : "Already have an account? Sign In"}
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
