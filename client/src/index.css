@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Cyber Sport Palette */
+    --background: 220 40% 10%;   /* Deep Navy/Black */
+    --foreground: 0 0% 100%;     /* Pure White */
+    --card: 220 40% 13%;
+    --card-foreground: 0 0% 100%;
+    --popover: 220 40% 10%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 142 70% 50%;      /* Neon Green */
+    --primary-foreground: 220 40% 10%;
+    --secondary: 48 90% 50%;     /* Electric Yellow */
+    --secondary-foreground: 220 40% 10%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 210 100% 50%;      /* Bright Blue */
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 142 70% 50%;
+    /* Shape & Typography */
+    --radius: 0px;               /* Sharp corners */
+    --skew: -10deg;              /* Rhomboid tilt */
+    --font-heading: "Oswald", sans-serif;
+  }
+}
+
+@layer components {
+  /* The Rhomboid Button Utility */
+  .btn-cyber {
+    @apply transform -skew-x-12 font-bold uppercase tracking-wider transition-all hover:skew-x-0;
+  }
+  .btn-cyber-content {
+    @apply transform skew-x-12 inline-block; /* Counter-skew text */
+  }
+}
