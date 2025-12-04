@@ -23,6 +23,8 @@ export default function BadgesTab() {
     useEffect(() => {
         if (profile?.id) {
             fetchUserBadges();
+        } else {
+            setLoading(false);
         }
     }, [profile?.id]);
 
