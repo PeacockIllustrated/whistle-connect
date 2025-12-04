@@ -51,39 +51,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const fetchProfile = async (currentUser: User) => {
         try {
-            // Check if user is referee or coach based on metadata or table query
-            // For now, we'll try to fetch from profiles_referee first
-            // In a real app, we might store 'role' in user_metadata or a separate 'users' table
-
-            // We are using a 'users' table in our schema that mirrors auth.users
-            // Let's fetch the role from there first
-            const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('email', currentUser.email)
+            // Fetch directly from the unified 'profiles' table
+            const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select(`
+                    *,
+                    county:counties(name)
+                `)
+                .eq('id', currentUser.id)
                 .single();
 
-            if (userError) {
-                console.error("Error fetching user role:", userError);
-                // Fallback or handle error
-            }
-
-            if (userData?.role === 'referee') {
-                const { data: profileData } = await supabase
-                    .from('profiles_referee')
-                    .select('*')
-                    .eq('user_id', userData.id) // Note: schema uses integer ID, but auth uses UUID. 
-                    // We need to ensure our 'users' table is linked correctly.
-                    // For this prototype, we might need to adjust how we link auth.users to public.users
-                    .single();
-
-                if (profileData) {
-                    setProfile({ ...userData, ...profileData });
-                } else {
-                    setProfile(userData);
-                }
+            if (error) {
+                console.error("Error fetching profile:", error);
+                // If profile doesn't exist yet (e.g. right after signup before insert completes), handle gracefully
+                setProfile(null);
             } else {
-                setProfile(userData);
+                setProfile(profileData);
             }
 
         } catch (error) {

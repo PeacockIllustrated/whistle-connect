@@ -57,48 +57,39 @@ export default function AuthPage() {
                 if (authError) throw authError;
 
                 if (authData.user) {
-                    // 2. Create Public User Record (Critical for Role)
-                    // We use the email to link them for now, as per our schema strategy
-                    const { data: userData, error: dbError } = await supabase
-                        .from('users')
+                    // 2. Create Profile Record (Unified)
+                    const { error: dbError } = await supabase
+                        .from('profiles')
                         .insert({
+                            id: authData.user.id,
                             email: email,
-                            password: 'hashed_placeholder', // We don't store the real password here, auth handles it
-                            role: role
-                        })
-                        .select()
-                        .single();
+                            role: role,
+                            // Referee specific fields (will be null for coaches)
+                            fa_number: role === 'referee' ? faNumber : null,
+                            county_text: role === 'referee' ? county : null,
+                            verification_status: role === 'referee' ? 'pending' : 'verified' // Coaches auto-verified for now?
+                        });
 
                     if (dbError) {
-                        // If user already exists in public table but not auth, handle it? 
-                        // Or just ignore if it's a duplicate key error
-                        console.error("Error creating public user:", dbError);
-                        // We might want to throw here if it's critical, but let's proceed for now
-                    }
-
-                    // 3. Create Referee Profile if needed
-                    if (role === "referee" && userData) {
-                        const { error: profileError } = await supabase
-                            .from('profiles_referee')
-                            .insert({
-                                user_id: userData.id,
-                                fa_number: faNumber,
-                                county: county,
-                                level: 'Level 7', // Default
-                                verification_status: 'pending'
-                            });
-
-                        if (profileError) console.error("Error creating referee profile:", profileError);
-
+                        console.error("Error creating profile:", dbError);
                         toast({
-                            title: "Verification Pending",
-                            description: "Your application has been sent to the County FA.",
+                            title: "Error creating profile",
+                            description: "Account created but profile setup failed. Please contact support.",
+                            variant: "destructive"
                         });
+                        // We might want to delete the auth user here to prevent "zombie" accounts
                     } else {
-                        toast({
-                            title: "Welcome Coach!",
-                            description: "Account created successfully.",
-                        });
+                        if (role === "referee") {
+                            toast({
+                                title: "Verification Pending",
+                                description: "Your application has been sent to the County FA.",
+                            });
+                        } else {
+                            toast({
+                                title: "Welcome Coach!",
+                                description: "Account created successfully.",
+                            });
+                        }
                     }
 
                     // 4. Auto-Login (if session missing)
