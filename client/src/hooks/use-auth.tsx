@@ -54,12 +54,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Fetch directly from the unified 'profiles' table
             const { data: profileData, error } = await supabase
                 .from('profiles')
-                .select(`
-                    *,
-                    county:counties(name)
-                `)
+                .select('*')
                 .eq('id', currentUser.id)
-                .single();
+                .maybeSingle();
 
             if (error) {
                 console.error("Error fetching profile:", error);
