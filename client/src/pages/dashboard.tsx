@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import CoachDashboard from "./coach-dashboard";
@@ -22,7 +23,9 @@ export default function Dashboard() {
     }
 
     // Role is stored in the 'users' table which we fetch into 'profile'
-    const role = profile?.role;
+    // DEBUG: Allow manual override if role is missing
+    const [debugRole, setDebugRole] = useState<"coach" | "referee" | null>(null);
+    const role = profile?.role || debugRole;
 
     if (role === "coach") {
         return <CoachDashboard />;
@@ -34,9 +37,30 @@ export default function Dashboard() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-background text-white">
-            <div className="text-center">
-                <h2 className="text-xl font-bold mb-2">Unknown Role</h2>
-                <p className="text-muted-foreground">Please contact support.</p>
+            <div className="text-center space-y-6">
+                <div>
+                    <h2 className="text-xl font-bold mb-2">Unknown Role</h2>
+                    <p className="text-muted-foreground">Profile data could not be loaded.</p>
+                    <p className="text-xs text-muted-foreground mt-2">User ID: {user.id}</p>
+                </div>
+
+                <div className="p-6 border border-dashed border-yellow-500/50 rounded-lg bg-yellow-500/10">
+                    <h3 className="text-yellow-500 font-bold mb-4 uppercase tracking-wider text-sm">Debug Mode</h3>
+                    <div className="flex gap-4 justify-center">
+                        <button
+                            onClick={() => setDebugRole('coach')}
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                        >
+                            View as Coach
+                        </button>
+                        <button
+                            onClick={() => setDebugRole('referee')}
+                            className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/90"
+                        >
+                            View as Referee
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     );
