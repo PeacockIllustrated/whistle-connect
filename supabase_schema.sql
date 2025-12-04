@@ -85,6 +85,21 @@ create table if not exists public.profiles (
 create index if not exists idx_profiles_role on public.profiles (role);
 create index if not exists idx_profiles_county_id on public.profiles (county_id);
 
+-- RLS POLICIES FOR PROFILES
+alter table public.profiles enable row level security;
+
+create policy "Public profiles are viewable by everyone"
+  on public.profiles for select
+  using ( true );
+
+create policy "Users can insert their own profile"
+  on public.profiles for insert
+  with check ( auth.uid() = id );
+
+create policy "Users can update own profile"
+  on public.profiles for update
+  using ( auth.uid() = id );
+
 ------------------------------------------------------------
 -- 4. MATCHES
 ------------------------------------------------------------
@@ -116,6 +131,12 @@ create table if not exists public.matches (
 create index if not exists idx_matches_season_id on public.matches (season_id);
 create index if not exists idx_matches_county_id on public.matches (county_id);
 create index if not exists idx_matches_kickoff_at on public.matches (kickoff_at);
+
+-- RLS FOR MATCHES (Simplified for now)
+alter table public.matches enable row level security;
+create policy "Matches are viewable by everyone" on public.matches for select using (true);
+create policy "Authenticated users can create matches" on public.matches for insert with check (auth.role() = 'authenticated');
+create policy "Authenticated users can update matches" on public.matches for update using (auth.role() = 'authenticated');
 
 ------------------------------------------------------------
 -- 5. REFEREE ASSIGNMENTS
@@ -152,6 +173,11 @@ create table if not exists public.referee_assignments (
 create index if not exists idx_ref_assignments_referee_id on public.referee_assignments (referee_id);
 create index if not exists idx_ref_assignments_match_id on public.referee_assignments (match_id);
 
+-- RLS FOR ASSIGNMENTS
+alter table public.referee_assignments enable row level security;
+create policy "Assignments viewable by everyone" on public.referee_assignments for select using (true);
+create policy "Authenticated users can manage assignments" on public.referee_assignments for all using (auth.role() = 'authenticated');
+
 ------------------------------------------------------------
 -- 6. RATINGS & REFLECTIONS
 ------------------------------------------------------------
@@ -179,6 +205,15 @@ create table if not exists public.referee_reflections (
   submitted_at  timestamptz not null default now(),
   content       text not null
 );
+
+-- RLS FOR RATINGS/REFLECTIONS
+alter table public.referee_ratings enable row level security;
+create policy "Ratings viewable by everyone" on public.referee_ratings for select using (true);
+create policy "Authenticated users can insert ratings" on public.referee_ratings for insert with check (auth.role() = 'authenticated');
+
+alter table public.referee_reflections enable row level security;
+create policy "Reflections viewable by owner" on public.referee_reflections for select using (auth.uid() = referee_id);
+create policy "Reflections insertable by owner" on public.referee_reflections for insert with check (auth.uid() = referee_id);
 
 ------------------------------------------------------------
 -- 7. TRAINING & TOURNAMENTS
@@ -218,6 +253,17 @@ create table if not exists public.tournament_matches (
   primary key (tournament_id, match_id)
 );
 
+-- RLS FOR TRAINING/TOURNAMENTS
+alter table public.training_modules enable row level security;
+create policy "Modules viewable by everyone" on public.training_modules for select using (true);
+
+alter table public.user_training_progress enable row level security;
+create policy "Progress viewable by owner" on public.user_training_progress for select using (auth.uid() = user_id);
+create policy "Progress insertable by owner" on public.user_training_progress for insert with check (auth.uid() = user_id);
+
+alter table public.tournaments enable row level security;
+create policy "Tournaments viewable by everyone" on public.tournaments for select using (true);
+
 ------------------------------------------------------------
 -- 8. BADGES (GAMIFICATION)
 ------------------------------------------------------------
@@ -243,6 +289,13 @@ create table if not exists public.user_badges (
   metadata        jsonb,
   constraint user_badges_unique_per_season unique (user_id, badge_id, season_id)
 );
+
+-- RLS FOR BADGES
+alter table public.badges enable row level security;
+create policy "Badges viewable by everyone" on public.badges for select using (true);
+
+alter table public.user_badges enable row level security;
+create policy "User badges viewable by everyone" on public.user_badges for select using (true);
 
 ------------------------------------------------------------
 -- 9. SEED DATA: BADGES
