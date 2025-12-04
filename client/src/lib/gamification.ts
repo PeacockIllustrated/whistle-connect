@@ -20,6 +20,26 @@ export type BadgeCode =
     | 'iron_man'
     | 'century_club';
 
+export const ALL_BADGE_CODES: BadgeCode[] = [
+    'road_warrior',
+    'iron_track',
+    'early_bird',
+    'top_rated_pro',
+    'fixture_machine',
+    'local_legend',
+    'mile_marker',
+    'whistle_scholar',
+    'community_champ',
+    'tournament_titan',
+    'seasoned_traveller',
+    'consistency_king',
+    'rapid_responder',
+    'mentor_mode',
+    'golden_whistle',
+    'iron_man',
+    'century_club'
+];
+
 export class GamificationEngine {
     static async checkAchievements(_userId: string, stats: {
         matchesOfficiated: number,

@@ -3,11 +3,12 @@ import { Calendar, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import BadgesTab from "@/components/badges-tab";
 
 export default function RefereeDashboard() {
     const { profile } = useAuth();
     const { toast } = useToast();
-    const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'availability'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'requests' | 'availability' | 'badges'>('overview');
     const [matches, setMatches] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -80,12 +81,12 @@ export default function RefereeDashboard() {
 
             <main className="max-w-5xl mx-auto p-4 space-y-6 mt-4">
                 {/* Navigation Tabs */}
-                <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border/50">
-                    {['overview', 'requests', 'availability'].map((tab) => (
+                <div className="flex gap-2 overflow-x-auto pb-2 border-b border-border/50 no-scrollbar">
+                    {['overview', 'requests', 'availability', 'badges'].map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
-                            className={`px-4 py-2 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 ${activeTab === tab
+                            className={`px-4 py-2 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 whitespace-nowrap ${activeTab === tab
                                 ? 'border-secondary text-secondary'
                                 : 'border-transparent text-muted-foreground hover:text-foreground'
                                 }`}
@@ -96,7 +97,7 @@ export default function RefereeDashboard() {
                 </div>
 
                 {activeTab === 'overview' && (
-                    <div className="space-y-6">
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
                         {/* Stats Overview */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="bg-card border border-border p-4 rounded-lg shadow-sm">
@@ -138,7 +139,7 @@ export default function RefereeDashboard() {
                 )}
 
                 {activeTab === 'requests' && (
-                    <div className="space-y-4">
+                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4">
                         <h3 className="font-heading text-lg font-bold text-white uppercase">Match Requests</h3>
                         {loading ? (
                             <Loader2 className="w-6 h-6 animate-spin text-secondary" />
@@ -176,9 +177,13 @@ export default function RefereeDashboard() {
                 )}
 
                 {activeTab === 'availability' && (
-                    <div className="text-center py-10 text-muted-foreground">
+                    <div className="text-center py-10 text-muted-foreground animate-in fade-in slide-in-from-bottom-4">
                         <p>Availability calendar coming soon.</p>
                     </div>
+                )}
+
+                {activeTab === 'badges' && (
+                    <BadgesTab />
                 )}
             </main>
         </div>
