@@ -52,8 +52,8 @@ export default async function ThreadPage({
         .eq('thread_id', threadId)
 
     const otherParticipant = participants?.find(
-        (p: any) => p.profile.id !== user.id
-    )?.profile
+        (p: any) => p.profile?.id !== user.id
+    )?.profile as { id: string; full_name: string } | undefined
 
     // Get messages
     const { data: messages } = await supabase

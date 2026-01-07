@@ -74,9 +74,9 @@ export default function NewBookingPage() {
     const canProceed = () => {
         switch (currentStep) {
             case 0:
-                return formData.match_date && formData.kickoff_time
+                return !!(formData.match_date && formData.kickoff_time)
             case 1:
-                return formData.location_postcode
+                return !!formData.location_postcode
             case 2:
                 return true // Optional fields
             default:

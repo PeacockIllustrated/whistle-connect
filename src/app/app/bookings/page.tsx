@@ -32,7 +32,7 @@ export default async function BookingsPage({
 
     const isCoach = profile?.role === 'coach'
     const isReferee = profile?.role === 'referee'
-    const statusFilter = params.status as BookingStatus | undefined
+    const statusFilter = params.status as BookingStatus | 'all' | undefined
 
     let bookings: any[] = []
 
@@ -112,8 +112,8 @@ export default async function BookingsPage({
                             key={filter.value}
                             href={filter.value === 'all' ? '/app/bookings' : `/app/bookings?status=${filter.value}`}
                             className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${(statusFilter === filter.value) || (!statusFilter && filter.value === 'all')
-                                    ? 'bg-[var(--brand-navy)] text-white'
-                                    : 'bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]'
+                                ? 'bg-[var(--brand-navy)] text-white'
+                                : 'bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]'
                                 }`}
                         >
                             {filter.label}

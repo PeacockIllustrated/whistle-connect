@@ -94,7 +94,7 @@ export function BookingActions({
                     </Button>
                 </Link>
 
-                {isCoach && booking.status !== 'completed' && booking.status !== 'cancelled' && (
+                {isCoach && booking.status !== 'completed' && (
                     <>
                         <Button
                             fullWidth
