@@ -27,7 +27,7 @@ export default async function MessagesPage() {
         booking:bookings(id, ground_name, location_postcode, match_date),
         participants:thread_participants(
           profile_id,
-          profile:profiles(id, full_name, role)
+          profile:profiles(id, full_name, role, avatar_url)
         )
       `)
             .in('id', threadIds)
@@ -90,8 +90,16 @@ export default async function MessagesPage() {
                         >
                             <div className="flex items-start gap-3">
                                 {/* Avatar */}
-                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white font-semibold">
-                                    {thread.other_participant?.full_name?.charAt(0) || '?'}
+                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[var(--brand-primary)] relative overflow-hidden flex items-center justify-center text-white font-semibold">
+                                    {thread.other_participant?.avatar_url ? (
+                                        <img
+                                            src={thread.other_participant.avatar_url}
+                                            alt={thread.other_participant.full_name}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        thread.other_participant?.full_name?.charAt(0) || '?'
+                                    )}
                                 </div>
 
                                 {/* Content */}

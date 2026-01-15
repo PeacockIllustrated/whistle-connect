@@ -199,7 +199,7 @@ export default function NewBookingPage() {
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="w-full py-3.5 bg-[var(--brand-navy)] text-white rounded-xl font-semibold shadow-lg shadow-blue-900/10 hover:opacity-90 transition-all disabled:opacity-50"
+                                className="w-full py-3.5 bg-[var(--color-primary)] text-white rounded-xl font-semibold shadow-lg shadow-blue-900/10 hover:opacity-90 transition-all disabled:opacity-50"
                             >
                                 {isSubmitting ? 'Searching...' : 'Search Referees'}
                             </button>

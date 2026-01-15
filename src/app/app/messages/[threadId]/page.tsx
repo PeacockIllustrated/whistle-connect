@@ -77,7 +77,7 @@ export default async function ThreadPage({
 
     const otherParticipant = participants?.find(
         (p: any) => p.profile?.id !== user.id
-    )?.profile as { id: string; full_name: string } | undefined
+    )?.profile as { id: string; full_name: string; avatar_url: string | null } | undefined
 
     // Get messages
     const { data: messages } = await supabase
@@ -100,8 +100,16 @@ export default async function ThreadPage({
                 </Link>
 
                 <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 rounded-full bg-[var(--brand-green)] flex items-center justify-center text-white font-semibold">
-                        {otherParticipant?.full_name?.charAt(0) || '?'}
+                    <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex-shrink-0 relative overflow-hidden flex items-center justify-center text-white font-semibold">
+                        {otherParticipant?.avatar_url ? (
+                            <img
+                                src={otherParticipant.avatar_url}
+                                alt={otherParticipant.full_name}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            otherParticipant?.full_name?.charAt(0) || '?'
+                        )}
                     </div>
                     <div className="flex-1 min-w-0">
                         <h1 className="font-semibold truncate">

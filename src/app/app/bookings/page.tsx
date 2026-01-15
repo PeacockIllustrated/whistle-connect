@@ -151,7 +151,7 @@ export default async function BookingsPage({
                         isCoach ? (
                             <Link
                                 href="/app/bookings/new"
-                                className="inline-flex items-center px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium text-sm"
+                                className="inline-flex items-center px-4 py-2 bg-[var(--brand-secondary)] text-white rounded-lg font-medium text-sm"
                             >
                                 Create Booking
                             </Link>

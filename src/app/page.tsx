@@ -34,12 +34,12 @@ export default function LandingPage() {
         {/* Background Image with Overlay */}
         <div className="absolute inset-0">
           <img
-            src="/_brain_caa116f9-3168-4b28-951c-88a6a4ee1a10/grassroots_football_ground_bg_1768475016333.png"
+            src="/assets/hero-bg.png"
             alt="Grassroots football ground"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover object-center"
           />
           {/* Dark Overlay for Legibility */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[var(--neutral-950)]/90 via-[var(--neutral-900)]/80 to-[var(--brand-primary-dark)]/40" />
+          <div className="absolute inset-0 bg-black/60" />
         </div>
 
         {/* Decorative Elements */}
@@ -89,10 +89,10 @@ export default function LandingPage() {
             &copy; {new Date().getFullYear()} Whistle Connect
           </p>
           <div className="flex justify-center gap-4 mt-3">
-            <Link href="#" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
+            <Link href="/privacy" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
               Privacy
             </Link>
-            <Link href="#" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
+            <Link href="/terms" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
               Terms
             </Link>
           </div>
