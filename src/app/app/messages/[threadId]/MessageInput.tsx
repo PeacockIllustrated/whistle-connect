@@ -18,11 +18,17 @@ export function MessageInput({ threadId }: MessageInputProps) {
 
         setSending(true)
         try {
-            await sendMessage(threadId, message.trim())
+            const result = await sendMessage(threadId, message.trim())
+            if (result && 'error' in result) {
+                console.error('Failed to send message:', result.error)
+                alert(`Error: ${result.error}`)
+                return
+            }
             setMessage('')
             inputRef.current?.focus()
         } catch (error) {
             console.error('Failed to send message:', error)
+            alert('An unexpected error occurred while sending the message.')
         } finally {
             setSending(false)
         }

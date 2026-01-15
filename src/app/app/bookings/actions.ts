@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { BookingFormData, BookingStatus } from '@/lib/types'
+import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult } from '@/lib/types'
 
 export async function createBooking(data: BookingFormData) {
     const supabase = await createClient()
@@ -167,24 +167,40 @@ export async function acceptOffer(offerId: string) {
         .eq('booking_id', offer.booking_id)
         .neq('id', offerId)
 
-    // Create a thread for communication
-    const { data: thread } = await supabase
+    // Create or get a thread for communication
+    // First, check if a thread already exists for this booking
+    let { data: thread } = await supabase
         .from('threads')
-        .insert({
-            booking_id: offer.booking_id,
-            title: `Booking: ${offer.booking.ground_name || offer.booking.location_postcode}`,
-        })
-        .select()
-        .single()
+        .select('id')
+        .eq('booking_id', offer.booking_id)
+        .maybeSingle()
+
+    if (!thread) {
+        // Create if not exists
+        const { data: newThread, error: threadError } = await supabase
+            .from('threads')
+            .insert({
+                booking_id: offer.booking_id,
+                title: `Booking: ${offer.booking.ground_name || offer.booking.location_postcode}`,
+            })
+            .select()
+            .single()
+
+        if (threadError || !newThread) {
+            console.error('Thread creation error:', threadError)
+            return { error: 'Failed to create message thread' }
+        }
+        thread = newThread
+    }
 
     if (thread) {
-        // Add participants
+        // Add participants (idempotently due to unique constraint on thread_id, profile_id)
         await supabase
             .from('thread_participants')
-            .insert([
+            .upsert([
                 { thread_id: thread.id, profile_id: offer.booking.coach_id },
                 { thread_id: thread.id, profile_id: user.id },
-            ])
+            ], { onConflict: 'thread_id, profile_id' })
 
         // Add system message
         await supabase
@@ -193,12 +209,18 @@ export async function acceptOffer(offerId: string) {
                 thread_id: thread.id,
                 sender_id: null,
                 kind: 'system',
-                body: 'Referee accepted and fixture confirmed. You can now message each other about the match.',
+                body: 'Offer accepted. You can confirm final details here.',
             })
     }
 
     revalidatePath('/app/bookings')
     revalidatePath(`/app/bookings/${offer.booking_id}`)
+    revalidatePath('/app/messages')
+
+    if (thread) {
+        return { success: true, threadId: thread.id }
+    }
+
     return { success: true }
 }
 
@@ -222,4 +244,159 @@ export async function declineOffer(offerId: string) {
 
     revalidatePath('/app/bookings')
     return { success: true }
+}
+
+export async function searchReferees(criteria: SearchCriteria): Promise<{ data?: RefereeSearchResult[], error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Get day of week from match date
+    const matchDate = new Date(criteria.match_date)
+    const dayOfWeek = matchDate.getDay()
+
+    const kickoff = criteria.kickoff_time + ':00'
+
+    // Query referee_profiles that match the county
+    // And join with profiles for basic info
+    // And join with availability to check for matches on that day and time
+    const { data: results, error } = await supabase
+        .from('referee_profiles')
+        .select(`
+            county,
+            level,
+            verified,
+            travel_radius_km,
+            dbs_status,
+            safeguarding_status,
+            profile:profiles!inner(
+                id,
+                full_name,
+                avatar_url
+            ),
+            availability:referee_availability!inner(
+                day_of_week,
+                start_time,
+                end_time
+            )
+        `)
+        .eq('county', criteria.county)
+        .eq('availability.day_of_week', dayOfWeek)
+        .lte('availability.start_time', kickoff)
+        .gte('availability.end_time', kickoff)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    // Filter out referees who don't actually have availability for that day
+    // (Supabase join might return the profile even if availability doesn't match if not careful, 
+    // but availability.day_of_week filter should work if structured correctly)
+    const formattedResults: RefereeSearchResult[] = (results || [])
+        .filter(r => r.availability && (r.availability as any).length > 0)
+        .map(r => {
+            const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
+            return {
+                id: profile.id,
+                full_name: profile.full_name,
+                avatar_url: profile.avatar_url,
+                level: r.level,
+                county: r.county,
+                travel_radius_km: r.travel_radius_km,
+                verified: r.verified,
+                dbs_status: r.dbs_status,
+                safeguarding_status: r.safeguarding_status
+            }
+        })
+
+    return { data: formattedResults }
+}
+
+export async function bookReferee(refereeId: string, data: BookingFormData): Promise<{ threadId?: string, error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // 1. Create the booking
+    const { data: booking, error: bookingError } = await supabase
+        .from('bookings')
+        .insert({
+            coach_id: user.id,
+            status: 'offered', // Start as offered since we are specific booking one referee
+            match_date: data.match_date,
+            kickoff_time: data.kickoff_time + ':00',
+            location_postcode: data.location_postcode,
+            ground_name: data.ground_name || null,
+            age_group: data.age_group || null,
+            format: data.format || null,
+            competition_type: data.competition_type || null,
+            notes: data.notes || null,
+            budget_pounds: data.budget_pounds || null,
+        })
+        .select()
+        .single()
+
+    if (bookingError) {
+        return { error: bookingError.message }
+    }
+
+    // 2. Create the offer for this specific referee
+    const { error: offerError } = await supabase
+        .from('booking_offers')
+        .insert({
+            booking_id: booking.id,
+            referee_id: refereeId,
+            status: 'sent',
+        })
+
+    if (offerError) {
+        return { error: offerError.message }
+    }
+
+    // 3. Create a thread for communication
+    const { data: thread, error: threadError } = await supabase
+        .from('threads')
+        .insert({
+            booking_id: booking.id,
+            title: `Booking Request: ${booking.ground_name || booking.location_postcode}`,
+        })
+        .select()
+        .single()
+
+    if (threadError || !thread) {
+        return { error: threadError?.message || 'Failed to create message thread' }
+    }
+
+    // 4. Add participants to the thread
+    const { error: partError } = await supabase
+        .from('thread_participants')
+        .insert([
+            { thread_id: thread.id, profile_id: user.id }, // Coach
+            { thread_id: thread.id, profile_id: refereeId }, // Referee
+        ])
+
+    if (partError) {
+        return { error: 'Failed to add participants to thread' }
+    }
+
+    // 5. Add system message
+    await supabase
+        .from('messages')
+        .insert({
+            thread_id: thread.id,
+            sender_id: null,
+            kind: 'system',
+            body: `Booking request sent to referee. You can now discuss details here.`,
+        })
+
+    revalidatePath('/app/bookings')
+    revalidatePath('/app/messages')
+
+    return { threadId: thread.id }
 }

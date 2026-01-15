@@ -65,7 +65,7 @@ export default async function AdminRefereesPage() {
                                 className="card p-4 block hover:shadow-md transition-shadow"
                             >
                                 <div className="flex items-center gap-3">
-                                    <div className="w-12 h-12 rounded-full bg-[var(--brand-green)] flex items-center justify-center text-white font-semibold">
+                                    <div className="w-12 h-12 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white font-semibold">
                                         {referee.full_name?.charAt(0) || '?'}
                                     </div>
 

@@ -80,37 +80,22 @@ export default function RegisterPage() {
                 <div className="max-w-[var(--content-max-width)] mx-auto w-full">
                     {/* Role Selection */}
                     <div className="mb-6">
-                        <p className="text-sm font-medium text-[var(--foreground)] mb-3">I am a...</p>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2 p-1 bg-[var(--background-soft)] rounded-2xl border border-[var(--border-color)]">
                             {roleOptions.map((option) => (
                                 <button
                                     key={option.value}
                                     type="button"
                                     onClick={() => setRole(option.value as UserRole)}
                                     className={cn(
-                                        'p-4 rounded-xl border-2 text-left transition-all',
+                                        'py-4 px-2 rounded-xl text-center transition-all duration-200 font-bold text-sm outline-none',
                                         role === option.value
-                                            ? 'border-[var(--color-primary)] bg-[var(--color-primary)]/5'
-                                            : 'border-[var(--border-color)] hover:border-[var(--neutral-300)]'
+                                            ? option.value === 'referee'
+                                                ? 'bg-[#cd1719] text-white shadow-lg'
+                                                : 'bg-[#1d2557] text-white shadow-lg'
+                                            : 'text-[var(--foreground-muted)] hover:bg-[var(--neutral-100)]'
                                     )}
                                 >
-                                    <div className={cn(
-                                        'w-10 h-10 rounded-full flex items-center justify-center mb-2',
-                                        option.value === 'referee'
-                                            ? 'bg-[var(--brand-green)]'
-                                            : 'bg-[var(--brand-orange)]'
-                                    )}>
-                                        {option.value === 'referee' ? (
-                                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                            </svg>
-                                        ) : (
-                                            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857" />
-                                            </svg>
-                                        )}
-                                    </div>
-                                    <span className="font-semibold text-sm">{option.label}</span>
+                                    {option.label}
                                 </button>
                             ))}
                         </div>

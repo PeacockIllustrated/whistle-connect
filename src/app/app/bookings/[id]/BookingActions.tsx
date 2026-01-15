@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { acceptOffer, declineOffer, cancelBooking } from '../actions'
@@ -22,6 +23,7 @@ export function BookingActions({
     isReferee,
     threadId
 }: BookingActionsProps) {
+    const router = useRouter()
     const [accepting, setAccepting] = useState(false)
     const [declining, setDeclining] = useState(false)
     const [showCancelDialog, setShowCancelDialog] = useState(false)
@@ -30,7 +32,12 @@ export function BookingActions({
         if (!userOffer) return
         setAccepting(true)
         try {
-            await acceptOffer(userOffer.id)
+            const result = await acceptOffer(userOffer.id)
+            if (result.success && (result as any).threadId) {
+                router.push(`/app/messages/${(result as any).threadId}`)
+            } else {
+                setAccepting(false)
+            }
         } catch (error) {
             console.error('Failed to accept offer:', error)
             setAccepting(false)
@@ -82,7 +89,7 @@ export function BookingActions({
     }
 
     // Message button if thread exists
-    if (threadId && (booking.status === 'confirmed' || booking.status === 'completed')) {
+    if (threadId && (booking.status === 'confirmed' || booking.status === 'completed' || booking.status === 'offered')) {
         return (
             <div className="space-y-3">
                 <Link href={`/app/messages/${threadId}`}>

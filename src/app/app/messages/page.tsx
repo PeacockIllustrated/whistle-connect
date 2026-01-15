@@ -90,7 +90,7 @@ export default async function MessagesPage() {
                         >
                             <div className="flex items-start gap-3">
                                 {/* Avatar */}
-                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[var(--brand-green)] flex items-center justify-center text-white font-semibold">
+                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white font-semibold">
                                     {thread.other_participant?.full_name?.charAt(0) || '?'}
                                 </div>
 

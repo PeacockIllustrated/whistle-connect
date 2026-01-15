@@ -1,9 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
-import { MessageBubble, MessageDateSeparator } from '@/components/app/MessageBubble'
-import { formatDate } from '@/lib/utils'
 import { MessageInput } from './MessageInput'
+import { MessageList } from './MessageList'
 import { markThreadAsRead } from '../actions'
 
 export default async function ThreadPage({
@@ -19,30 +18,55 @@ export default async function ThreadPage({
         redirect('/auth/login')
     }
 
-    // Get thread with messages
+    // Get thread with messages - use maybeSingle to avoid 404 on slight delays
     const { data: thread, error } = await supabase
         .from('threads')
         .select(`
       *,
-      booking:bookings(id, ground_name, location_postcode, match_date)
+      booking:bookings(id, ground_name, location_postcode, match_date, coach_id)
     `)
         .eq('id', threadId)
-        .single()
+        .maybeSingle()
 
     if (error || !thread) {
-        notFound()
+        return (
+            <div className="flex flex-col items-center justify-center h-full p-4 text-center">
+                <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
+                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h1 className="text-xl font-bold mb-2">Conversation not found</h1>
+                <p className="text-[var(--foreground-muted)] mb-6 max-w-xs">
+                    We couldn't load this conversation. It might have been deleted or you might not have access.
+                </p>
+                <Link href="/app/messages" className="px-6 py-2 bg-[var(--brand-navy)] text-white rounded-lg font-medium">
+                    Back to Messages
+                </Link>
+            </div>
+        )
     }
 
-    // Verify user is participant
+    // Verify user is participant or involved in booking
     const { data: participation } = await supabase
         .from('thread_participants')
         .select('*')
         .eq('thread_id', threadId)
         .eq('profile_id', user.id)
-        .single()
+        .maybeSingle()
 
-    if (!participation) {
-        notFound()
+    // If no participation record found, but they have access to the thread (they passed RLS),
+    // they are likely the coach or referee who hasn't been added yet (rare case)
+    if (!participation && thread.booking?.coach_id !== user.id) {
+        // Double check if they are the referee for the booking
+        const { data: isRef } = await supabase.rpc('check_is_booking_referee', {
+            p_booking_id: thread.booking_id,
+            p_user_id: user.id
+        })
+
+        if (!isRef) {
+            return redirect('/app/messages')
+        }
     }
 
     // Get participants
@@ -64,19 +88,6 @@ export default async function ThreadPage({
 
     // Mark as read
     await markThreadAsRead(threadId)
-
-    // Group messages by date
-    const groupedMessages: { date: string; messages: any[] }[] = []
-    let currentDate = ''
-
-    messages?.forEach((message) => {
-        const messageDate = new Date(message.created_at).toDateString()
-        if (messageDate !== currentDate) {
-            currentDate = messageDate
-            groupedMessages.push({ date: message.created_at, messages: [] })
-        }
-        groupedMessages[groupedMessages.length - 1].messages.push(message)
-    })
 
     return (
         <div className="flex flex-col h-[calc(100vh-var(--header-height)-var(--bottom-nav-height))]">
@@ -117,27 +128,11 @@ export default async function ThreadPage({
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-                {groupedMessages.length > 0 ? (
-                    groupedMessages.map((group, groupIndex) => (
-                        <div key={groupIndex}>
-                            <MessageDateSeparator date={group.date} />
-                            {group.messages.map((message) => (
-                                <MessageBubble
-                                    key={message.id}
-                                    message={message}
-                                    isOwn={message.sender_id === user.id}
-                                    showSender={message.sender_id !== user.id && message.kind === 'user'}
-                                />
-                            ))}
-                        </div>
-                    ))
-                ) : (
-                    <div className="flex items-center justify-center h-full text-[var(--foreground-muted)] text-sm">
-                        No messages yet. Start the conversation!
-                    </div>
-                )}
-            </div>
+            <MessageList
+                initialMessages={messages || []}
+                threadId={threadId}
+                currentUserId={user.id}
+            />
 
             {/* Input */}
             <MessageInput threadId={threadId} />

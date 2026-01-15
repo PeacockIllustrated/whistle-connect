@@ -154,8 +154,8 @@ export function AccessLane({
     className,
 }: AccessLaneProps) {
     const variants = {
-        referee: 'from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700',
-        coach: 'from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700',
+        coach: 'from-[var(--wc-coach-blue)] to-[var(--wc-blue)] hover:from-[var(--brand-primary-dark)] hover:to-[var(--wc-coach-blue)]',
+        referee: 'from-[var(--wc-ref-red)] to-[#a31214] hover:from-[#a31214] hover:to-[#8c1012]',
         default: 'from-[var(--neutral-600)] to-[var(--neutral-700)] hover:from-[var(--neutral-700)] hover:to-[var(--neutral-800)]',
     }
 

@@ -62,7 +62,7 @@ export default async function AdminRefereeDetailPage({
             {/* Profile Card */}
             <div className="card p-4 mb-4">
                 <div className="flex items-center gap-4 mb-4">
-                    <div className="w-16 h-16 rounded-full bg-[var(--brand-green)] flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-16 h-16 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-2xl font-bold">
                         {referee.full_name?.charAt(0) || '?'}
                     </div>
                     <div className="flex-1">

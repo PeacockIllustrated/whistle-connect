@@ -4,12 +4,18 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { AvailabilityGrid } from '@/components/app/AvailabilityGrid'
 import { Button } from '@/components/ui/Button'
-import { getAvailability, setAvailability } from './actions'
+import { getAvailability, setAvailability, getRefereeProfile, updateRefereeProfile } from './actions'
 import { AvailabilitySlot, RefereeAvailability } from '@/lib/types'
+import { Select } from '@/components/ui/Select'
+import { UK_COUNTIES } from '@/lib/constants'
 
 export default function AvailabilityPage() {
     const [availability, setAvailabilityState] = useState<RefereeAvailability[]>([])
     const [pendingSlots, setPendingSlots] = useState<AvailabilitySlot[]>([])
+    const [centralVenueOptIn, setCentralVenueOptIn] = useState(false)
+    const [initialOptIn, setInitialOptIn] = useState(false)
+    const [county, setCounty] = useState('')
+    const [initialCounty, setInitialCounty] = useState('')
     const [loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [hasChanges, setHasChanges] = useState(false)
@@ -21,9 +27,19 @@ export default function AvailabilityPage() {
 
     async function loadAvailability() {
         setLoading(true)
-        const result = await getAvailability()
-        if (result.data) {
-            setAvailabilityState(result.data)
+        const [availResult, profileResult] = await Promise.all([
+            getAvailability(),
+            getRefereeProfile()
+        ])
+
+        if (availResult.data) {
+            setAvailabilityState(availResult.data)
+        }
+        if (profileResult.data) {
+            setCentralVenueOptIn(profileResult.data.central_venue_opt_in)
+            setInitialOptIn(profileResult.data.central_venue_opt_in)
+            setCounty(profileResult.data.county || '')
+            setInitialCounty(profileResult.data.county || '')
         }
         setLoading(false)
     }
@@ -38,12 +54,24 @@ export default function AvailabilityPage() {
         setMessage(null)
 
         try {
-            const result = await setAvailability(pendingSlots)
-            if (result.error) {
-                setMessage({ type: 'error', text: result.error })
+            const results = await Promise.all([
+                setAvailability(pendingSlots),
+                (centralVenueOptIn !== initialOptIn || county !== initialCounty)
+                    ? updateRefereeProfile({
+                        central_venue_opt_in: centralVenueOptIn,
+                        county: county
+                    })
+                    : Promise.resolve({ success: true })
+            ])
+
+            const errorObj = results.find(r => 'error' in r && r.error)
+            if (errorObj && 'error' in errorObj) {
+                setMessage({ type: 'error', text: errorObj.error as string })
             } else {
                 setMessage({ type: 'success', text: 'Availability saved successfully!' })
                 setHasChanges(false)
+                setInitialOptIn(centralVenueOptIn)
+                setInitialCounty(county)
                 loadAvailability()
             }
         } catch (error) {
@@ -73,12 +101,47 @@ export default function AvailabilityPage() {
             {/* Message */}
             {message && (
                 <div className={`p-3 rounded-lg mb-4 ${message.type === 'success'
-                        ? 'bg-green-50 border border-green-200 text-green-700'
-                        : 'bg-red-50 border border-red-200 text-red-700'
+                    ? 'bg-green-50 border border-green-200 text-green-700'
+                    : 'bg-red-50 border border-red-200 text-red-700'
                     }`}>
                     {message.text}
                 </div>
             )}
+
+            {/* County Selection */}
+            <div className="card p-4 mb-6">
+                <h2 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">LOCATION</h2>
+                <Select
+                    label="Primary County"
+                    options={UK_COUNTIES.map(c => ({ value: c, label: c }))}
+                    value={county}
+                    onChange={(e) => {
+                        setCounty(e.target.value)
+                        setHasChanges(true)
+                    }}
+                    placeholder="Select your primary county"
+                />
+                <p className="text-[10px] text-[var(--foreground-muted)] mt-2">
+                    Used to help coaches find you in their area.
+                </p>
+            </div>
+
+            {/* Central Venue Opt-in */}
+            <div className="flex items-center gap-3 mb-6 p-1">
+                <input
+                    type="checkbox"
+                    id="central_venue_opt_in"
+                    checked={centralVenueOptIn}
+                    onChange={(e) => {
+                        setCentralVenueOptIn(e.target.checked)
+                        setHasChanges(true)
+                    }}
+                    className="w-5 h-5 rounded border-[var(--border-color)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
+                />
+                <label htmlFor="central_venue_opt_in" className="text-sm font-medium cursor-pointer">
+                    Available for Central Venue booking
+                </label>
+            </div>
 
             {/* Grid */}
             <div className="card p-4 mb-6">

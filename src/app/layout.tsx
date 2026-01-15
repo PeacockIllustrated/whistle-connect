@@ -18,7 +18,12 @@ export const metadata: Metadata = {
   title: "Whistle Connect | Book Referees Fast",
   description: "The grassroots football operations app. Book referees, manage availability, and communicate seamlessly.",
   keywords: ["football", "referee", "booking", "grassroots", "soccer"],
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

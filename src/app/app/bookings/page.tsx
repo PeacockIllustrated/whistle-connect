@@ -42,7 +42,8 @@ export default async function BookingsPage({
             .select(`
         *,
         coach:profiles!bookings_coach_id_fkey(*),
-        assignment:booking_assignments(*, referee:profiles(*))
+        assignment:booking_assignments(*, referee:profiles(*)),
+        thread:threads(*)
       `)
             .eq('coach_id', user.id)
             .order('match_date', { ascending: true })
@@ -59,7 +60,7 @@ export default async function BookingsPage({
             .from('booking_offers')
             .select(`
         *,
-        booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*))
+        booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*), thread:threads(*))
       `)
             .eq('referee_id', user.id)
 
@@ -67,7 +68,7 @@ export default async function BookingsPage({
             .from('booking_assignments')
             .select(`
         *,
-        booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*))
+        booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*), thread:threads(*))
       `)
             .eq('referee_id', user.id)
 

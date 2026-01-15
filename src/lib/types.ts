@@ -60,6 +60,7 @@ export interface RefereeProfile {
     safeguarding_status: ComplianceStatus
     safeguarding_expires_at: string | null
     bio: string | null
+    central_venue_opt_in: boolean
     created_at: string
     updated_at: string
 }
@@ -168,6 +169,7 @@ export interface BookingFormData {
     match_date: string
     kickoff_time: string
     location_postcode: string
+    county?: string
     ground_name?: string
     age_group?: string
     format?: MatchFormat
@@ -175,6 +177,27 @@ export interface BookingFormData {
     referee_level_required?: string
     notes?: string
     budget_pounds?: number
+}
+
+export interface SearchCriteria {
+    county: string
+    match_date: string
+    kickoff_time: string
+    age_group: string
+    format: MatchFormat
+    competition_type: CompetitionType
+}
+
+export interface RefereeSearchResult {
+    id: string
+    full_name: string
+    avatar_url: string | null
+    level: string | null
+    county: string | null
+    travel_radius_km: number
+    verified: boolean
+    dbs_status: ComplianceStatus
+    safeguarding_status: ComplianceStatus
 }
 
 export interface AvailabilitySlot {

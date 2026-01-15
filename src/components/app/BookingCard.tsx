@@ -1,3 +1,4 @@
+'use client'
 import Link from 'next/link'
 import { cn, formatDate, formatTime } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
@@ -33,7 +34,23 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                         </p>
                     )}
                 </div>
-                <StatusChip status={booking.status} size="sm" />
+                <div className="flex items-center gap-2">
+                    {booking.thread && (
+                        <span
+                            onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                window.location.href = `/app/messages/${booking.thread?.id}`
+                            }}
+                            className="p-1.5 bg-[var(--brand-primary)] text-white rounded-full hover:bg-[var(--brand-navy)] transition-colors"
+                        >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </span>
+                    )}
+                    <StatusChip status={booking.status} size="sm" />
+                </div>
             </div>
 
             {/* Details Row */}
@@ -69,7 +86,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
             {/* Referee Assignment */}
             {showReferee && booking.assignment?.referee && (
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-[var(--border-color)]">
-                    <div className="w-8 h-8 rounded-full bg-[var(--brand-green)] flex items-center justify-center text-white text-sm font-semibold">
+                    <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-sm font-semibold">
                         {booking.assignment.referee.full_name.charAt(0)}
                     </div>
                     <div>
@@ -106,7 +123,23 @@ export function BookingCardCompact({ booking, className }: { booking: BookingWit
                 <p className="font-medium text-sm truncate">{booking.ground_name || booking.location_postcode}</p>
                 <p className="text-xs text-[var(--foreground-muted)]">{formatTime(booking.kickoff_time)}</p>
             </div>
-            <StatusChip status={booking.status} size="sm" />
+            <div className="flex items-center gap-2">
+                {booking.thread && (
+                    <span
+                        onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            window.location.href = `/app/messages/${booking.thread?.id}`
+                        }}
+                        className="p-1.5 text-[var(--brand-primary)] hover:bg-[var(--neutral-100)] rounded-full transition-colors"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                    </span>
+                )}
+                <StatusChip status={booking.status} size="sm" />
+            </div>
         </Link>
     )
 }

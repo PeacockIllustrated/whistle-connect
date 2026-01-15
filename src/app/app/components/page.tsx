@@ -30,8 +30,8 @@ export default function ComponentsPage() {
                         key={tab}
                         onClick={() => setActiveTab(tab)}
                         className={`px-4 py-2 rounded-full font-medium capitalize whitespace-nowrap transition-colors ${activeTab === tab
-                                ? 'bg-[var(--brand-navy)] text-white'
-                                : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
+                            ? 'bg-[var(--brand-navy)] text-white'
+                            : 'bg-[var(--neutral-100)] text-[var(--neutral-600)]'
                             }`}
                     >
                         {tab}
@@ -46,9 +46,9 @@ export default function ComponentsPage() {
                     <section>
                         <h2 className="text-lg font-semibold mb-4">Brand Colors</h2>
                         <div className="grid grid-cols-3 gap-3">
-                            <ColorSwatch name="Navy" var="--brand-navy" />
-                            <ColorSwatch name="Green" var="--brand-green" />
-                            <ColorSwatch name="Orange" var="--brand-orange" />
+                            <ColorSwatch name="Blue (Primary)" var="--wc-blue" />
+                            <ColorSwatch name="Coach Blue" var="--wc-coach-blue" />
+                            <ColorSwatch name="Ref Red" var="--wc-ref-red" />
                         </div>
                     </section>
 
@@ -114,7 +114,7 @@ export default function ComponentsPage() {
                                 <div key={space.name} className="flex items-center gap-3">
                                     <span className="text-sm w-12 text-[var(--foreground-muted)]">{space.name}</span>
                                     <div
-                                        className="bg-[var(--brand-green)] h-4"
+                                        className="bg-[var(--brand-primary)] h-4"
                                         style={{ width: space.size }}
                                     />
                                     <span className="text-xs text-[var(--neutral-400)]">{space.size}</span>
@@ -352,7 +352,7 @@ export default function ComponentsPage() {
                         <h2 className="text-lg font-semibold mb-4">Composed: Home Dashboard</h2>
                         <div className="card p-4 space-y-4">
                             <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-full bg-[var(--brand-navy)] text-white flex items-center justify-center font-bold">
+                                <div className="w-12 h-12 rounded-full bg-[var(--brand-primary)] text-white flex items-center justify-center font-bold">
                                     JS
                                 </div>
                                 <div>
@@ -398,9 +398,9 @@ export default function ComponentsPage() {
                                 <code className="bg-[var(--neutral-100)] px-1 rounded">?theme=blue</code> to the URL
                             </p>
                             <div className="flex gap-2">
-                                <a href="?theme=red" className="px-3 py-1 bg-red-600 text-white rounded text-sm">Red Theme</a>
-                                <a href="?theme=blue" className="px-3 py-1 bg-blue-600 text-white rounded text-sm">Blue Theme</a>
-                                <a href="?" className="px-3 py-1 bg-[var(--brand-green)] text-white rounded text-sm">Default</a>
+                                <a href="?role=coach" className="px-3 py-1 bg-[var(--wc-coach-blue)] text-white rounded text-sm">Coach Style</a>
+                                <a href="?role=referee" className="px-3 py-1 bg-[var(--wc-ref-red)] text-white rounded text-sm">Referee Style</a>
+                                <a href="?" className="px-3 py-1 bg-[var(--brand-primary)] text-white rounded text-sm">Default</a>
                             </div>
                         </div>
                     </section>

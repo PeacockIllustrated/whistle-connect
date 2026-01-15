@@ -78,11 +78,11 @@ const statusConfig: Record<StatusType, { label: string; colors: string }> = {
     // User roles
     coach: {
         label: 'Coach',
-        colors: 'bg-gradient-to-r from-amber-500 to-orange-500 text-white border-transparent'
+        colors: 'bg-[var(--wc-coach-blue)] text-white border-transparent'
     },
     referee: {
         label: 'Referee',
-        colors: 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-transparent'
+        colors: 'bg-[var(--wc-ref-red)] text-white border-transparent'
     },
     admin: {
         label: 'Admin',

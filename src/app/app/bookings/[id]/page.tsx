@@ -32,7 +32,7 @@ export default async function BookingDetailPage({
       coach:profiles!bookings_coach_id_fkey(*),
       club:clubs(*),
       assignment:booking_assignments(*, referee:profiles(*)),
-      offers:booking_offers(*, referee:profiles(*), referee_profile:referee_profiles(*)),
+      offers:booking_offers(*, referee:profiles(*)),
       thread:threads(id)
     `)
         .eq('id', id)
@@ -155,7 +155,7 @@ export default async function BookingDetailPage({
                 <div className="card p-4 mb-4">
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">COACH</h3>
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[var(--brand-orange)] flex items-center justify-center text-white font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-[var(--wc-coach-blue)] flex items-center justify-center text-white font-semibold">
                             {booking.coach.full_name.charAt(0)}
                         </div>
                         <div>
@@ -171,7 +171,7 @@ export default async function BookingDetailPage({
                 <div className="card p-4 mb-4">
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">ASSIGNED REFEREE</h3>
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[var(--brand-green)] flex items-center justify-center text-white font-semibold">
+                        <div className="w-10 h-10 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white font-semibold">
                             {assignment.referee.full_name.charAt(0)}
                         </div>
                         <div className="flex-1">
@@ -204,7 +204,7 @@ export default async function BookingDetailPage({
                                 key={offer.id}
                                 className="flex items-center gap-3 p-2 rounded-lg bg-[var(--neutral-50)]"
                             >
-                                <div className="w-8 h-8 rounded-full bg-[var(--brand-green)] flex items-center justify-center text-white text-sm font-semibold">
+                                <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-sm font-semibold">
                                     {offer.referee?.full_name?.charAt(0) || '?'}
                                 </div>
                                 <div className="flex-1">

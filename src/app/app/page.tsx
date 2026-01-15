@@ -210,16 +210,6 @@ export default async function AppHomePage() {
                     />
                 </div>
             )}
-
-            {/* Component Demo Link (for internal use) */}
-            <div className="mt-8 pt-6 border-t border-[var(--border-color)]">
-                <Link
-                    href="/app/components"
-                    className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
-                >
-                    View Component Library →
-                </Link>
-            </div>
         </div>
     )
 }
