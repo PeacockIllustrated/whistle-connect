@@ -1,17 +1,64 @@
 'use client'
+import { useState } from 'react'
 import Link from 'next/link'
 import { cn, formatDate, formatTime } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { BookingWithDetails, BookingStatus } from '@/lib/types'
+import { deleteBooking, cancelBooking } from '@/app/app/bookings/actions'
+import { useToast } from '@/components/ui/Toast'
 
 export interface BookingCardProps {
-    booking: BookingWithDetails
+    booking: BookingWithDetails & { offer_status?: string }
     showCoach?: boolean
     showReferee?: boolean
     className?: string
 }
 
 export function BookingCard({ booking, showCoach, showReferee, className }: BookingCardProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    const { showToast } = useToast()
+
+    // Determine status to show
+    // If user is referee (showCoach is true), show their specific offer status if not confirmed/completed
+    // Otherwise show global booking status
+    const effectiveStatus = (showCoach && booking.offer_status && booking.status !== 'confirmed' && booking.status !== 'completed' && booking.status !== 'cancelled')
+        ? booking.offer_status as BookingStatus
+        : booking.status
+
+    const handleDelete = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!confirm('Are you sure you want to delete this booking?')) return
+
+        setIsLoading(true)
+        try {
+            const result = await deleteBooking(booking.id)
+            if (result.error) throw new Error(result.error)
+            showToast({ message: 'Booking deleted', type: 'success' })
+        } catch (error) {
+            showToast({ message: 'Failed to delete booking', type: 'error' })
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleCancel = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!confirm('Are you sure you want to cancel this booking? The coach will be notified.')) return
+
+        setIsLoading(true)
+        try {
+            const result = await cancelBooking(booking.id)
+            if (result.error) throw new Error(result.error)
+            showToast({ message: 'Booking cancelled', type: 'success' })
+        } catch (error) {
+            showToast({ message: 'Failed to cancel booking', type: 'error' })
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
     return (
         <Link
             href={`/app/bookings/${booking.id}`}
@@ -49,7 +96,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                             </svg>
                         </span>
                     )}
-                    <StatusChip status={booking.status} size="sm" />
+                    <StatusChip status={effectiveStatus} size="sm" />
                 </div>
             </div>
 
@@ -95,12 +142,42 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                     </div>
                 </div>
             )}
+
+            {/* Actions */}
+            <div className="mt-3 flex justify-end">
+                {/* Coach Actions: Delete if pending/offered */}
+                {!showCoach && (booking.status === 'pending' || booking.status === 'offered') && (
+                    <button
+                        onClick={handleDelete}
+                        disabled={isLoading}
+                        className="text-xs text-red-600 font-medium hover:underline disabled:opacity-50"
+                    >
+                        {isLoading ? 'Deleting...' : 'Delete Booking'}
+                    </button>
+                )}
+
+                {/* Referee Actions: Cancel if confirmed */}
+                {showCoach && booking.status === 'confirmed' && (
+                    <button
+                        onClick={handleCancel}
+                        disabled={isLoading}
+                        className="text-xs text-red-600 font-medium hover:underline disabled:opacity-50"
+                    >
+                        {isLoading ? 'Cancelling...' : 'Cancel Job'}
+                    </button>
+                )}
+            </div>
         </Link>
     )
 }
 
 // Compact variant for lists
-export function BookingCardCompact({ booking, className }: { booking: BookingWithDetails; className?: string }) {
+export function BookingCardCompact({ booking, className }: { booking: BookingWithDetails & { offer_status?: string }; className?: string }) {
+    // Basic offer logic for compact view too
+    const effectiveStatus = (booking.offer_status && booking.status !== 'confirmed' && booking.status !== 'completed' && booking.status !== 'cancelled')
+        ? booking.offer_status as BookingStatus
+        : booking.status
+
     return (
         <Link
             href={`/app/bookings/${booking.id}`}
@@ -138,7 +215,7 @@ export function BookingCardCompact({ booking, className }: { booking: BookingWit
                         </svg>
                     </span>
                 )}
-                <StatusChip status={booking.status} size="sm" />
+                <StatusChip status={effectiveStatus} size="sm" />
             </div>
         </Link>
     )

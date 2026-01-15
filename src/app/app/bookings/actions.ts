@@ -116,8 +116,66 @@ export async function updateBookingStatus(bookingId: string, status: BookingStat
     return { success: true }
 }
 
+export async function deleteBooking(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const { error } = await supabase
+        .from('bookings')
+        .delete()
+        .eq('id', bookingId)
+        .eq('coach_id', user.id) // Ensure ownership
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
 export async function cancelBooking(bookingId: string) {
-    return updateBookingStatus(bookingId, 'cancelled')
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Get booking details for notification
+    const { data: booking } = await supabase
+        .from('bookings')
+        .select('*, coach:profiles(*)')
+        .eq('id', bookingId)
+        .single()
+
+    const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', bookingId)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    // Notify the coach if the user cancelling is NOT the coach (i.e. it's the referee)
+    if (booking && booking.coach_id !== user.id) {
+        await createNotification({
+            userId: booking.coach_id,
+            title: 'Booking Cancelled',
+            message: `Referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}.`,
+            type: 'warning',
+            link: `/app/bookings/${bookingId}`
+        })
+    }
+
+    revalidatePath(`/app/bookings/${bookingId}`)
+    revalidatePath('/app/bookings')
+    return { success: true }
 }
 
 export async function acceptOffer(offerId: string) {
@@ -166,6 +224,15 @@ export async function acceptOffer(offerId: string) {
         .update({ status: 'withdrawn' })
         .eq('booking_id', offer.booking_id)
         .neq('id', offerId)
+
+    // Notify Coach
+    await createNotification({
+        userId: offer.booking.coach_id,
+        title: 'Offer Accepted!',
+        message: `A referee has accepted your booking request for ${offer.booking.ground_name || offer.booking.location_postcode}.`,
+        type: 'success',
+        link: `/app/bookings/${offer.booking_id}`
+    })
 
     // Create or get a thread for communication
     // First, check if a thread already exists for this booking
@@ -242,8 +309,35 @@ export async function declineOffer(offerId: string) {
         return { error: error.message }
     }
 
+    // Get booking to notify coach
+    const { data: offerData } = await supabase.from('booking_offers').select('booking:bookings(coach_id, ground_name, location_postcode)').eq('id', offerId).single()
+
+    // Handle Supabase join sometimes returning array
+    const booking = offerData?.booking ? (Array.isArray(offerData.booking) ? offerData.booking[0] : offerData.booking) : null
+
+    if (booking) {
+        await createNotification({
+            userId: booking.coach_id,
+            title: 'Offer Declined',
+            message: `A referee declined your booking request for ${booking.ground_name || booking.location_postcode}.`,
+            type: 'info',
+            link: '/app/bookings'
+        })
+    }
+
     revalidatePath('/app/bookings')
     return { success: true }
+}
+
+async function createNotification({ userId, title, message, type, link }: { userId: string, title: string, message: string, type: 'info' | 'success' | 'warning' | 'error', link?: string }) {
+    const supabase = await createClient()
+    await supabase.from('notifications').insert({
+        user_id: userId,
+        title,
+        message,
+        type,
+        link
+    })
 }
 
 export async function searchReferees(criteria: SearchCriteria): Promise<{ data?: RefereeSearchResult[], error?: string }> {
