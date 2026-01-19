@@ -10,21 +10,26 @@
      BRAND PALETTE - WHISTLE CONNECT
      ---------------------------------------- */
   --wc-blue: #2a285e;
-  --wc-coach-blue: #1d2557;
-  --wc-ref-red: #cd1719;
-  --wc-red: var(--wc-ref-red);
+  /* Coach Color */
+  --wc-red: #cd1719;
+  /* Referee Color */
+  --wc-ink: #1d2557;
+  /* Deep Navy */
 
-  --brand-navy: var(--wc-blue);
+  --brand-navy: var(--wc-ink);
 
   --brand-primary: var(--wc-blue);
-  /* Brand Blue - Trust & Professionalism */
+  /* Brand Blue - Coach */
   --brand-primary-light: #44418a;
-  --brand-secondary: var(--wc-coach-blue);
-  /* Coach Blue - Trust & Professionalism */
-  --brand-accent: #F59E0B;
-  /* Ref Red - Authority & Focus */
-  /* Amber - Warm highlights */
-  --brand-accent-light: #FBBF24;
+  --brand-primary-dark: var(--wc-ink);
+
+  --brand-secondary: var(--wc-red);
+  /* Brand Red - Referee */
+
+  --brand-accent: var(--wc-red);
+  /* For referee elements/highlights */
+
+  --brand-accent-light: #f14c4e;
 
   /* ----------------------------------------
      SEMANTIC COLORS
@@ -498,11 +503,11 @@ body {
 
   0%,
   100% {
-    box-shadow: var(--shadow-md), 0 0 20px rgba(16, 185, 129, 0.3);
+    box-shadow: var(--shadow-md), 0 0 20px rgba(42, 40, 94, 0.3);
   }
 
   50% {
-    box-shadow: var(--shadow-md), 0 0 30px rgba(16, 185, 129, 0.5);
+    box-shadow: var(--shadow-md), 0 0 30px rgba(42, 40, 94, 0.5);
   }
 }
 
@@ -595,7 +600,7 @@ body {
 /* Focus styles */
 .focus-ring:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px var(--color-primary), 0 0 0 6px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 0 3px var(--color-primary), 0 0 0 6px rgba(42, 40, 94, 0.2);
 }
 
 /* ============================================

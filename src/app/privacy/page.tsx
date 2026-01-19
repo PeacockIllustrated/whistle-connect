@@ -32,7 +32,7 @@ export default function PrivacyPage() {
                     <section>
                         <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">1. Introduction</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
-                            Whistle Connect ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclosure, and safeguard your information when you visit our application. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the application.
+                            Whistle Connect (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclosure, and safeguard your information when you visit our application. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access the application.
                         </p>
                     </section>
 

@@ -79,6 +79,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const [settings, setSettings] = useState<ThemeSettings>(defaultSettings)
     const [mounted, setMounted] = useState(false)
 
+    const applySettings = (s: ThemeSettings) => {
+        const root = document.documentElement
+
+        // Apply color theme
+        root.setAttribute('data-color', s.color)
+
+        // Apply typography
+        root.setAttribute('data-typography', s.typography)
+
+        // Apply radius
+        root.setAttribute('data-radius', s.radius)
+    }
+
     // Load settings from localStorage on mount
     useEffect(() => {
         setMounted(true)
@@ -99,18 +112,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
-    const applySettings = (s: ThemeSettings) => {
-        const root = document.documentElement
-
-        // Apply color theme
-        root.setAttribute('data-color', s.color)
-
-        // Apply typography
-        root.setAttribute('data-typography', s.typography)
-
-        // Apply radius
-        root.setAttribute('data-radius', s.radius)
-    }
 
     const saveAndApply = useCallback((newSettings: ThemeSettings) => {
         setSettings(newSettings)

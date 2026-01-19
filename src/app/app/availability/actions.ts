@@ -13,7 +13,7 @@ export async function getAvailability() {
     }
 
     const { data, error } = await supabase
-        .from('referee_availability')
+        .from('referee_date_availability')
         .select('*')
         .eq('referee_id', user.id)
 
@@ -24,7 +24,28 @@ export async function getAvailability() {
     return { data, error: null }
 }
 
-export async function setAvailability(slots: AvailabilitySlot[]) {
+export async function getDateAvailability(date: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized', data: null }
+    }
+
+    const { data, error } = await supabase
+        .from('referee_date_availability')
+        .select('*')
+        .eq('referee_id', user.id)
+        .eq('date', date)
+
+    if (error) {
+        return { error: error.message, data: null }
+    }
+
+    return { data, error: null }
+}
+
+export async function updateDateAvailability(date: string, slots: { start_time: string, end_time: string }[]) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -32,23 +53,24 @@ export async function setAvailability(slots: AvailabilitySlot[]) {
         return { error: 'Unauthorized' }
     }
 
-    // Delete existing availability
+    // Delete existing availability for this date
     await supabase
-        .from('referee_availability')
+        .from('referee_date_availability')
         .delete()
         .eq('referee_id', user.id)
+        .eq('date', date)
 
     // Insert new availability
     if (slots.length > 0) {
         const slotsToInsert = slots.map(slot => ({
             referee_id: user.id,
-            day_of_week: slot.day_of_week,
+            date,
             start_time: slot.start_time,
             end_time: slot.end_time,
         }))
 
         const { error } = await supabase
-            .from('referee_availability')
+            .from('referee_date_availability')
             .insert(slotsToInsert)
 
         if (error) {
@@ -57,7 +79,6 @@ export async function setAvailability(slots: AvailabilitySlot[]) {
     }
 
     revalidatePath('/app/availability')
-    revalidatePath('/app')
     return { success: true }
 }
 

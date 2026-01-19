@@ -73,7 +73,9 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
             <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-[var(--foreground)] truncate">
-                        {booking.ground_name || booking.location_postcode}
+                        {booking.home_team && booking.away_team
+                            ? `${booking.home_team} vs ${booking.away_team}`
+                            : (booking.address_text || booking.ground_name || booking.location_postcode)}
                     </h3>
                     {showCoach && booking.coach && (
                         <p className="text-sm text-[var(--foreground-muted)]">
@@ -82,7 +84,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    {booking.thread && (
+                    {booking.thread && booking.status === 'confirmed' && (
                         <span
                             onClick={(e) => {
                                 e.preventDefault()
@@ -197,11 +199,15 @@ export function BookingCardCompact({ booking, className }: { booking: BookingWit
                 </span>
             </div>
             <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm truncate">{booking.ground_name || booking.location_postcode}</p>
+                <p className="font-medium text-sm truncate">
+                    {booking.home_team && booking.away_team
+                        ? `${booking.home_team} vs ${booking.away_team}`
+                        : (booking.address_text || booking.ground_name || booking.location_postcode)}
+                </p>
                 <p className="text-xs text-[var(--foreground-muted)]">{formatTime(booking.kickoff_time)}</p>
             </div>
             <div className="flex items-center gap-2">
-                {booking.thread && (
+                {booking.thread && booking.status === 'confirmed' && (
                     <span
                         onClick={(e) => {
                             e.preventDefault()

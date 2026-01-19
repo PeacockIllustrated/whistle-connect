@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your Whistle Connect Account</title>
+  <style>
+    /* Reset styles for email clients */
+    body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+    a { text-decoration: none; color: inherit; }
+    
+    /* Responsive styles */
+    @media only screen and (max-width: 600px) {
+      .container { width: 100% !important; padding: 20px !important; }
+      .button { width: 100% !important; display: block !important; text-align: center !important; }
+    }
+  </style>
+</head>
+<body style="background-color: #f3f4f6; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.6;">
+
+  <!-- Outer Container -->
+  <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f3f4f6; min-height: 100vh;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        
+        <!-- Email Container -->
+        <table border="0" cellpadding="0" cellspacing="0" width="600" class="container" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
+          
+          <!-- Header -->
+          <tr>
+            <td align="center" style="background-color: #1d2557; padding: 32px 40px;">
+              <h1 style="color: #ffffff; font-size: 24px; font-weight: 700; margin: 0; letter-spacing: 0.5px;">WHISTLE CONNECT</h1>
+            </td>
+          </tr>
+
+          <!-- Body Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #1d2557; font-size: 20px; font-weight: 600; margin-top: 0; margin-bottom: 16px;">Welcome to Whistle Connect!</h2>
+              
+              <p style="margin-bottom: 24px; color: #475569; font-size: 16px;">
+                You're just one step away from connecting with top referees and coaches. 
+                Please confirm your email address to unlock your dashboard, manage bookings, and update your profile.
+              </p>
+
+              <!-- Button -->
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 32px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="{{ .ConfirmationURL }}" class="button" style="background-color: #2a285e; color: #ffffff; padding: 14px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; text-decoration: none; display: inline-block; mso-padding-alt: 0;">
+                      <!--[if mso]>
+                      <i style="letter-spacing: 25px; mso-font-width: -100%; mso-text-raise: 30pt;">&nbsp;</i>
+                      <![endif]-->
+                      <span style="mso-text-raise: 15pt;">Confirm My Account</span>
+                      <!--[if mso]>
+                      <i style="letter-spacing: 25px; mso-font-width: -100%;">&nbsp;</i>
+                      <![endif]-->
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin-bottom: 0; color: #64748b; font-size: 14px;">
+                If you didn't create an account, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #f8fafc; padding: 24px 40px; border-top: 1px solid #e2e8f0; text-align: center;">
+              <p style="color: #94a3b8; font-size: 12px; margin: 0;">
+                &copy; {{ .CurrentYear }} Whistle Connect. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

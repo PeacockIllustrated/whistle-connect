@@ -10,7 +10,7 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--neutral-900)] via-[var(--neutral-800)] to-[var(--neutral-900)]" />
         <div className="relative max-w-[var(--content-max-width)] mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] flex items-center justify-center shadow-lg shadow-[var(--brand-primary)]/30">
+            <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-lg shadow-[var(--brand-primary)]/30">
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
               </svg>
@@ -62,22 +62,28 @@ export default function LandingPage() {
             Connect coaches with qualified, verified officials instantly
           </p>
 
-          <div className="flex flex-col gap-3 max-w-xs mx-auto">
-            <Link href="/auth/register?role=referee" className="w-full">
-              <Button size="lg" className="w-full bg-[#cd1719] hover:bg-[#a31214] text-white border-none shadow-lg">
-                Register as a Referee
+          <div className="flex flex-col gap-4 max-w-xs mx-auto">
+            <Link href="/book" className="w-full">
+              <Button size="lg" className="w-full bg-[var(--wc-blue)] hover:bg-[#1e1c45] text-white border-none shadow-xl text-lg h-14 font-bold flex items-center justify-center gap-2">
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+                Book a Referee
               </Button>
             </Link>
-            <Link href="/auth/register?role=coach" className="w-full">
-              <Button size="lg" className="w-full bg-[#2a285e] hover:bg-[#1e1c45] text-white border-none shadow-lg">
-                Register as a Coach
-              </Button>
-            </Link>
-            <Link href="/auth/login" className="w-full">
-              <Button size="lg" className="w-full bg-[#2a285e] hover:bg-[#1e1c45] text-white border-none shadow-lg">
-                Central Venue Referees
-              </Button>
-            </Link>
+
+            <div className="grid grid-cols-1 gap-3 mt-4">
+              <Link href="/auth/register?role=coach" className="w-full">
+                <Button variant="ghost" className="w-full text-white bg-white/10 hover:bg-white/20 border border-white/10">
+                  Register as a Coach
+                </Button>
+              </Link>
+              <Link href="/auth/register?role=referee" className="w-full">
+                <Button variant="ghost" className="w-full text-white bg-white/10 hover:bg-white/20 border border-white/10">
+                  Register as a Referee
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>

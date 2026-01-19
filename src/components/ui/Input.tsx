@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { InputHTMLAttributes, forwardRef } from 'react'
+import { InputHTMLAttributes, forwardRef, useId } from 'react'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
     label?: string
@@ -9,7 +9,8 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const Input = forwardRef<HTMLInputElement, InputProps>(
     ({ className, label, error, hint, id, ...props }, ref) => {
-        const inputId = id || props.name || Math.random().toString(36).slice(2)
+        const generatedId = useId()
+        const inputId = id || props.name || generatedId
 
         return (
             <div className="space-y-1.5">

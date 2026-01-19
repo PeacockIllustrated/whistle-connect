@@ -5,6 +5,7 @@ import { StatusChip } from '@/components/ui/StatusChip'
 import { Button } from '@/components/ui/Button'
 import { formatDate, formatTime } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
+import { BookingOffer, Profile } from '@/lib/types'
 
 export default async function BookingDetailPage({
     params,
@@ -48,7 +49,7 @@ export default async function BookingDetailPage({
 
     // Get user's offer if referee
     const userOffer = isReferee
-        ? booking.offers?.find((o: any) => o.referee_id === user.id)
+        ? booking.offers?.find((o: BookingOffer) => o.referee_id === user.id)
         : null
 
     const assignment = Array.isArray(booking.assignment)
@@ -77,7 +78,9 @@ export default async function BookingDetailPage({
             {/* Main Card */}
             <div className="card p-4 mb-4">
                 <h2 className="text-xl font-bold mb-1">
-                    {booking.ground_name || booking.location_postcode}
+                    {booking.home_team && booking.away_team
+                        ? `${booking.home_team} vs ${booking.away_team}`
+                        : (booking.address_text || booking.ground_name || booking.location_postcode)}
                 </h2>
 
                 <div className="space-y-3 mt-4">
@@ -106,8 +109,10 @@ export default async function BookingDetailPage({
                         </div>
                         <div>
                             <p className="font-medium">{booking.location_postcode}</p>
-                            {booking.ground_name && (
-                                <p className="text-sm text-[var(--foreground-muted)]">{booking.ground_name}</p>
+                            {(booking.address_text || booking.ground_name) && (
+                                <p className="text-sm text-[var(--foreground-muted)]">
+                                    {booking.address_text || booking.ground_name}
+                                </p>
                             )}
                         </div>
                     </div>
@@ -199,7 +204,7 @@ export default async function BookingDetailPage({
                         OFFERS SENT ({booking.offers.length})
                     </h3>
                     <div className="space-y-2">
-                        {booking.offers.map((offer: any) => (
+                        {booking.offers.map((offer: BookingOffer & { referee: Profile | null }) => (
                             <div
                                 key={offer.id}
                                 className="flex items-center gap-3 p-2 rounded-lg bg-[var(--neutral-50)]"

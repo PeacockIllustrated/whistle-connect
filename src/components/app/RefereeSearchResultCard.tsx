@@ -49,10 +49,10 @@ export function RefereeSearchResultCard({
                             </span>
                         )}
                         {referee.county && (
-                            <span>• {referee.county}</span>
+                            <span>- {referee.county}</span>
                         )}
                         {referee.travel_radius_km > 0 && (
-                            <span>• {referee.travel_radius_km}km radius</span>
+                            <span>- {referee.travel_radius_km}km radius</span>
                         )}
                     </div>
 
@@ -74,7 +74,7 @@ export function RefereeSearchResultCard({
                     onClick={() => onBook(referee)}
                     className="flex-1 px-3 py-2 text-sm font-medium text-white bg-[var(--color-primary)] rounded-lg hover:opacity-90 transition-colors"
                 >
-                    Book
+                    Request
                 </button>
             </div>
         </div>

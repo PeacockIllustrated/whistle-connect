@@ -56,6 +56,10 @@ const statusConfig: Record<StatusType, { label: string; colors: string }> = {
         label: 'Withdrawn',
         colors: 'bg-slate-100 text-slate-500 border-slate-200'
     },
+    accepted_priced: {
+        label: 'Price Proposed',
+        colors: 'bg-indigo-50 text-indigo-700 border-indigo-200'
+    },
     expired: {
         label: 'Expired',
         colors: 'bg-orange-50 text-orange-600 border-orange-200'
@@ -78,11 +82,11 @@ const statusConfig: Record<StatusType, { label: string; colors: string }> = {
     // User roles
     coach: {
         label: 'Coach',
-        colors: 'bg-[var(--wc-coach-blue)] text-white border-transparent'
+        colors: 'bg-[var(--wc-blue)] text-white border-transparent'
     },
     referee: {
         label: 'Referee',
-        colors: 'bg-[var(--wc-ref-red)] text-white border-transparent'
+        colors: 'bg-[var(--wc-red)] text-white border-transparent'
     },
     admin: {
         label: 'Admin',

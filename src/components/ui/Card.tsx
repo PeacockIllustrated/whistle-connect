@@ -74,7 +74,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
 Card.displayName = 'Card'
 
 // Card Header
-interface CardHeaderProps extends HTMLAttributes<HTMLDivElement> { }
+type CardHeaderProps = HTMLAttributes<HTMLDivElement>
 
 const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     ({ className, ...props }, ref) => (
@@ -106,7 +106,7 @@ const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
 CardTitle.displayName = 'CardTitle'
 
 // Card Description
-interface CardDescriptionProps extends HTMLAttributes<HTMLParagraphElement> { }
+type CardDescriptionProps = HTMLAttributes<HTMLParagraphElement>
 
 const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
     ({ className, ...props }, ref) => (
@@ -121,7 +121,7 @@ const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
 CardDescription.displayName = 'CardDescription'
 
 // Card Footer
-interface CardFooterProps extends HTMLAttributes<HTMLDivElement> { }
+type CardFooterProps = HTMLAttributes<HTMLDivElement>
 
 const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
     ({ className, ...props }, ref) => (

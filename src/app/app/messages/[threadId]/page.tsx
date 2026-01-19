@@ -38,7 +38,7 @@ export default async function ThreadPage({
                 </div>
                 <h1 className="text-xl font-bold mb-2">Conversation not found</h1>
                 <p className="text-[var(--foreground-muted)] mb-6 max-w-xs">
-                    We couldn't load this conversation. It might have been deleted or you might not have access.
+                    We couldn&apos;t load this conversation. It might have been deleted or you might not have access.
                 </p>
                 <Link href="/app/messages" className="px-6 py-2 bg-[var(--brand-navy)] text-white rounded-lg font-medium">
                     Back to Messages

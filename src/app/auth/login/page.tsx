@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { signIn } from '@/lib/auth/actions'
@@ -16,6 +16,8 @@ const roleOptions = [
 
 export default function LoginPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo') || '/app'
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [role, setRole] = useState<UserRole>('coach')
@@ -28,7 +30,7 @@ export default function LoginPage() {
         setLoading(true)
 
         try {
-            const result = await signIn(email, password)
+            const result = await signIn(email, password, returnTo)
             if (result?.error) {
                 setError(result.error)
             }
@@ -79,8 +81,8 @@ export default function LoginPage() {
                                         'py-4 px-2 rounded-xl text-center transition-all duration-200 font-bold text-sm outline-none',
                                         role === option.value
                                             ? option.value === 'referee'
-                                                ? 'bg-[#cd1719] text-white shadow-lg'
-                                                : 'bg-[#1d2557] text-white shadow-lg'
+                                                ? 'bg-[var(--wc-red)] text-white shadow-lg'
+                                                : 'bg-[var(--wc-blue)] text-white shadow-lg'
                                             : 'text-[var(--foreground-muted)] hover:bg-[var(--neutral-100)]'
                                     )}
                                 >

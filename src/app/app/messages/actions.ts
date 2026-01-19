@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { createNotification } from '@/lib/notifications'
 
 export async function sendMessage(threadId: string, body: string) {
     const supabase = await createClient()
@@ -43,6 +44,25 @@ export async function sendMessage(threadId: string, body: string) {
         .update({ last_read_at: new Date().toISOString() })
         .eq('thread_id', threadId)
         .eq('profile_id', user.id)
+
+    // Notify other participants
+    const { data: otherParticipants } = await supabase
+        .from('thread_participants')
+        .select('profile_id')
+        .eq('thread_id', threadId)
+        .neq('profile_id', user.id)
+
+    if (otherParticipants) {
+        otherParticipants.forEach(async (p) => {
+            await createNotification({
+                userId: p.profile_id,
+                title: 'New Message',
+                message: `You have a new message: ${body.substring(0, 50)}${body.length > 50 ? '...' : ''}`,
+                type: 'info',
+                link: `/app/messages/${threadId}`
+            })
+        })
+    }
 
     // Update thread updated_at
     await supabase

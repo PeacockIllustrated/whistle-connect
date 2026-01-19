@@ -17,6 +17,7 @@ const roleOptions = [
 
 export default function RegisterPage() {
     const searchParams = useSearchParams()
+    const returnTo = searchParams.get('returnTo') || '/app'
     const [fullName, setFullName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -46,7 +47,7 @@ export default function RegisterPage() {
                 role,
                 phone: phone || undefined,
                 postcode: postcode || undefined,
-            })
+            }, returnTo)
             if (result?.error) {
                 setError(result.error)
             } else if (result?.message) {
@@ -90,8 +91,8 @@ export default function RegisterPage() {
                                         'py-4 px-2 rounded-xl text-center transition-all duration-200 font-bold text-sm outline-none',
                                         role === option.value
                                             ? option.value === 'referee'
-                                                ? 'bg-[#cd1719] text-white shadow-lg'
-                                                : 'bg-[#1d2557] text-white shadow-lg'
+                                                ? 'bg-[var(--wc-red)] text-white shadow-lg'
+                                                : 'bg-[var(--wc-blue)] text-white shadow-lg'
                                             : 'text-[var(--foreground-muted)] hover:bg-[var(--neutral-100)]'
                                     )}
                                 >

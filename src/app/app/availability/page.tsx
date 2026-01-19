@@ -2,16 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { AvailabilityGrid } from '@/components/app/AvailabilityGrid'
+import { MonthCalendar } from '@/components/app/MonthCalendar'
+import { TimeBandSelector, TIME_BANDS } from '@/components/app/TimeBandSelector'
 import { Button } from '@/components/ui/Button'
-import { getAvailability, setAvailability, getRefereeProfile, updateRefereeProfile } from './actions'
-import { AvailabilitySlot, RefereeAvailability } from '@/lib/types'
+import { getDateAvailability, updateDateAvailability, getRefereeProfile, updateRefereeProfile } from './actions'
+import { RefereeDateAvailability } from '@/lib/types'
 import { Select } from '@/components/ui/Select'
 import { UK_COUNTIES } from '@/lib/constants'
 
 export default function AvailabilityPage() {
-    const [availability, setAvailabilityState] = useState<RefereeAvailability[]>([])
-    const [pendingSlots, setPendingSlots] = useState<AvailabilitySlot[]>([])
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const [dateAvailability, setDateAvailability] = useState<RefereeDateAvailability[]>([])
     const [centralVenueOptIn, setCentralVenueOptIn] = useState(false)
     const [initialOptIn, setInitialOptIn] = useState(false)
     const [county, setCounty] = useState('')
@@ -22,19 +23,16 @@ export default function AvailabilityPage() {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
     useEffect(() => {
-        loadAvailability()
+        loadInitialData()
     }, [])
 
-    async function loadAvailability() {
-        setLoading(true)
-        const [availResult, profileResult] = await Promise.all([
-            getAvailability(),
-            getRefereeProfile()
-        ])
+    useEffect(() => {
+        loadDateAvailability(selectedDate)
+    }, [selectedDate])
 
-        if (availResult.data) {
-            setAvailabilityState(availResult.data)
-        }
+    async function loadInitialData() {
+        setLoading(true)
+        const profileResult = await getRefereeProfile()
         if (profileResult.data) {
             setCentralVenueOptIn(profileResult.data.central_venue_opt_in)
             setInitialOptIn(profileResult.data.central_venue_opt_in)
@@ -44,8 +42,34 @@ export default function AvailabilityPage() {
         setLoading(false)
     }
 
-    function handleChange(slots: AvailabilitySlot[]) {
-        setPendingSlots(slots)
+    async function loadDateAvailability(date: Date) {
+        const dateStr = date.toISOString().split('T')[0]
+        const result = await getDateAvailability(dateStr)
+        if (result.data) {
+            setDateAvailability(result.data)
+        } else {
+            setDateAvailability([])
+        }
+        setHasChanges(false)
+    }
+
+    const toggleBand = (startTime: string) => {
+        const isSelected = dateAvailability.some(a => a.start_time === startTime + ':00')
+        let newAvail = [...dateAvailability]
+
+        if (isSelected) {
+            newAvail = newAvail.filter(a => a.start_time !== startTime + ':00')
+        } else {
+            const band = TIME_BANDS.find(b => b.start === startTime)
+            if (band) {
+                newAvail.push({
+                    start_time: band.start + ':00',
+                    end_time: band.end + ':00',
+                } as RefereeDateAvailability)
+            }
+        }
+
+        setDateAvailability(newAvail)
         setHasChanges(true)
     }
 
@@ -54,8 +78,14 @@ export default function AvailabilityPage() {
         setMessage(null)
 
         try {
+            const dateStr = selectedDate.toISOString().split('T')[0]
+            const slots = dateAvailability.map(a => ({
+                start_time: a.start_time,
+                end_time: a.end_time
+            }))
+
             const results = await Promise.all([
-                setAvailability(pendingSlots),
+                updateDateAvailability(dateStr, slots),
                 (centralVenueOptIn !== initialOptIn || county !== initialCounty)
                     ? updateRefereeProfile({
                         central_venue_opt_in: centralVenueOptIn,
@@ -68,14 +98,13 @@ export default function AvailabilityPage() {
             if (errorObj && 'error' in errorObj) {
                 setMessage({ type: 'error', text: errorObj.error as string })
             } else {
-                setMessage({ type: 'success', text: 'Availability saved successfully!' })
+                setMessage({ type: 'success', text: 'Availability updated!' })
                 setHasChanges(false)
                 setInitialOptIn(centralVenueOptIn)
                 setInitialCounty(county)
-                loadAvailability()
             }
         } catch (error) {
-            setMessage({ type: 'error', text: 'Failed to save availability' })
+            setMessage({ type: 'error', text: 'Failed to update availability' })
         } finally {
             setSaving(false)
         }
@@ -91,90 +120,129 @@ export default function AvailabilityPage() {
                     </svg>
                 </Link>
                 <div className="flex-1">
-                    <h1 className="text-lg font-semibold">Set Availability</h1>
+                    <h1 className="text-lg font-semibold">Referee Availability</h1>
                     <p className="text-sm text-[var(--foreground-muted)]">
-                        Tap time slots when you're available to referee
+                        Manage your calendar and time slots
                     </p>
                 </div>
             </div>
 
             {/* Message */}
             {message && (
-                <div className={`p-3 rounded-lg mb-4 ${message.type === 'success'
-                    ? 'bg-green-50 border border-green-200 text-green-700'
-                    : 'bg-red-50 border border-red-200 text-red-700'
+                <div className={`p-4 rounded-xl mb-6 shadow-sm ${message.type === 'success'
+                    ? 'bg-green-50 border border-green-100 text-green-800'
+                    : 'bg-red-50 border border-red-100 text-red-800'
                     }`}>
-                    {message.text}
+                    <div className="flex items-center gap-2">
+                        {message.type === 'success' ? (
+                            <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                        ) : (
+                            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        )}
+                        <span className="font-medium text-sm">{message.text}</span>
+                    </div>
                 </div>
             )}
 
-            {/* County Selection */}
-            <div className="card p-4 mb-6">
-                <h2 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">LOCATION</h2>
-                <Select
-                    label="Primary County"
-                    options={UK_COUNTIES.map(c => ({ value: c, label: c }))}
-                    value={county}
-                    onChange={(e) => {
-                        setCounty(e.target.value)
-                        setHasChanges(true)
-                    }}
-                    placeholder="Select your primary county"
-                />
-                <p className="text-[10px] text-[var(--foreground-muted)] mt-2">
-                    Used to help coaches find you in their area.
-                </p>
-            </div>
-
-            {/* Central Venue Opt-in */}
-            <div className="flex items-center gap-3 mb-6 p-1">
-                <input
-                    type="checkbox"
-                    id="central_venue_opt_in"
-                    checked={centralVenueOptIn}
-                    onChange={(e) => {
-                        setCentralVenueOptIn(e.target.checked)
-                        setHasChanges(true)
-                    }}
-                    className="w-5 h-5 rounded border-[var(--border-color)] text-[var(--color-primary)] focus:ring-[var(--color-primary)]"
-                />
-                <label htmlFor="central_venue_opt_in" className="text-sm font-medium cursor-pointer">
-                    Available for Central Venue booking
-                </label>
-            </div>
-
-            {/* Grid */}
-            <div className="card p-4 mb-6">
-                {loading ? (
-                    <div className="flex items-center justify-center py-12">
-                        <div className="animate-spin w-8 h-8 border-2 border-[var(--color-primary)] border-t-transparent rounded-full" />
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">
+                <div className="space-y-8">
+                    {/* Calendar Section */}
+                    <div className="card overflow-hidden">
+                        <div className="p-4 border-b border-[var(--border-color)] bg-[var(--neutral-50)]">
+                            <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground-muted)]">SELECT DATE</h2>
+                        </div>
+                        <div className="p-6">
+                            <MonthCalendar
+                                selectedDate={selectedDate}
+                                onDateSelect={setSelectedDate}
+                            />
+                        </div>
                     </div>
-                ) : (
-                    <AvailabilityGrid
-                        availability={availability}
-                        onChange={handleChange}
-                    />
-                )}
-            </div>
 
-            {/* Save Button */}
-            <Button
-                fullWidth
-                onClick={handleSave}
-                loading={saving}
-                disabled={!hasChanges}
-            >
-                {hasChanges ? 'Save Changes' : 'No Changes'}
-            </Button>
+                    {/* Time Bands Section */}
+                    <div className="card overflow-hidden">
+                        <div className="p-4 border-b border-[var(--border-color)] bg-[var(--neutral-50)] flex items-center justify-between">
+                            <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+                                SLOTS: {selectedDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}
+                            </h2>
+                        </div>
+                        <div className="p-6">
+                            <TimeBandSelector
+                                selectedBands={dateAvailability.map(a => a.start_time.slice(0, 5))}
+                                onToggle={toggleBand}
+                            />
+                        </div>
+                    </div>
+                </div>
 
-            {/* Help Text */}
-            <div className="mt-6 p-4 bg-[var(--neutral-50)] rounded-lg">
-                <h3 className="font-semibold text-sm mb-2">How it works</h3>
-                <ul className="text-sm text-[var(--foreground-muted)] space-y-1">
-                    <li>• Tap on time slots to mark when you're available</li>
-                    <li>• You'll receive offers for matches during your available times</li>
-                    <li>• Update your availability any time</li>
-                </ul>
+                <div className="space-y-6">
+                    {/* Settings Section */}
+                    <div className="card overflow-hidden">
+                        <div className="p-4 border-b border-[var(--border-color)] bg-[var(--neutral-50)]">
+                            <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground-muted)]">SETTINGS</h2>
+                        </div>
+                        <div className="p-6 space-y-6">
+                            <div>
+                                <label className="text-xs font-bold text-[var(--foreground-muted)] uppercase mb-3 block">LOCATION</label>
+                                <Select
+                                    label="Primary County"
+                                    options={UK_COUNTIES.map(c => ({ value: c, label: c }))}
+                                    value={county}
+                                    onChange={(e) => {
+                                        setCounty(e.target.value)
+                                        setHasChanges(true)
+                                    }}
+                                    placeholder="Select county"
+                                />
+                                <p className="text-[10px] text-[var(--foreground-muted)] mt-2 italic">
+                                    Helps coaches find you in their area.
+                                </p>
+                            </div>
+
+                            <hr className="border-[var(--border-color)]" />
+
+                            <div className="flex items-start gap-3 bg-[var(--neutral-50)] p-4 rounded-xl border border-[var(--border-color)]">
+                                <div className="pt-1">
+                                    <input
+                                        type="checkbox"
+                                        id="central_venue_opt_in"
+                                        checked={centralVenueOptIn}
+                                        onChange={(e) => {
+                                            setCentralVenueOptIn(e.target.checked)
+                                            setHasChanges(true)
+                                        }}
+                                        className="w-5 h-5 rounded border-[var(--border-color)] text-[var(--brand-primary)] focus:ring-[var(--brand-primary)] cursor-pointer"
+                                    />
+                                </div>
+                                <label htmlFor="central_venue_opt_in" className="text-sm cursor-pointer select-none">
+                                    <span className="font-bold block text-[var(--foreground)]">Central Venue Opt-in</span>
+                                    <span className="text-xs text-[var(--foreground-muted)]">I am available for multi-game bookings at central venues</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="sticky bottom-6 lg:static">
+                        <Button
+                            fullWidth
+                            size="lg"
+                            onClick={handleSave}
+                            loading={saving}
+                            disabled={!hasChanges && centralVenueOptIn === initialOptIn && county === initialCounty}
+                            className="shadow-lg"
+                        >
+                            Update Availability
+                        </Button>
+                        <p className="text-[10px] text-center mt-3 text-[var(--foreground-muted)]">
+                            * Changes apply only to the selected date and settings
+                        </p>
+                    </div>
+                </div>
             </div>
         </div>
     )

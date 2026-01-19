@@ -9,7 +9,7 @@ export type UserRole = 'coach' | 'referee' | 'admin'
 export type BookingStatus = 'draft' | 'pending' | 'offered' | 'confirmed' | 'completed' | 'cancelled'
 
 // Offer Status
-export type OfferStatus = 'sent' | 'accepted' | 'declined' | 'withdrawn'
+export type OfferStatus = 'sent' | 'accepted' | 'accepted_priced' | 'declined' | 'withdrawn'
 
 // Compliance Status
 export type ComplianceStatus = 'not_provided' | 'provided' | 'verified' | 'expired'
@@ -74,6 +74,15 @@ export interface RefereeAvailability {
     created_at: string
 }
 
+export interface RefereeDateAvailability {
+    id: string
+    referee_id: string
+    date: string // YYYY-MM-DD
+    start_time: string // HH:MM:SS
+    end_time: string
+    created_at: string
+}
+
 export interface Booking {
     id: string
     coach_id: string
@@ -87,8 +96,13 @@ export interface Booking {
     format: MatchFormat | null
     competition_type: CompetitionType | null
     referee_level_required: string | null
+    county: string | null
+    home_team: string | null
+    away_team: string | null
+    address_text: string | null
     notes: string | null
     budget_pounds: number | null
+    booking_type: 'individual' | 'central'
     created_at: string
     updated_at: string
 }
@@ -98,6 +112,8 @@ export interface BookingOffer {
     booking_id: string
     referee_id: string
     status: OfferStatus
+    price_pence: number | null
+    currency: string
     created_at: string
     responded_at: string | null
 }
@@ -175,8 +191,12 @@ export interface BookingFormData {
     format?: MatchFormat
     competition_type?: CompetitionType
     referee_level_required?: string
+    home_team?: string
+    away_team?: string
+    address_text?: string
     notes?: string
     budget_pounds?: number
+    booking_type?: 'individual' | 'central'
 }
 
 export interface SearchCriteria {

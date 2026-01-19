@@ -17,6 +17,17 @@ export function MessageList({ initialMessages, threadId, currentUserId }: Messag
     const scrollRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
 
+    const scrollToBottom = () => {
+        if (scrollRef.current) {
+            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+        }
+    }
+
+    // Scroll to bottom when messages change
+    useEffect(() => {
+        scrollToBottom()
+    }, [messages])
+
     useEffect(() => {
         // Scroll to bottom on initial load
         scrollToBottom()
@@ -77,16 +88,6 @@ export function MessageList({ initialMessages, threadId, currentUserId }: Messag
         }
     }, [threadId, supabase])
 
-    // Scroll to bottom when messages change
-    useEffect(() => {
-        scrollToBottom()
-    }, [messages])
-
-    const scrollToBottom = () => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-        }
-    }
 
     // Group messages by date
     const groupedMessages: { date: string; messages: MessageWithSender[] }[] = []

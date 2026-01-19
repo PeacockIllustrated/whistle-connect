@@ -1,0 +1,187 @@
+
+> whistle-connect@0.1.0 lint
+> eslint
+
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\generate-keys.js
+  1:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:17  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\availability\actions.ts
+  5:10  warning  'AvailabilitySlot' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\availability\page.tsx
+   20:12  warning  'loading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  106:18  warning  'error' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\bookings\[id]\BookingActions.tsx
+  9:10  warning  'Booking' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\bookings\[id]\match\page.tsx
+   17:11  warning  'router' is assigned a value but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   35:22  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   58:18  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  166:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\bookings\[id]\page.tsx
+    5:10  warning  'Button' is defined but never used            @typescript-eslint/no-unused-vars
+   47:11  warning  'isAdmin' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   51:36  error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  206:53  error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\bookings\actions.ts
+   50:16  warning  'matchRefereesToBooking' is defined but never used  @typescript-eslint/no-unused-vars
+  423:11  warning  'dayOfWeek' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  463:59  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+  551:11  warning  'dayOfWeek' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  596:59  error    Unexpected any. Specify a different type            @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\bookings\new\page.tsx
+  13:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  67:18  warning  'err' is defined but never used              @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\bookings\page.tsx
+   5:10  warning  'StatusChip' is defined but never used    @typescript-eslint/no-unused-vars
+  37:19  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\components\page.tsx
+  12:25  warning  'MessageDateSeparator' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\messages\[threadId]\MessageInput.tsx
+  3:28  warning  'useEffect' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\messages\[threadId]\MessageList.tsx
+  53:33  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  55:55  error    Unexpected any. Specify a different type                                                                          @typescript-eslint/no-explicit-any
+  89:8   warning  React Hook useEffect has a missing dependency: 'currentUserId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\messages\[threadId]\page.tsx
+    2:10  warning  'notFound' is defined but never used                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+   79:13  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  105:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\messages\page.tsx
+  18:18  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  58:29  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  99:41  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\offers\page.tsx
+  26:27  warning  'error' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  58:41  error    Unexpected any. Specify a different type    @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\page.tsx
+   3:22  warning  'AccessLane' is defined but never used    @typescript-eslint/no-unused-vars
+  26:25  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\profile\ProfileClient.tsx
+  12:11  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  13:14  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  14:21  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  61:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\profile\ProfileEditForm.tsx
+  42:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\app\profile\page.tsx
+  4:10  warning  'StatusChip' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\auth\login\page.tsx
+  18:11  warning  'router' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  37:18  warning  'err' is defined but never used              @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\auth\register\page.tsx
+   8:10  warning  'Select' is defined but never used        @typescript-eslint/no-unused-vars
+  57:23  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\book\page.tsx
+   6:10  warning  'Button' is defined but never used         @typescript-eslint/no-unused-vars
+  13:12  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  13:38  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\app\page.tsx
+   2:10  warning  'ActionCard' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+  36:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\app\AppHeader.tsx
+  15:29  warning  'userName' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\app\BookingCard.tsx
+  38:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+  55:18  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\app\BottomNav.tsx
+  98:38  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\app\MessageBubble.tsx
+  2:29  warning  'MessageKind' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\app\PushNotificationManager.tsx
+  43:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\app\PushNotificationManager.tsx:43:13
+  41 |     useEffect(() => {
+  42 |         if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
+> 43 |             setIsSupported(true)
+     |             ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  44 |             registerServiceWorker()
+  45 |         }
+  46 |     }, [VAPID_PUBLIC_KEY])  react-hooks/set-state-in-effect
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\app\RefereeSearchResultCard.tsx
+  21:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\profile\AvatarUpload.tsx
+   6:10  warning  'Button' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+  34:41  warning  'data' is assigned a value but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  52:25  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  67:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\ui\Card.tsx
+   77:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+  109:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+  124:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\ui\Modal.tsx
+  19:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\components\ui\Modal.tsx:19:13
+  17 |     useEffect(() => {
+  18 |         if (isOpen) {
+> 19 |             setIsAnimating(true)
+     |             ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  20 |             document.body.style.overflow = 'hidden'
+  21 |         } else {
+  22 |             document.body.style.overflow = ''  react-hooks/set-state-in-effect
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\lib\theme\ThemeProvider.tsx
+  97:9  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\peaco\Documents\Antigravity\whistle-connect\whistle-connect\src\lib\theme\ThemeProvider.tsx:97:9
+   95 |     // Load settings from localStorage on mount
+   96 |     useEffect(() => {
+>  97 |         setMounted(true)
+      |         ^^^^^^^^^^ Avoid calling setState() directly within an effect
+   98 |         try {
+   99 |             const saved = localStorage.getItem(THEME_STORAGE_KEY)
+  100 |             if (saved) {  react-hooks/set-state-in-effect
+
+Ô£û 69 problems (28 errors, 41 warnings)
+

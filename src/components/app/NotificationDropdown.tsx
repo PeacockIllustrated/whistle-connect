@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 
@@ -20,26 +19,54 @@ export function NotificationDropdown() {
     const [isOpen, setIsOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
     const [unreadCount, setUnreadCount] = useState(0)
+    const [userId, setUserId] = useState<string | null>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
     const supabase = createClient()
     const router = useRouter()
 
-    useEffect(() => {
-        // Fetch initial notifications
-        fetchNotifications()
+    const fetchNotifications = useCallback(async (uid: string) => {
+        const { data } = await supabase
+            .from('notifications')
+            .select('*')
+            .eq('user_id', uid)
+            .order('created_at', { ascending: false })
+            .limit(15)
 
-        // Subscribe to real-time changes
+        if (data) {
+            setNotifications(data as Notification[])
+            setUnreadCount(data.filter((n: Notification) => !n.is_read).length)
+        }
+    }, [supabase])
+
+    useEffect(() => {
+        // Get user once on mount
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+                setUserId(user.id)
+                fetchNotifications(user.id)
+            }
+        }
+        getUser()
+    }, [supabase.auth, fetchNotifications])
+
+    useEffect(() => {
+        if (!userId) return
+
+        // Subscribe to real-time changes for this user
         const channel = supabase
-            .channel('notifications')
+            .channel('notifications-user')
             .on(
                 'postgres_changes',
                 {
                     event: '*',
                     schema: 'public',
                     table: 'notifications',
+                    filter: `user_id=eq.${userId}`,
                 },
-                () => {
-                    fetchNotifications()
+                (payload) => {
+                    console.log('Notification received:', payload)
+                    fetchNotifications(userId)
                 }
             )
             .subscribe()
@@ -47,7 +74,7 @@ export function NotificationDropdown() {
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [])
+    }, [userId, supabase, fetchNotifications])
 
     useEffect(() => {
         // Close dropdown when clicking outside
@@ -63,47 +90,29 @@ export function NotificationDropdown() {
         }
     }, [])
 
-    const fetchNotifications = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
-
-        const { data } = await supabase
-            .from('notifications')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(10)
-
-        if (data) {
-            setNotifications(data as Notification[])
-            setUnreadCount(data.filter((n: Notification) => !n.is_read).length)
-        }
-    }
-
     const markAsRead = async (id: string) => {
+        // Optimistic update
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+        setUnreadCount(prev => Math.max(0, prev - 1))
+
         await supabase
             .from('notifications')
             .update({ is_read: true })
             .eq('id', id)
-
-        // Optimistic update
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
-        setUnreadCount(prev => Math.max(0, prev - 1))
     }
 
     const markAllAsRead = async () => {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
-
-        await supabase
-            .from('notifications')
-            .update({ is_read: true })
-            .eq('user_id', user.id)
-            .eq('is_read', false)
+        if (!userId) return
 
         // Optimistic update
         setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
         setUnreadCount(0)
+
+        await supabase
+            .from('notifications')
+            .update({ is_read: true })
+            .eq('user_id', userId)
+            .eq('is_read', false)
     }
 
     const handleNotificationClick = async (notification: Notification) => {

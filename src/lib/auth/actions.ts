@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { RegisterFormData } from '@/lib/types'
 
-export async function signIn(email: string, password: string) {
+export async function signIn(email: string, password: string, redirectTo: string = '/app') {
     const supabase = await createClient()
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -16,10 +16,10 @@ export async function signIn(email: string, password: string) {
         return { error: error.message }
     }
 
-    redirect('/app')
+    redirect(redirectTo)
 }
 
-export async function signUp(data: RegisterFormData) {
+export async function signUp(data: RegisterFormData, redirectTo: string = '/app') {
     const supabase = await createClient()
 
     // Create auth user with metadata
@@ -92,7 +92,7 @@ export async function signUp(data: RegisterFormData) {
         }
     }
 
-    redirect('/app')
+    redirect(redirectTo)
 }
 
 export async function signOut() {

@@ -35,7 +35,7 @@ export default async function MessagesPage() {
 
         if (data) {
             // Get last message and unread count for each thread
-            threads = await Promise.all(
+            const allThreads = await Promise.all(
                 data.map(async (thread) => {
                     const { data: messages } = await supabase
                         .from('messages')
@@ -66,6 +66,10 @@ export default async function MessagesPage() {
                     }
                 })
             )
+
+            // Filter to only show threads for confirmed bookings
+            // We allow system messages to exist, but the thread only appears in the list when confirmed
+            threads = allThreads.filter(t => t.booking?.status === 'confirmed')
         }
     }
 
