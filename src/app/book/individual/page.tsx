@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
-import { UK_COUNTIES, AGE_GROUPS } from '@/lib/constants'
+import { UK_COUNTIES, AGE_GROUPS, MATCH_FORMATS, COMPETITION_TYPES } from '@/lib/constants'
 
 export default function IndividualBookingPage() {
     const router = useRouter()
@@ -18,6 +18,9 @@ export default function IndividualBookingPage() {
         home_team: '',
         away_team: '',
         address_text: '',
+        location_postcode: '',
+        format: '',
+        competition_type: '',
     })
 
     const updateField = (field: string, value: string) => {
@@ -110,13 +113,41 @@ export default function IndividualBookingPage() {
                                 />
                             </div>
 
-                            <Input
-                                label="Address / Ground"
-                                value={formData.address_text}
-                                onChange={(e) => updateField('address_text', e.target.value)}
-                                placeholder="e.g. Wembley Stadium or SW1A 1AA"
-                                required
-                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Input
+                                    label="Address / Ground"
+                                    value={formData.address_text}
+                                    onChange={(e) => updateField('address_text', e.target.value)}
+                                    placeholder="e.g. Wembley Stadium"
+                                    required
+                                />
+                                <Input
+                                    label="Postcode"
+                                    value={formData.location_postcode}
+                                    onChange={(e) => updateField('location_postcode', e.target.value.toUpperCase())}
+                                    placeholder="e.g. SW1A 1AA"
+                                    required
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <Select
+                                    label="Match Format"
+                                    options={MATCH_FORMATS}
+                                    value={formData.format}
+                                    onChange={(e) => updateField('format', e.target.value)}
+                                    placeholder="Select format"
+                                    required
+                                />
+                                <Select
+                                    label="Competition"
+                                    options={COMPETITION_TYPES}
+                                    value={formData.competition_type}
+                                    onChange={(e) => updateField('competition_type', e.target.value)}
+                                    placeholder="Select type"
+                                    required
+                                />
+                            </div>
                         </div>
 
                         <Button type="submit" size="lg" className="w-full h-14 text-lg font-bold bg-[var(--wc-blue)] hover:bg-[#1e1c45] text-white">

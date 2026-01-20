@@ -18,9 +18,30 @@ export default async function AppHomePage() {
         .eq('id', user.id)
         .single()
 
-    const isCoach = profile?.role === 'coach'
-    const isReferee = profile?.role === 'referee'
-    const isAdmin = profile?.role === 'admin'
+    if (!profile) {
+        return (
+            <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold text-[var(--foreground)]">
+                        Welcome to Whistle Connect
+                    </h1>
+                    <p className="text-[var(--foreground-muted)] mb-4">
+                        It looks like your profile setup is incomplete.
+                    </p>
+                    <Link
+                        href="/auth/login"
+                        className="text-[var(--brand-primary)] font-medium hover:underline"
+                    >
+                        Return to Sign In
+                    </Link>
+                </div>
+            </div>
+        )
+    }
+
+    const isCoach = profile.role === 'coach'
+    const isReferee = profile.role === 'referee'
+    const isAdmin = profile.role === 'admin'
 
     // Get recent bookings based on role
     let recentBookings: any[] = []
@@ -60,7 +81,7 @@ export default async function AppHomePage() {
             {/* Welcome Section */}
             <div className="mb-6">
                 <h1 className="text-2xl font-bold text-[var(--foreground)]">
-                    Hello, {profile?.full_name?.split(' ')[0]}!
+                    Hello{profile.full_name ? `, ${profile.full_name.split(' ')[0]}` : ''}!
                 </h1>
                 <p className="text-[var(--foreground-muted)]">
                     {isCoach && 'Manage your bookings and find referees'}
