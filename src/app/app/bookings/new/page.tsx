@@ -59,6 +59,10 @@ export default function NewBookingPage() {
 
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault()
+
+        // Prevent autofill-triggered submission
+        if (isSubmitting) return
+
         setIsSubmitting(true)
         setError('')
 
@@ -71,6 +75,13 @@ export default function NewBookingPage() {
         } catch (err) {
             setError('Failed to create booking')
             setIsSubmitting(false)
+        }
+    }
+
+    // Prevent form submission on Enter key in input fields (prevents autofill auto-submit)
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+            e.preventDefault()
         }
     }
 
@@ -96,7 +107,7 @@ export default function NewBookingPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleCreate} className="space-y-6">
+                    <form onSubmit={handleCreate} onKeyDown={handleKeyDown} className="space-y-6">
                         <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 space-y-6 shadow-sm">
                             {isPreFilled ? (
                                 <div className="space-y-4">

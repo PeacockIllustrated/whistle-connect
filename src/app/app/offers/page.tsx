@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { formatDate, formatTime } from '@/lib/utils'
+import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
+import { UserRole } from '@/lib/types'
 
 export default async function OffersPage() {
     const supabase = await createClient()
@@ -19,7 +21,14 @@ export default async function OffersPage() {
         .single()
 
     if (profile?.role !== 'referee') {
-        redirect('/app/bookings')
+        return (
+            <RoleAccessDenied
+                requiredRole="referee"
+                currentRole={profile?.role as UserRole}
+                featureName="Incoming Offers"
+                description="This feature is for referees to view and respond to match requests. As a coach, you can send offers from the booking pages."
+            />
+        )
     }
 
     // Fetch sent offers for this referee
@@ -37,6 +46,8 @@ export default async function OffersPage() {
                 format,
                 competition_type,
                 notes,
+                home_team,
+                away_team,
                 coach:profiles(full_name)
             )
         `)
@@ -77,6 +88,20 @@ export default async function OffersPage() {
                                 </div>
                                 <StatusChip status="pending" size="sm" />
                             </div>
+
+                            {/* Teams Display */}
+                            {(offer.booking.home_team || offer.booking.away_team) && (
+                                <div className="flex items-center gap-2 mb-4 p-3 bg-[var(--neutral-50)] rounded-lg">
+                                    <svg className="w-5 h-5 text-[var(--foreground-muted)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <div className="flex items-center gap-2 text-sm font-medium">
+                                        <span>{offer.booking.home_team || 'TBC'}</span>
+                                        <span className="text-[var(--foreground-muted)] text-xs">vs</span>
+                                        <span>{offer.booking.away_team || 'TBC'}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="flex items-center gap-2 text-sm">

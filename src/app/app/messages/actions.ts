@@ -52,16 +52,22 @@ export async function sendMessage(threadId: string, body: string) {
         .eq('thread_id', threadId)
         .neq('profile_id', user.id)
 
-    if (otherParticipants) {
-        otherParticipants.forEach(async (p) => {
-            await createNotification({
+    if (otherParticipants && otherParticipants.length > 0) {
+        const notificationPromises = otherParticipants.map((p) =>
+            createNotification({
                 userId: p.profile_id,
                 title: 'New Message',
                 message: `You have a new message: ${body.substring(0, 50)}${body.length > 50 ? '...' : ''}`,
                 type: 'info',
                 link: `/app/messages/${threadId}`
             })
-        })
+        )
+
+        const results = await Promise.allSettled(notificationPromises)
+        const failed = results.filter(r => r.status === 'rejected')
+        if (failed.length > 0) {
+            console.error(`Failed to send ${failed.length} message notifications:`, failed)
+        }
     }
 
     // Update thread updated_at
@@ -117,33 +123,52 @@ export async function getThreads() {
         .in('id', threadIds)
         .order('updated_at', { ascending: false })
 
-    // Get last message for each thread
-    const threadsWithLastMessage = await Promise.all(
-        (threads || []).map(async (thread) => {
-            const { data: messages } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('thread_id', thread.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
+    // Batch fetch last messages for all threads in a single query
+    // Using a raw query to get the last message per thread efficiently
+    const { data: allLastMessages } = await supabase
+        .from('messages')
+        .select('*')
+        .in('thread_id', threadIds)
+        .order('created_at', { ascending: false })
 
-            // Get unread count
-            const participation = participations.find(p => p.thread_id === thread.id)
-            const lastReadAt = participation?.last_read_at || '1970-01-01'
-
-            const { count } = await supabase
-                .from('messages')
-                .select('*', { count: 'exact', head: true })
-                .eq('thread_id', thread.id)
-                .gt('created_at', lastReadAt)
-
-            return {
-                ...thread,
-                last_message: messages?.[0] || null,
-                unread_count: count || 0,
+    // Group messages by thread_id and take the first (most recent) for each
+    const lastMessageByThread = new Map<string, typeof allLastMessages extends (infer T)[] | null ? T : never>()
+    if (allLastMessages) {
+        for (const msg of allLastMessages) {
+            if (!lastMessageByThread.has(msg.thread_id)) {
+                lastMessageByThread.set(msg.thread_id, msg)
             }
-        })
-    )
+        }
+    }
+
+    // Batch fetch unread counts for all threads
+    // We need to count messages created after last_read_at for each thread
+    const { data: allMessages } = await supabase
+        .from('messages')
+        .select('thread_id, created_at')
+        .in('thread_id', threadIds)
+
+    // Calculate unread counts for each thread
+    const unreadCountByThread = new Map<string, number>()
+    if (allMessages) {
+        for (const msg of allMessages) {
+            const participation = participations.find(p => p.thread_id === msg.thread_id)
+            const lastReadAt = participation?.last_read_at || '1970-01-01'
+            if (new Date(msg.created_at) > new Date(lastReadAt)) {
+                unreadCountByThread.set(
+                    msg.thread_id,
+                    (unreadCountByThread.get(msg.thread_id) || 0) + 1
+                )
+            }
+        }
+    }
+
+    // Combine all data
+    const threadsWithLastMessage = (threads || []).map((thread) => ({
+        ...thread,
+        last_message: lastMessageByThread.get(thread.id) || null,
+        unread_count: unreadCountByThread.get(thread.id) || 0,
+    }))
 
     return { data: threadsWithLastMessage, error: null }
 }

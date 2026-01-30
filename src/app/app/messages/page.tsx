@@ -24,7 +24,7 @@ export default async function MessagesPage() {
             .from('threads')
             .select(`
         *,
-        booking:bookings(id, ground_name, location_postcode, match_date),
+        booking:bookings(id, ground_name, location_postcode, match_date, status),
         participants:thread_participants(
           profile_id,
           profile:profiles(id, full_name, role, avatar_url)

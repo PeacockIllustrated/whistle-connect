@@ -30,6 +30,8 @@ export function BookingActions({
     const [showCancelDialog, setShowCancelDialog] = useState(false)
     const [showPriceInput, setShowPriceInput] = useState(false)
     const [price, setPrice] = useState('')
+    const [successMessage, setSuccessMessage] = useState('')
+    const [errorMessage, setErrorMessage] = useState('')
 
     const handleAccept = async () => {
         if (!userOffer) return
@@ -40,20 +42,28 @@ export function BookingActions({
 
         const priceNum = parseFloat(price)
         if (isNaN(priceNum) || priceNum <= 0) {
-            alert('Please enter a valid price')
+            setErrorMessage('Please enter a valid price')
             return
         }
 
         setAccepting(true)
+        setErrorMessage('')
         try {
             const result = await acceptOffer(userOffer.id, priceNum)
             if (result.success) {
-                router.refresh()
+                setSuccessMessage(`Price of £${priceNum.toFixed(2)} sent! Waiting for coach to confirm.`)
+                setShowPriceInput(false)
+                // Delay refresh to show success message
+                setTimeout(() => {
+                    router.refresh()
+                }, 1500)
             } else {
+                setErrorMessage(result.error || 'Failed to accept offer')
                 setAccepting(false)
             }
         } catch (error) {
             console.error('Failed to accept offer:', error)
+            setErrorMessage('Failed to accept offer. Please try again.')
             setAccepting(false)
         }
     }
@@ -96,8 +106,27 @@ export function BookingActions({
 
     // Referee actions for pending offer
     if (isReferee && userOffer?.status === 'sent') {
+        // Show success message if price was sent
+        if (successMessage) {
+            return (
+                <div className="space-y-3">
+                    <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+                        <svg className="w-10 h-10 mx-auto mb-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p className="text-sm font-semibold text-green-700">{successMessage}</p>
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div className="space-y-3">
+                {errorMessage && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center">
+                        {errorMessage}
+                    </div>
+                )}
                 {showPriceInput && (
                     <div className="p-4 bg-white border border-[var(--border-color)] rounded-xl space-y-3">
                         <p className="text-sm font-semibold">Enter your fee for this match</p>
@@ -129,7 +158,14 @@ export function BookingActions({
                 <Button
                     fullWidth
                     variant="outline"
-                    onClick={() => showPriceInput ? setShowPriceInput(false) : handleDecline()}
+                    onClick={() => {
+                        if (showPriceInput) {
+                            setShowPriceInput(false)
+                            setErrorMessage('')
+                        } else {
+                            handleDecline()
+                        }
+                    }}
                     loading={declining}
                     disabled={accepting}
                 >
@@ -143,28 +179,45 @@ export function BookingActions({
     const pricedOffer = isCoach && booking.offers?.find(o => o.status === 'accepted_priced')
     if (pricedOffer && booking.status !== 'confirmed') {
         const displayPrice = (pricedOffer.price_pence || 0) / 100
+        const refereeInfo = pricedOffer.referee as { full_name?: string } | null
         return (
             <div className="space-y-3">
-                <div className="p-4 bg-[var(--neutral-50)] border border-[var(--border-color)] rounded-xl text-center">
-                    <p className="text-sm text-[var(--foreground-muted)] mb-1">Proposed Fee</p>
-                    <p className="text-2xl font-bold">£{displayPrice.toFixed(2)}</p>
-                    <p className="text-xs text-[var(--foreground-muted)] mt-2 italic">
-                        Accept the price to finalize the booking and start chat.
+                {/* Referee who sent the price */}
+                <div className="card p-4">
+                    <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">REFEREE</h3>
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white font-semibold">
+                            {refereeInfo?.full_name?.charAt(0) || '?'}
+                        </div>
+                        <div className="flex-1">
+                            <p className="font-medium">{refereeInfo?.full_name || 'Unknown Referee'}</p>
+                            <p className="text-sm text-[var(--foreground-muted)]">Has accepted your request</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Price Display */}
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center">
+                    <p className="text-sm text-green-700 mb-1">Proposed Fee</p>
+                    <p className="text-3xl font-bold text-green-700">£{displayPrice.toFixed(2)}</p>
+                    <p className="text-xs text-green-600 mt-2">
+                        This is the referee&apos;s fee including travel and expenses.
                     </p>
                 </div>
+
                 <Button
                     fullWidth
                     onClick={() => handleConfirmPrice(pricedOffer.id)}
                     loading={accepting}
                 >
-                    Accept Price & Confirm
+                    Accept Price & Confirm Booking
                 </Button>
                 <Button
                     fullWidth
-                    variant="danger"
+                    variant="outline"
                     onClick={() => setShowCancelDialog(true)}
                 >
-                    Decline & Cancel Booking
+                    Decline & Cancel
                 </Button>
                 <ConfirmDialog
                     isOpen={showCancelDialog}
@@ -242,6 +295,14 @@ export function BookingActions({
                             : 'Waiting for referees to respond...'}
                     </p>
                 </div>
+                <Link href={`/app/bookings/${booking.id}/edit`}>
+                    <Button fullWidth variant="outline">
+                        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit Booking
+                    </Button>
+                </Link>
                 <Button
                     fullWidth
                     variant="danger"

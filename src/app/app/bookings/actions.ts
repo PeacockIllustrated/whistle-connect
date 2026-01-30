@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult } from '@/lib/types'
+import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, RefereeProfileWithAvailability } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
 
 export async function createBooking(data: BookingFormData) {
@@ -14,30 +14,74 @@ export async function createBooking(data: BookingFormData) {
         return { error: 'Unauthorized' }
     }
 
-    // Create the booking
-    const { data: booking, error: bookingError } = await supabase
+    // Build the booking data object
+    // Use ground_name as fallback for address_text if the column doesn't exist
+    const groundNameValue = data.address_text || data.ground_name || null
+
+    // Create the booking - try with all fields first
+    let booking
+    let bookingError
+
+    // First attempt: try with all fields including address_text
+    const fullInsertData = {
+        coach_id: user.id,
+        status: 'pending',
+        match_date: data.match_date,
+        kickoff_time: data.kickoff_time + ':00',
+        location_postcode: data.location_postcode,
+        ground_name: groundNameValue,
+        age_group: data.age_group || null,
+        format: data.format || null,
+        competition_type: data.competition_type || null,
+        referee_level_required: data.referee_level_required || null,
+        county: data.county || null,
+        home_team: data.home_team || null,
+        away_team: data.away_team || null,
+        address_text: data.address_text || null,
+        notes: data.notes || null,
+        budget_pounds: data.budget_pounds || null,
+        booking_type: data.booking_type || 'individual',
+    }
+
+    const result = await supabase
         .from('bookings')
-        .insert({
-            coach_id: user.id,
-            status: 'pending',
-            match_date: data.match_date,
-            kickoff_time: data.kickoff_time + ':00',
-            location_postcode: data.location_postcode,
-            ground_name: data.ground_name || null,
-            age_group: data.age_group || null,
-            format: data.format || null,
-            competition_type: data.competition_type || null,
-            referee_level_required: data.referee_level_required || null,
-            county: data.county || null,
-            home_team: data.home_team || null,
-            away_team: data.away_team || null,
-            address_text: data.address_text || null,
-            notes: data.notes || null,
-            budget_pounds: data.budget_pounds || null,
-            booking_type: data.booking_type || 'individual',
-        })
+        .insert(fullInsertData)
         .select()
         .single()
+
+    booking = result.data
+    bookingError = result.error
+
+    // If we get a column not found error, retry without the problematic columns
+    if (bookingError?.message?.includes('address_text') ||
+        bookingError?.message?.includes('home_team') ||
+        bookingError?.message?.includes('away_team') ||
+        bookingError?.message?.includes('county') ||
+        bookingError?.message?.includes('booking_type')) {
+
+        // Fallback: insert with only the core columns (no extended fields)
+        const fallbackResult = await supabase
+            .from('bookings')
+            .insert({
+                coach_id: user.id,
+                status: 'pending',
+                match_date: data.match_date,
+                kickoff_time: data.kickoff_time + ':00',
+                location_postcode: data.location_postcode,
+                ground_name: groundNameValue,
+                age_group: data.age_group || null,
+                format: data.format || null,
+                competition_type: data.competition_type || null,
+                referee_level_required: data.referee_level_required || null,
+                notes: data.notes || null,
+                budget_pounds: data.budget_pounds || null,
+            })
+            .select()
+            .single()
+
+        booking = fallbackResult.data
+        bookingError = fallbackResult.error
+    }
 
     if (bookingError) {
         return { error: bookingError.message }
@@ -87,17 +131,22 @@ async function matchRefereesToBooking(bookingId: string, data: BookingFormData) 
 
     await supabase.from('booking_offers').insert(offersToCreate)
 
-    // Notify Referees
-    // We do this asynchronously to not block the response
-    offersToCreate.forEach(async (offer) => {
-        await createNotification({
+    // Notify Referees - use Promise.allSettled to ensure all notifications are awaited
+    const notificationPromises = offersToCreate.map((offer) =>
+        createNotification({
             userId: offer.referee_id,
             title: 'New Booking Offer',
             message: `You have received a booking offer for ${data.ground_name || data.location_postcode}.`,
             type: 'info',
             link: '/app/bookings' // Referees see offers in their bookings list
         })
-    })
+    )
+
+    const notificationResults = await Promise.allSettled(notificationPromises)
+    const failedNotifications = notificationResults.filter(r => r.status === 'rejected')
+    if (failedNotifications.length > 0) {
+        console.error(`Failed to send ${failedNotifications.length} notifications:`, failedNotifications)
+    }
 
     // Update booking status to 'offered' if offers were sent
     if (offersToCreate.length > 0) {
@@ -131,6 +180,106 @@ export async function updateBookingStatus(bookingId: string, status: BookingStat
     return { success: true }
 }
 
+export async function updateBooking(bookingId: string, data: Partial<BookingFormData>) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // First verify the user owns this booking and it's editable
+    const { data: existingBooking } = await supabase
+        .from('bookings')
+        .select('status, coach_id')
+        .eq('id', bookingId)
+        .single()
+
+    if (!existingBooking) {
+        return { error: 'Booking not found' }
+    }
+
+    if (existingBooking.coach_id !== user.id) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Only allow editing pending or offered bookings
+    if (!['pending', 'offered'].includes(existingBooking.status)) {
+        return { error: 'Cannot edit a confirmed or completed booking' }
+    }
+
+    // Build update object - use ground_name as fallback for address_text
+    const groundNameValue = data.address_text || data.ground_name || null
+
+    // Core fields that should always exist
+    const coreUpdateData: Record<string, unknown> = {}
+    if (data.match_date !== undefined) coreUpdateData.match_date = data.match_date
+    if (data.kickoff_time !== undefined) coreUpdateData.kickoff_time = data.kickoff_time + ':00'
+    if (data.location_postcode !== undefined) coreUpdateData.location_postcode = data.location_postcode
+    if (data.ground_name !== undefined || data.address_text !== undefined) coreUpdateData.ground_name = groundNameValue
+    if (data.age_group !== undefined) coreUpdateData.age_group = data.age_group || null
+    if (data.format !== undefined) coreUpdateData.format = data.format || null
+    if (data.competition_type !== undefined) coreUpdateData.competition_type = data.competition_type || null
+    if (data.notes !== undefined) coreUpdateData.notes = data.notes || null
+    if (data.budget_pounds !== undefined) coreUpdateData.budget_pounds = data.budget_pounds || null
+
+    // Extended fields that may not exist in the database
+    const extendedUpdateData: Record<string, unknown> = {
+        ...coreUpdateData,
+    }
+    if (data.county !== undefined) extendedUpdateData.county = data.county || null
+    if (data.home_team !== undefined) extendedUpdateData.home_team = data.home_team || null
+    if (data.away_team !== undefined) extendedUpdateData.away_team = data.away_team || null
+    if (data.address_text !== undefined) extendedUpdateData.address_text = data.address_text || null
+
+    // Try with all fields first
+    let result = await supabase
+        .from('bookings')
+        .update(extendedUpdateData)
+        .eq('id', bookingId)
+
+    // If column not found error, retry with only core fields
+    if (result.error?.message?.includes('address_text') ||
+        result.error?.message?.includes('home_team') ||
+        result.error?.message?.includes('away_team') ||
+        result.error?.message?.includes('county')) {
+
+        result = await supabase
+            .from('bookings')
+            .update(coreUpdateData)
+            .eq('id', bookingId)
+    }
+
+    if (result.error) {
+        return { error: result.error.message }
+    }
+
+    revalidatePath(`/app/bookings/${bookingId}`)
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+export async function getBooking(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized', data: null }
+    }
+
+    const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('id', bookingId)
+        .single()
+
+    if (error) {
+        return { error: error.message, data: null }
+    }
+
+    return { data, error: null }
+}
+
 export async function deleteBooking(bookingId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -161,12 +310,26 @@ export async function cancelBooking(bookingId: string) {
         return { error: 'Unauthorized' }
     }
 
-    // Get booking details for notification
+    // Get booking details for notification and authorization check
     const { data: booking } = await supabase
         .from('bookings')
-        .select('*, coach:profiles(*)')
+        .select('*, coach:profiles(*), assignments:booking_assignments(referee_id)')
         .eq('id', bookingId)
         .single()
+
+    if (!booking) {
+        return { error: 'Booking not found' }
+    }
+
+    // Check authorization: user must be the coach OR an assigned referee
+    const isCoach = booking.coach_id === user.id
+    const isAssignedReferee = booking.assignments?.some(
+        (a: { referee_id: string }) => a.referee_id === user.id
+    )
+
+    if (!isCoach && !isAssignedReferee) {
+        return { error: 'Unauthorized - you do not have permission to cancel this booking' }
+    }
 
     const { error } = await supabase
         .from('bookings')
@@ -393,15 +556,13 @@ export async function declineOffer(offerId: string) {
     const booking = offerData?.booking ? (Array.isArray(offerData.booking) ? offerData.booking[0] : offerData.booking) : null
 
     if (booking) {
-        if (booking) {
-            await createNotification({
-                userId: booking.coach_id,
-                title: 'Offer Declined',
-                message: `A referee declined your booking request for ${booking.ground_name || booking.location_postcode}.`,
-                type: 'info',
-                link: '/app/bookings'
-            })
-        }
+        await createNotification({
+            userId: booking.coach_id,
+            title: 'Offer Declined',
+            message: `A referee declined your booking request for ${booking.ground_name || booking.location_postcode}.`,
+            type: 'info',
+            link: '/app/bookings'
+        })
     }
 
     revalidatePath('/app/bookings')
@@ -418,15 +579,27 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
         return { error: 'Unauthorized' }
     }
 
-    // Get day of week from match date
-    const matchDate = new Date(criteria.match_date)
-    const dayOfWeek = matchDate.getDay()
-
     const kickoff = criteria.kickoff_time + ':00'
 
-    // Query referee_profiles that match the county
-    // And join with profiles for basic info
-    // And join with date availability to check for matches on that day and time
+    // Step 1: Get referee IDs who have availability for this date/time
+    const { data: availableReferees, error: availError } = await supabase
+        .from('referee_date_availability')
+        .select('referee_id')
+        .eq('date', criteria.match_date)
+        .lte('start_time', kickoff)
+        .gte('end_time', kickoff)
+
+    if (availError) {
+        return { error: availError.message }
+    }
+
+    if (!availableReferees || availableReferees.length === 0) {
+        return { data: [] }
+    }
+
+    const refereeIds = availableReferees.map(a => a.referee_id)
+
+    // Step 2: Get referee profiles for those who have availability and match county
     const { data: results, error } = await supabase
         .from('referee_profiles')
         .select(`
@@ -440,27 +613,17 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 id,
                 full_name,
                 avatar_url
-            ),
-            availability:referee_date_availability!inner(
-                date,
-                start_time,
-                end_time
             )
         `)
         .eq('county', criteria.county)
-        .eq('availability.date', criteria.match_date)
-        .lte('availability.start_time', kickoff)
-        .gte('availability.end_time', kickoff)
+        .in('profile_id', refereeIds)
 
     if (error) {
         return { error: error.message }
     }
 
-    // Filter out referees who don't actually have availability for that day
-    // (Supabase join might return the profile even if availability doesn't match if not careful, 
-    // but availability.day_of_week filter should work if structured correctly)
+    // Format the results
     const formattedResults: RefereeSearchResult[] = (results || [])
-        .filter(r => r.availability && (r.availability as any).length > 0)
         .map(r => {
             const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
             return {
@@ -547,11 +710,27 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     if (bookingError || !booking) return { error: 'Booking not found' }
 
     // 2. Prepare Match Criteria
-    const matchDate = new Date(booking.match_date)
-    const dayOfWeek = matchDate.getDay()
     const kickoff = booking.kickoff_time
 
-    // 3. Query
+    // 3. Step 1: Get referee IDs who have availability for this date/time
+    const { data: availableReferees, error: availError } = await supabase
+        .from('referee_date_availability')
+        .select('referee_id')
+        .eq('date', booking.match_date)
+        .lte('start_time', kickoff)
+        .gte('end_time', kickoff)
+
+    if (availError) {
+        return { error: availError.message }
+    }
+
+    if (!availableReferees || availableReferees.length === 0) {
+        return { data: [] }
+    }
+
+    const refereeIds = availableReferees.map(a => a.referee_id)
+
+    // 4. Step 2: Get referee profiles for those who have availability
     let query = supabase
         .from('referee_profiles')
         .select(`
@@ -566,16 +745,9 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 id,
                 full_name,
                 avatar_url
-            ),
-            availability:referee_date_availability!inner(
-                date,
-                start_time,
-                end_time
             )
         `)
-        .eq('availability.date', booking.match_date)
-        .lte('availability.start_time', kickoff)
-        .gte('availability.end_time', kickoff)
+        .in('profile_id', refereeIds)
 
     // Apply location match (county for MVP)
     if (booking.county) {
@@ -591,9 +763,8 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
 
     if (error) return { error: error.message }
 
-    // 4. Format
+    // 5. Format
     const formattedResults: RefereeSearchResult[] = (results || [])
-        .filter(r => r.availability && (r.availability as any).length > 0)
         .map(r => {
             const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
             return {

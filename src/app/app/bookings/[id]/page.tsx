@@ -197,8 +197,9 @@ export default async function BookingDetailPage({
                 threadId={thread?.id}
             />
 
-            {/* Offers List (for coaches) */}
-            {isCoach && booking.offers && booking.offers.length > 0 && !assignment && (
+            {/* Offers List (for coaches) - only show if no priced offer awaiting confirmation */}
+            {isCoach && booking.offers && booking.offers.length > 0 && !assignment &&
+             !booking.offers.some((o: BookingOffer) => o.status === 'accepted_priced') && (
                 <div className="card p-4 mt-4">
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">
                         OFFERS SENT ({booking.offers.length})
@@ -214,6 +215,11 @@ export default async function BookingDetailPage({
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-sm font-medium">{offer.referee?.full_name || 'Unknown'}</p>
+                                    {offer.status === 'accepted_priced' && offer.price_pence && (
+                                        <p className="text-xs text-green-600 font-medium">
+                                            Quoted: £{(offer.price_pence / 100).toFixed(2)}
+                                        </p>
+                                    )}
                                 </div>
                                 <StatusChip status={offer.status} size="sm" />
                             </div>

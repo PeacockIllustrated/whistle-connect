@@ -4,13 +4,23 @@ import { useState } from 'react'
 import { cn } from '@/lib/utils'
 
 interface MonthCalendarProps {
-    selectedDate: Date
-    onDateSelect: (date: Date) => void
+    selectedDate?: Date
+    selectedDates?: Date[]
+    onDateSelect?: (date: Date) => void
+    onDatesSelect?: (dates: Date[]) => void
+    multiSelect?: boolean
     className?: string
 }
 
-export function MonthCalendar({ selectedDate, onDateSelect, className }: MonthCalendarProps) {
-    const [viewDate, setViewDate] = useState(new Date(selectedDate))
+export function MonthCalendar({
+    selectedDate,
+    selectedDates = [],
+    onDateSelect,
+    onDatesSelect,
+    multiSelect = false,
+    className
+}: MonthCalendarProps) {
+    const [viewDate, setViewDate] = useState(new Date(selectedDate || selectedDates[0] || new Date()))
 
     const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate()
     const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay()
@@ -61,9 +71,43 @@ export function MonthCalendar({ selectedDate, onDateSelect, className }: MonthCa
     const monthName = viewDate.toLocaleString('default', { month: 'long' })
 
     const isSelected = (day: number, m: number, y: number) => {
-        return selectedDate.getDate() === day &&
+        if (multiSelect) {
+            return selectedDates.some(d =>
+                d.getDate() === day &&
+                d.getMonth() === m &&
+                d.getFullYear() === y
+            )
+        }
+        return selectedDate &&
+            selectedDate.getDate() === day &&
             selectedDate.getMonth() === m &&
             selectedDate.getFullYear() === y
+    }
+
+    const handleDateClick = (dateObj: { day: number; month: number; year: number }) => {
+        const clickedDate = new Date(dateObj.year, dateObj.month, dateObj.day)
+
+        if (multiSelect && onDatesSelect) {
+            const isAlreadySelected = selectedDates.some(d =>
+                d.getDate() === dateObj.day &&
+                d.getMonth() === dateObj.month &&
+                d.getFullYear() === dateObj.year
+            )
+
+            if (isAlreadySelected) {
+                // Remove from selection
+                onDatesSelect(selectedDates.filter(d =>
+                    !(d.getDate() === dateObj.day &&
+                        d.getMonth() === dateObj.month &&
+                        d.getFullYear() === dateObj.year)
+                ))
+            } else {
+                // Add to selection
+                onDatesSelect([...selectedDates, clickedDate])
+            }
+        } else if (onDateSelect) {
+            onDateSelect(clickedDate)
+        }
     }
 
     return (
@@ -106,7 +150,7 @@ export function MonthCalendar({ selectedDate, onDateSelect, className }: MonthCa
                     return (
                         <button
                             key={i}
-                            onClick={() => onDateSelect(new Date(dateObj.year, dateObj.month, dateObj.day))}
+                            onClick={() => handleDateClick(dateObj)}
                             className={cn(
                                 "aspect-square flex items-center justify-center text-sm rounded-lg transition-all",
                                 dateObj.isCurrentMonth ? "text-[var(--foreground)]" : "text-[var(--foreground-muted)] opacity-30",

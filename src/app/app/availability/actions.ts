@@ -123,3 +123,24 @@ export async function updateRefereeProfile(updates: { central_venue_opt_in?: boo
     revalidatePath('/app/availability')
     return { success: true }
 }
+
+export async function getUserProfile() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized', data: null }
+    }
+
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+
+    if (error) {
+        return { error: error.message, data: null }
+    }
+
+    return { data, error: null }
+}

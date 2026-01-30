@@ -226,6 +226,27 @@ export interface AvailabilitySlot {
     end_time: string
 }
 
+// Type for referee search query results from Supabase joins
+export interface RefereeProfileWithAvailability {
+    county: string | null
+    level: string | null
+    verified: boolean
+    travel_radius_km: number
+    dbs_status: ComplianceStatus
+    safeguarding_status: ComplianceStatus
+    central_venue_opt_in?: boolean
+    profile: {
+        id: string
+        full_name: string
+        avatar_url: string | null
+    } | {
+        id: string
+        full_name: string
+        avatar_url: string | null
+    }[]
+    availability: RefereeDateAvailability[] | RefereeDateAvailability
+}
+
 export interface RegisterFormData {
     email: string
     password: string
