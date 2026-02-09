@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { cn } from '@/lib/utils'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface MonthCalendarProps {
     selectedDate?: Date
@@ -121,17 +122,13 @@ export function MonthCalendar({
                         onClick={prevMonth}
                         className="p-1 hover:bg-[var(--neutral-100)] rounded-md transition-colors"
                     >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                         onClick={nextMonth}
                         className="p-1 hover:bg-[var(--neutral-100)] rounded-md transition-colors"
                     >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                        </svg>
+                        <ChevronRight className="w-5 h-5" />
                     </button>
                 </div>
             </div>

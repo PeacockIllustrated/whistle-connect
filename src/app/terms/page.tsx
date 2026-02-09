@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Play } from 'lucide-react'
 
 export default function TermsPage() {
     return (
@@ -9,9 +10,7 @@ export default function TermsPage() {
                     <div className="flex items-center gap-3">
                         <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] flex items-center justify-center shadow-lg shadow-[var(--brand-primary)]/30">
-                                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                </svg>
+                                <Play className="w-5 h-5 text-white" fill="currentColor" />
                             </div>
                             <div>
                                 <h1 className="text-xl font-bold text-white tracking-tight">Whistle Connect</h1>

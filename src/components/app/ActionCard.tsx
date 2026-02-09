@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 import { ReactNode } from 'react'
+import { ChevronRight } from 'lucide-react'
 
 interface ActionCardProps {
     href?: string
@@ -98,17 +99,10 @@ export function ActionCard({
                 'group-hover:translate-x-1',
                 variant === 'primary' ? 'bg-white/10' : 'bg-[var(--neutral-100)]'
             )}>
-                <svg
-                    className={cn(
-                        'w-4 h-4',
-                        variant === 'primary' ? 'text-white' : 'text-[var(--neutral-500)]'
-                    )}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRight className={cn(
+                    'w-4 h-4',
+                    variant === 'primary' ? 'text-white' : 'text-[var(--neutral-500)]'
+                )} />
             </div>
         </>
     )
@@ -165,9 +159,7 @@ export function AccessLane({
                 {icon}
             </span>
             <span className="font-semibold text-white">{title}</span>
-            <svg className="w-4 h-4 text-white/70 ml-auto group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <ChevronRight className="w-4 h-4 text-white/70 ml-auto group-hover:translate-x-1 transition-transform" />
         </div>
     )
 

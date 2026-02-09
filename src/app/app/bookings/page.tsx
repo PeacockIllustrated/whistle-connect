@@ -4,6 +4,7 @@ import { BookingCard } from '@/components/app/BookingCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { BookingStatus } from '@/lib/types'
+import { CalendarDays } from 'lucide-react'
 
 const statusFilters: { value: BookingStatus | 'all'; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -138,9 +139,7 @@ export default async function BookingsPage({
             ) : (
                 <EmptyState
                     icon={
-                        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
+                        <CalendarDays className="w-12 h-12" strokeWidth={1.5} />
                     }
                     title={isCoach ? 'No bookings yet' : 'No offers yet'}
                     description={isCoach

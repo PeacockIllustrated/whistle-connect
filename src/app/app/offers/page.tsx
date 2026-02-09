@@ -5,6 +5,7 @@ import { StatusChip } from '@/components/ui/StatusChip'
 import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
 import { UserRole } from '@/lib/types'
+import { Users, CalendarDays, Clock, ChevronRight, Inbox } from 'lucide-react'
 
 export default async function OffersPage() {
     const supabase = await createClient()
@@ -92,9 +93,7 @@ export default async function OffersPage() {
                             {/* Teams Display */}
                             {(offer.booking.home_team || offer.booking.away_team) && (
                                 <div className="flex items-center gap-2 mb-4 p-3 bg-[var(--neutral-50)] rounded-lg">
-                                    <svg className="w-5 h-5 text-[var(--foreground-muted)] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
+                                    <Users className="w-5 h-5 text-[var(--foreground-muted)] flex-shrink-0" />
                                     <div className="flex items-center gap-2 text-sm font-medium">
                                         <span>{offer.booking.home_team || 'TBC'}</span>
                                         <span className="text-[var(--foreground-muted)] text-xs">vs</span>
@@ -105,15 +104,11 @@ export default async function OffersPage() {
 
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="flex items-center gap-2 text-sm">
-                                    <svg className="w-4 h-4 text-[var(--foreground-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
+                                    <CalendarDays className="w-4 h-4 text-[var(--foreground-muted)]" />
                                     <span className="font-medium">{formatDate(offer.booking.match_date)}</span>
                                 </div>
                                 <div className="flex items-center gap-2 text-sm">
-                                    <svg className="w-4 h-4 text-[var(--foreground-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
+                                    <Clock className="w-4 h-4 text-[var(--foreground-muted)]" />
                                     <span className="font-medium">{formatTime(offer.booking.kickoff_time)}</span>
                                 </div>
                             </div>
@@ -142,9 +137,7 @@ export default async function OffersPage() {
                                 </div>
                                 <span className="text-xs font-bold text-[var(--color-primary)] flex items-center gap-1">
                                     View Details
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                    </svg>
+                                    <ChevronRight className="w-3 h-3" />
                                 </span>
                             </div>
                         </Link>
@@ -153,9 +146,7 @@ export default async function OffersPage() {
             ) : (
                 <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-[var(--border-color)]">
                     <div className="w-16 h-16 bg-[var(--neutral-50)] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <svg className="w-8 h-8 text-[var(--neutral-400)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                        </svg>
+                        <Inbox className="w-8 h-8 text-[var(--neutral-400)]" />
                     </div>
                     <h3 className="text-lg font-bold mb-1">All caught up!</h3>
                     <p className="text-[var(--foreground-muted)] text-sm">

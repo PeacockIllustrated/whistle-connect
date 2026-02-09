@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { ChevronLeft, CalendarDays, MapPin } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ActionCard } from '@/components/app/ActionCard'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
@@ -69,9 +70,7 @@ export default function BookInterstitialPage() {
                 <header className="bg-[var(--neutral-900)] text-white py-4 px-4">
                     <div className="max-w-[var(--content-max-width)] mx-auto flex items-center gap-3">
                         <Link href="/app" className="p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors">
-                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
+                            <ChevronLeft className="w-5 h-5" />
                         </Link>
                         <h1 className="text-lg font-semibold tracking-tight">Book a Referee</h1>
                     </div>
@@ -92,9 +91,7 @@ export default function BookInterstitialPage() {
             <header className="bg-[var(--neutral-900)] text-white py-4 px-4">
                 <div className="max-w-[var(--content-max-width)] mx-auto flex items-center gap-3">
                     <Link href="/" className="p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <ChevronLeft className="w-5 h-5" />
                     </Link>
                     <h1 className="text-lg font-semibold tracking-tight">Book a Referee</h1>
                 </div>
@@ -113,9 +110,7 @@ export default function BookInterstitialPage() {
                         subtitle="Book a referee for a single match or specific event"
                         icon={
                             <div className="w-12 h-12 rounded-xl bg-[var(--wc-blue)]/10 flex items-center justify-center text-[var(--wc-blue)]">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
+                                <CalendarDays className="w-6 h-6" />
                             </div>
                         }
                     />
@@ -126,10 +121,7 @@ export default function BookInterstitialPage() {
                         subtitle="Arrange referees for multiple games at a fixed location"
                         icon={
                             <div className="w-12 h-12 rounded-xl bg-[var(--wc-red)]/10 flex items-center justify-center text-[var(--wc-red)]">
-                                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
+                                <MapPin className="w-6 h-6" />
                             </div>
                         }
                     />

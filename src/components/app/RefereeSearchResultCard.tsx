@@ -1,5 +1,6 @@
 import { RefereeSearchResult } from '@/lib/types'
 import { StatusChip } from '@/components/ui/StatusChip'
+import { CheckCircle } from 'lucide-react'
 
 interface RefereeSearchResultCardProps {
     referee: RefereeSearchResult
@@ -34,9 +35,7 @@ export function RefereeSearchResultCard({
                         </h3>
                         {referee.verified && (
                             <span className="flex items-center text-[var(--color-primary)]">
-                                <svg className="w-4 h-4 mr-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
+                                <CheckCircle className="w-4 h-4 mr-0.5" fill="currentColor" stroke="white" strokeWidth={1.5} />
                                 <span className="text-[10px] uppercase font-bold tracking-tight">Verified</span>
                             </span>
                         )}
@@ -59,7 +58,7 @@ export function RefereeSearchResultCard({
                     <div className="flex gap-2">
                         {referee.fa_verified ? (
                             <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                <CheckCircle className="w-3 h-3" fill="currentColor" stroke="white" strokeWidth={1.5} />
                                 FA Verified
                             </span>
                         ) : (

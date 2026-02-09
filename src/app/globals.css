@@ -541,6 +541,58 @@ body {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
+/* ============================================
+   ICON MICRO-INTERACTION ANIMATIONS
+   ============================================ */
+
+@keyframes icon-bounce {
+  0%, 100% { transform: translateY(0); }
+  30% { transform: translateY(-3px); }
+  60% { transform: translateY(1px); }
+}
+
+@keyframes icon-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+@keyframes icon-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  60% { transform: rotate(-4deg); }
+  80% { transform: rotate(4deg); }
+}
+
+@keyframes icon-ring {
+  0% { transform: rotate(0deg); }
+  15% { transform: rotate(14deg); }
+  30% { transform: rotate(-10deg); }
+  45% { transform: rotate(8deg); }
+  60% { transform: rotate(-4deg); }
+  75% { transform: rotate(2deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes icon-send {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(3px, -3px) scale(0.9); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes icon-pulse-soft {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.08); opacity: 0.85; }
+}
+
+.icon-animate-bounce { animation: icon-bounce 0.4s ease-out; }
+.icon-animate-pop { animation: icon-pop 0.3s ease-out; }
+.icon-animate-wiggle { animation: icon-wiggle 0.5s ease-out; }
+.icon-animate-ring { animation: icon-ring 0.6s ease-out; }
+.icon-animate-send { animation: icon-send 0.3s ease-out; }
+.icon-animate-pulse-soft { animation: icon-pulse-soft 0.4s ease-out; }
+
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }

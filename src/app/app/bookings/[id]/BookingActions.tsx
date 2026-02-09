@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/Toast'
 import { acceptOffer, declineOffer, cancelBooking, confirmPrice } from '../actions'
 import { Booking, BookingOffer, BookingWithDetails } from '@/lib/types'
 import { Input } from '@/components/ui/Input'
+import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil } from 'lucide-react'
 
 interface BookingActionsProps {
     booking: BookingWithDetails
@@ -144,9 +145,7 @@ export function BookingActions({
                 {/* Price input shown immediately — no confusing two-step */}
                 <div className="p-4 bg-[var(--background-elevated)] border border-[var(--border-color)] rounded-xl space-y-3">
                     <div className="flex items-center gap-2 mb-1">
-                        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <CircleDollarSign className="w-5 h-5 text-green-600" />
                         <p className="text-sm font-semibold">Your fee for this match</p>
                     </div>
                     <div className="relative">
@@ -175,9 +174,7 @@ export function BookingActions({
                     loading={accepting}
                     disabled={declining || !price}
                 >
-                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Check className="w-5 h-5 mr-2" />
                     Accept &amp; Send Price
                 </Button>
                 <Button
@@ -236,9 +233,7 @@ export function BookingActions({
                     onClick={() => handleConfirmPrice(pricedOffer.id)}
                     loading={accepting}
                 >
-                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
+                    <Check className="w-5 h-5 mr-2" />
                     Accept Price &amp; Confirm Booking
                 </Button>
                 <Button
@@ -272,9 +267,7 @@ export function BookingActions({
                 {threadId && (
                     <Link href={`/app/messages/${threadId}`}>
                         <Button fullWidth variant="primary">
-                            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
+                            <MessageCircle className="w-5 h-5 mr-2" />
                             Message
                         </Button>
                     </Link>
@@ -288,9 +281,7 @@ export function BookingActions({
                         className="w-full block"
                     >
                         <Button fullWidth variant="outline">
-                            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
+                            <CalendarDays className="w-5 h-5 mr-2" />
                             Add to Calendar
                         </Button>
                     </a>
@@ -347,9 +338,7 @@ export function BookingActions({
                 </div>
                 <Link href={`/app/bookings/${booking.id}/edit`}>
                     <Button fullWidth variant="outline">
-                        <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
+                        <Pencil className="w-5 h-5 mr-2" />
                         Edit Booking
                     </Button>
                 </Link>
@@ -393,24 +382,16 @@ export function BookingActions({
                     {/* Icon */}
                     <div className="flex justify-center mb-2">
                         {userOffer.status === 'accepted_priced' && (
-                            <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            <Clock className="w-8 h-8 text-amber-500" />
                         )}
                         {userOffer.status === 'accepted' && (
-                            <svg className="w-8 h-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            <CheckCircle className="w-8 h-8 text-green-500" />
                         )}
                         {userOffer.status === 'declined' && (
-                            <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            <XCircle className="w-8 h-8 text-red-400" />
                         )}
                         {userOffer.status === 'withdrawn' && (
-                            <svg className="w-8 h-8 text-[var(--neutral-400)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                            </svg>
+                            <Ban className="w-8 h-8 text-[var(--neutral-400)]" />
                         )}
                     </div>
 
@@ -439,9 +420,7 @@ export function BookingActions({
                 {threadId && (
                     <Link href={`/app/messages/${threadId}`}>
                         <Button fullWidth variant="outline">
-                            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
+                            <MessageCircle className="w-5 h-5 mr-2" />
                             Message Coach
                         </Button>
                     </Link>

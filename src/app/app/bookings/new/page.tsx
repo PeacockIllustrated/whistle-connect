@@ -8,6 +8,7 @@ import { Select } from '@/components/ui/Select'
 import { createBooking } from '../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
+import { ChevronLeft } from 'lucide-react'
 
 export default function NewBookingPage() {
     const router = useRouter()

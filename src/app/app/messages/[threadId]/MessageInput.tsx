@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { sendMessage } from '../actions'
 import { useToast } from '@/components/ui/Toast'
+import { Send } from 'lucide-react'
 import { MessageWithSender } from '@/lib/types'
 
 interface MessageInputProps {
@@ -99,9 +100,7 @@ export function MessageInput({
                 disabled={!message.trim()}
                 className="w-10 h-10 rounded-full bg-[var(--color-primary)] text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
+                <Send className="w-5 h-5" />
             </button>
         </form>
     )

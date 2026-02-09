@@ -3,9 +3,14 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useBookingUpdates } from './BookingUpdatesProvider'
+import { useToast } from '@/components/ui/Toast'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { cn, formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
+import { ConfirmDialog } from '@/components/ui/Modal'
+import { confirmPrice, cancelBooking } from '@/app/app/bookings/actions'
+import { Check, X } from 'lucide-react'
 
 /* ──────────────────────────────────────────────
    Shared types
@@ -30,7 +35,11 @@ interface ActionItem {
    ────────────────────────────────────────────── */
 export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem[] }) {
     const [items, setItems] = useState<ActionItem[]>(initialItems)
+    const [loadingId, setLoadingId] = useState<string | null>(null)
+    const [cancelId, setCancelId] = useState<string | null>(null) // which item shows cancel dialog
     const { subscribe } = useBookingUpdates()
+    const { showToast } = useToast()
+    const router = useRouter()
     const supabase = createClient()
 
     const refetch = useCallback(async () => {
@@ -106,7 +115,55 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
         })
     }, [subscribe, refetch])
 
+    // ── Accept price & confirm booking ──
+    const handleAccept = async (item: ActionItem) => {
+        setLoadingId(item.id)
+        try {
+            const result = await confirmPrice(item.id)
+            if (result.success) {
+                showToast({ message: 'Booking confirmed!', type: 'success' })
+                // Optimistically remove
+                setItems(prev => prev.filter(i => i.id !== item.id))
+                if (result.threadId) {
+                    router.push(`/app/messages/${result.threadId}`)
+                } else {
+                    router.refresh()
+                }
+            } else {
+                showToast({ message: result.error || 'Failed to confirm booking', type: 'error' })
+            }
+        } catch {
+            showToast({ message: 'Something went wrong. Please try again.', type: 'error' })
+        } finally {
+            setLoadingId(null)
+        }
+    }
+
+    // ── Cancel booking ──
+    const handleCancel = async (item: ActionItem) => {
+        setLoadingId(item.id)
+        try {
+            const result = await cancelBooking(item.bookingId)
+            if (result.error) {
+                showToast({ message: result.error, type: 'error' })
+            } else {
+                showToast({ message: 'Booking cancelled', type: 'success' })
+                // Optimistically remove
+                setItems(prev => prev.filter(i => i.id !== item.id))
+                router.refresh()
+            }
+        } catch {
+            showToast({ message: 'Failed to cancel booking', type: 'error' })
+        } finally {
+            setLoadingId(null)
+            setCancelId(null)
+        }
+    }
+
     if (items.length === 0) return null
+
+    // Item currently being cancelled (for dialog)
+    const cancelItem = cancelId ? items.find(i => i.id === cancelId) : null
 
     return (
         <section className="mb-6">
@@ -121,44 +178,95 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
                 </span>
             </div>
 
-            <div className="space-y-2">
-                {items.map((item) => (
-                    <Link
-                        key={item.id}
-                        href={`/app/bookings/${item.bookingId}`}
-                        className={cn(
-                            'flex items-center gap-3 p-3 rounded-lg border border-[var(--border-color)]',
-                            'transition-all duration-200 hover:shadow-md',
-                            getStatusCardStyle('accepted_priced')
-                        )}
-                    >
-                        {/* Pulsing indicator */}
-                        <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-100 flex flex-col items-center justify-center">
-                            <span className="text-xs font-bold text-indigo-700">
-                                {new Date(item.matchDate).getDate()}
-                            </span>
-                            <span className="text-[10px] text-indigo-500 uppercase">
-                                {new Date(item.matchDate).toLocaleDateString('en', { month: 'short' })}
-                            </span>
-                        </div>
+            <div className="space-y-3">
+                {items.map((item) => {
+                    const isLoading = loadingId === item.id
+                    const displayPrice = item.price != null ? (item.price / 100).toFixed(2) : null
+                    return (
+                        <div
+                            key={item.id}
+                            className={cn(
+                                'rounded-xl border border-[var(--border-color)] overflow-hidden',
+                                'transition-all duration-200',
+                                getStatusCardStyle('accepted_priced')
+                            )}
+                        >
+                            {/* Top row — tap to see full details */}
+                            <Link
+                                href={`/app/bookings/${item.bookingId}`}
+                                className="flex items-center gap-3 p-3"
+                            >
+                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-100 flex flex-col items-center justify-center">
+                                    <span className="text-xs font-bold text-indigo-700">
+                                        {new Date(item.matchDate).getDate()}
+                                    </span>
+                                    <span className="text-[10px] text-indigo-500 uppercase">
+                                        {new Date(item.matchDate).toLocaleDateString('en', { month: 'short' })}
+                                    </span>
+                                </div>
 
-                        <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{item.venue}</p>
-                            <p className="text-xs text-[var(--foreground-muted)]">
-                                {item.refereeName && <span>{item.refereeName} · </span>}
-                                {item.price != null && <span className="font-semibold text-indigo-700">£{(item.price / 100).toFixed(2)}</span>}
-                                {item.price != null && ' · '}
-                                {formatTime(item.kickoffTime)}
-                            </p>
-                        </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate">{item.venue}</p>
+                                    <p className="text-xs text-[var(--foreground-muted)]">
+                                        {item.refereeName && <span>{item.refereeName} · </span>}
+                                        {formatTime(item.kickoffTime)}
+                                    </p>
+                                </div>
 
-                        <div className="flex flex-col items-end gap-1">
-                            <StatusChip status="accepted_priced" size="sm" />
-                            <span className="text-[10px] text-amber-600 font-semibold">Confirm Price</span>
+                                <div className="text-right flex-shrink-0">
+                                    {displayPrice && (
+                                        <p className="text-lg font-bold text-green-700">&pound;{displayPrice}</p>
+                                    )}
+                                </div>
+                            </Link>
+
+                            {/* Action buttons */}
+                            <div className="flex border-t border-[var(--border-color)]">
+                                <button
+                                    onClick={() => handleAccept(item)}
+                                    disabled={isLoading}
+                                    className={cn(
+                                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold',
+                                        'text-green-700 bg-green-50 hover:bg-green-100 active:bg-green-200',
+                                        'transition-colors disabled:opacity-50',
+                                        'border-r border-[var(--border-color)]'
+                                    )}
+                                >
+                                    {isLoading && loadingId === item.id ? (
+                                        <span className="w-4 h-4 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <Check className="w-4 h-4" strokeWidth={2.5} />
+                                    )}
+                                    Accept
+                                </button>
+                                <button
+                                    onClick={() => setCancelId(item.id)}
+                                    disabled={isLoading}
+                                    className={cn(
+                                        'flex-1 flex items-center justify-center gap-1.5 py-2.5 text-sm font-semibold',
+                                        'text-red-600 bg-red-50 hover:bg-red-100 active:bg-red-200',
+                                        'transition-colors disabled:opacity-50'
+                                    )}
+                                >
+                                    <X className="w-4 h-4" strokeWidth={2.5} />
+                                    Cancel
+                                </button>
+                            </div>
                         </div>
-                    </Link>
-                ))}
+                    )
+                })}
             </div>
+
+            {/* Cancel confirmation dialog */}
+            <ConfirmDialog
+                isOpen={!!cancelId}
+                onClose={() => setCancelId(null)}
+                onConfirm={() => cancelItem && handleCancel(cancelItem)}
+                title="Cancel Booking"
+                message="Are you sure you want to cancel this booking? The referee will be notified and this action cannot be undone."
+                confirmLabel="Yes, Cancel"
+                variant="danger"
+            />
         </section>
     )
 }

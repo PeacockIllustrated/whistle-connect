@@ -10,6 +10,7 @@ import { RefereeDateAvailability, UserRole } from '@/lib/types'
 import { Select } from '@/components/ui/Select'
 import { UK_COUNTIES } from '@/lib/constants'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
+import { ChevronLeft, Check, AlertCircle, CalendarDays, ChevronDown } from 'lucide-react'
 
 export default function AvailabilityPage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -207,9 +208,7 @@ export default function AvailabilityPage() {
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <Link href="/app" className="p-2 -ml-2 hover:bg-[var(--neutral-100)] rounded-lg">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <ChevronLeft className="w-5 h-5" />
                 </Link>
                 <div className="flex-1">
                     <h1 className="text-lg font-semibold">Referee Availability</h1>
@@ -227,13 +226,9 @@ export default function AvailabilityPage() {
                     }`}>
                     <div className="flex items-center gap-2">
                         {message.type === 'success' ? (
-                            <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
+                            <Check className="w-5 h-5 text-green-500" />
                         ) : (
-                            <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            <AlertCircle className="w-5 h-5 text-red-500" />
                         )}
                         <span className="font-medium text-sm">{message.text}</span>
                     </div>
@@ -383,9 +378,7 @@ export default function AvailabilityPage() {
                         <div className="p-6">
                             {multiSelectMode && selectedDates.length === 0 ? (
                                 <div className="text-center py-8 text-[var(--foreground-muted)]">
-                                    <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
+                                    <CalendarDays className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                     <p className="text-sm font-medium">Select dates on the calendar</p>
                                     <p className="text-xs mt-1">Then choose time slots to apply to all selected dates</p>
                                 </div>
@@ -409,9 +402,7 @@ export default function AvailabilityPage() {
                             className="w-full p-4 flex items-center justify-between bg-[var(--neutral-50)] hover:bg-[var(--neutral-100)] transition-colors"
                         >
                             <div className="flex items-center gap-2">
-                                <svg className="w-4 h-4 text-[var(--brand-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
+                                <CalendarDays className="w-4 h-4 text-[var(--brand-primary)]" />
                                 <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
                                     CURRENT AVAILABILITY
                                 </h2>
@@ -424,14 +415,7 @@ export default function AvailabilityPage() {
                                     </span>
                                 )}
                             </div>
-                            <svg
-                                className={`w-5 h-5 text-[var(--foreground-muted)] transition-transform duration-200 ${accordionOpen ? 'rotate-180' : ''}`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                            <ChevronDown className={`w-5 h-5 text-[var(--foreground-muted)] transition-transform duration-200 ${accordionOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         <div
@@ -440,9 +424,7 @@ export default function AvailabilityPage() {
                             <div className="p-4 border-t border-[var(--border-color)] overflow-y-auto max-h-[350px]">
                                 {allAvailability.length === 0 ? (
                                     <div className="text-center py-6 text-[var(--foreground-muted)]">
-                                        <svg className="w-10 h-10 mx-auto mb-2 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                        </svg>
+                                        <CalendarDays className="w-10 h-10 mx-auto mb-2 opacity-30" />
                                         <p className="text-sm font-medium">No availability set</p>
                                         <p className="text-xs mt-1">Select dates and time slots above</p>
                                     </div>

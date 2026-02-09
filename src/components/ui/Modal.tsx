@@ -31,7 +31,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
     return (
         <div
             className={cn(
-                'fixed inset-0 z-50',
+                'fixed inset-0 z-[60]',
                 'transition-opacity duration-200',
                 isOpen ? 'opacity-100' : 'opacity-0'
             )}

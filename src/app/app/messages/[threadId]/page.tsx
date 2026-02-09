@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ThreadView } from './ThreadView'
 import { markThreadAsRead } from '../actions'
+import { ChevronLeft, AlertTriangle, Info } from 'lucide-react'
 
 export default async function ThreadPage({
     params,
@@ -31,9 +32,7 @@ export default async function ThreadPage({
         return (
             <div className="flex flex-col items-center justify-center h-full p-4 text-center">
                 <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-4">
-                    <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+                    <AlertTriangle className="w-8 h-8" />
                 </div>
                 <h1 className="text-xl font-bold mb-2">Conversation not found</h1>
                 <p className="text-[var(--foreground-muted)] mb-6 max-w-xs">
@@ -98,9 +97,7 @@ export default async function ThreadPage({
             {/* Header */}
             <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[var(--border-color)] bg-white">
                 <Link href="/app/messages" className="p-2 -ml-2 hover:bg-[var(--neutral-100)] rounded-lg">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <ChevronLeft className="w-5 h-5" />
                 </Link>
 
                 <div className="flex items-center gap-3 flex-1">
@@ -132,9 +129,7 @@ export default async function ThreadPage({
                         href={`/app/bookings/${thread.booking.id}`}
                         className="p-2 hover:bg-[var(--neutral-100)] rounded-lg"
                     >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        <Info className="w-5 h-5" />
                     </Link>
                 )}
             </div>

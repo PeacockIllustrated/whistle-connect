@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { verifyReferee } from '../../actions'
 import { RefereeProfile } from '@/lib/types'
+import { CheckCircle } from 'lucide-react'
 
 interface AdminRefereeActionsProps {
     refereeId: string

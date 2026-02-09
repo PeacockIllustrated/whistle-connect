@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { ChevronLeft } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
@@ -65,9 +66,7 @@ export default function CentralBookingPage() {
             <header className="bg-[var(--neutral-900)] text-white py-4 px-4">
                 <div className="max-w-[var(--content-max-width)] mx-auto flex items-center gap-3">
                     <Link href="/book" className="p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+                        <ChevronLeft className="w-5 h-5" />
                     </Link>
                     <h1 className="text-lg font-semibold tracking-tight">Central Venue Booking</h1>
                 </div>
