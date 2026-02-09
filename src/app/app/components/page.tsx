@@ -208,10 +208,7 @@ export default function ComponentsPage() {
                                 <StatusChip status="admin" />
                             </div>
                             <div className="flex flex-wrap gap-2 mt-4">
-                                <StatusChip status="not_provided" />
-                                <StatusChip status="provided" />
                                 <StatusChip status="verified" />
-                                <StatusChip status="expired" />
                             </div>
                         </div>
                     </section>

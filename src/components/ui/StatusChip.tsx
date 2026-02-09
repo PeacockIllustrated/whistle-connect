@@ -1,9 +1,9 @@
 'use client'
 
 import { cn } from '@/lib/utils'
-import { BookingStatus, OfferStatus, ComplianceStatus, UserRole } from '@/lib/types'
+import { BookingStatus, OfferStatus, UserRole } from '@/lib/types'
 
-type StatusType = BookingStatus | OfferStatus | ComplianceStatus | UserRole | 'verified'
+type StatusType = BookingStatus | OfferStatus | UserRole | 'verified'
 
 interface StatusChipProps {
     status: StatusType
@@ -60,20 +60,8 @@ const statusConfig: Record<StatusType, { label: string; colors: string }> = {
         label: 'Price Proposed',
         colors: 'bg-indigo-50 text-indigo-700 border-indigo-200'
     },
-    expired: {
-        label: 'Expired',
-        colors: 'bg-orange-50 text-orange-600 border-orange-200'
-    },
 
-    // Compliance statuses
-    not_provided: {
-        label: 'Not Provided',
-        colors: 'bg-slate-100 text-slate-500 border-slate-200'
-    },
-    provided: {
-        label: 'Provided',
-        colors: 'bg-amber-50 text-amber-700 border-amber-200'
-    },
+    // Verification
     verified: {
         label: 'Verified',
         colors: 'bg-emerald-50 text-emerald-700 border-emerald-200'

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { ThemeToggle } from '@/lib/theme/ThemeProvider'
 import { UserRole } from '@/lib/types'
@@ -24,16 +25,15 @@ export function AppHeader({ userName, userRole }: AppHeaderProps) {
             {/* Content */}
             <div className="relative h-full max-w-[var(--content-max-width)] mx-auto px-4 flex items-center justify-between">
                 {/* Brand */}
-                <Link href="/app" className="flex items-center gap-3 group">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] flex items-center justify-center shadow-md group-hover:shadow-[var(--shadow-glow)] transition-shadow">
-                        <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        </svg>
-                    </div>
-                    <div className="hidden sm:block">
-                        <h1 className="text-white font-bold text-lg leading-tight">Whistle</h1>
-                        <p className="text-white/50 text-xs leading-tight">Connect</p>
-                    </div>
+                <Link href="/app" className="flex items-center group">
+                    <Image
+                        src="/assets/logo-main-white.svg"
+                        alt="Whistle Connect"
+                        width={130}
+                        height={45}
+                        className="group-hover:opacity-90 transition-opacity"
+                        priority
+                    />
                 </Link>
 
                 {/* Right side */}

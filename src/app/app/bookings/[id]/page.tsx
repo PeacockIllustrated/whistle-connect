@@ -3,7 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { Button } from '@/components/ui/Button'
-import { formatDate, formatTime } from '@/lib/utils'
+import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
 import { BookingOffer, Profile } from '@/lib/types'
 
@@ -76,7 +76,7 @@ export default async function BookingDetailPage({
             </div>
 
             {/* Main Card */}
-            <div className="card p-4 mb-4">
+            <div className={`card p-4 mb-4 ${getStatusCardStyle(booking.status)}`}>
                 <h2 className="text-xl font-bold mb-1">
                     {booking.home_team && booking.away_team
                         ? `${booking.home_team} vs ${booking.away_team}`
@@ -197,18 +197,17 @@ export default async function BookingDetailPage({
                 threadId={thread?.id}
             />
 
-            {/* Offers List (for coaches) - only show if no priced offer awaiting confirmation */}
-            {isCoach && booking.offers && booking.offers.length > 0 && !assignment &&
-             !booking.offers.some((o: BookingOffer) => o.status === 'accepted_priced') && (
+            {/* Offers List (for coaches) — always show when offers exist and no assignment yet */}
+            {isCoach && booking.offers && booking.offers.length > 0 && !assignment && (
                 <div className="card p-4 mt-4">
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">
-                        OFFERS SENT ({booking.offers.length})
+                        OFFERS ({booking.offers.length})
                     </h3>
                     <div className="space-y-2">
                         {booking.offers.map((offer: BookingOffer & { referee: Profile | null }) => (
                             <div
                                 key={offer.id}
-                                className="flex items-center gap-3 p-2 rounded-lg bg-[var(--neutral-50)]"
+                                className={`flex items-center gap-3 p-2 rounded-lg ${getStatusCardStyle(offer.status) || 'bg-[var(--neutral-50)]'}`}
                             >
                                 <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-sm font-semibold">
                                     {offer.referee?.full_name?.charAt(0) || '?'}
@@ -217,7 +216,7 @@ export default async function BookingDetailPage({
                                     <p className="text-sm font-medium">{offer.referee?.full_name || 'Unknown'}</p>
                                     {offer.status === 'accepted_priced' && offer.price_pence && (
                                         <p className="text-xs text-green-600 font-medium">
-                                            Quoted: £{(offer.price_pence / 100).toFixed(2)}
+                                            Quoted: &pound;{(offer.price_pence / 100).toFixed(2)}
                                         </p>
                                     )}
                                 </div>

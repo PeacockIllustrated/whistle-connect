@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { ActionCard, AccessLane } from '@/components/app/ActionCard'
+import { ActionCard } from '@/components/app/ActionCard'
 import { BookingCardCompact } from '@/components/app/BookingCard'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/AwaitingAction'
 
 export default async function AppHomePage() {
     const supabase = await createClient()
@@ -43,10 +44,12 @@ export default async function AppHomePage() {
     const isReferee = profile.role === 'referee'
     const isAdmin = profile.role === 'admin'
 
-    // Get recent bookings based on role
+    // ── Coach data ──────────────────────────────────────
     let recentBookings: any[] = []
+    let coachActionItems: any[] = []
 
     if (isCoach) {
+        // Recent bookings
         const { data } = await supabase
             .from('bookings')
             .select('*, coach:profiles!bookings_coach_id_fkey(*)')
@@ -54,26 +57,89 @@ export default async function AppHomePage() {
             .order('match_date', { ascending: true })
             .limit(3)
         recentBookings = data || []
-    } else if (isReferee) {
-        // Get bookings with offers for this referee
-        const { data } = await supabase
+
+        // Offers awaiting coach confirmation (accepted_priced)
+        const { data: awaitingOffers } = await supabase
             .from('booking_offers')
-            .select('*, booking:bookings(*)')
-            .eq('referee_id', user.id)
-            .eq('status', 'sent')
-            .limit(3)
-        recentBookings = (data || []).map(o => o.booking)
+            .select(`
+                id,
+                status,
+                price_pence,
+                booking:bookings!inner(
+                    id, status, match_date, kickoff_time,
+                    ground_name, location_postcode, address_text, coach_id
+                ),
+                referee:profiles!booking_offers_referee_id_fkey(full_name)
+            `)
+            .eq('status', 'accepted_priced')
+            .order('created_at', { ascending: false })
+
+        if (awaitingOffers) {
+            coachActionItems = awaitingOffers
+                .filter((o: any) => {
+                    const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
+                    return booking?.coach_id === user.id
+                })
+                .map((o: any) => {
+                    const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
+                    const referee = Array.isArray(o.referee) ? o.referee[0] : o.referee
+                    return {
+                        id: o.id,
+                        bookingId: booking.id,
+                        status: o.status,
+                        bookingStatus: booking.status,
+                        matchDate: booking.match_date,
+                        kickoffTime: booking.kickoff_time,
+                        venue: booking.address_text || booking.ground_name || booking.location_postcode,
+                        price: o.price_pence,
+                        refereeName: referee?.full_name,
+                    }
+                })
+        }
     }
 
-    // Get referee profile if applicable
+    // ── Referee data ────────────────────────────────────
+    let refereeActionItems: any[] = []
     let refereeProfile = null
+
     if (isReferee) {
-        const { data } = await supabase
+        // Referee profile
+        const { data: refData } = await supabase
             .from('referee_profiles')
             .select('*')
             .eq('profile_id', user.id)
             .single()
-        refereeProfile = data
+        refereeProfile = refData
+
+        // Offers awaiting referee response (sent)
+        const { data: sentOffers } = await supabase
+            .from('booking_offers')
+            .select(`
+                id,
+                status,
+                booking:bookings!inner(
+                    id, status, match_date, kickoff_time,
+                    ground_name, location_postcode, address_text
+                )
+            `)
+            .eq('referee_id', user.id)
+            .eq('status', 'sent')
+            .order('created_at', { ascending: false })
+
+        if (sentOffers) {
+            refereeActionItems = sentOffers.map((o: any) => {
+                const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
+                return {
+                    id: o.id,
+                    bookingId: booking.id,
+                    status: o.status,
+                    bookingStatus: booking.status,
+                    matchDate: booking.match_date,
+                    kickoffTime: booking.kickoff_time,
+                    venue: booking.address_text || booking.ground_name || booking.location_postcode,
+                }
+            })
+        }
     }
 
     return (
@@ -93,6 +159,9 @@ export default async function AppHomePage() {
             {/* Coach View */}
             {isCoach && (
                 <>
+                    {/* Awaiting Action — real-time updates */}
+                    <CoachAwaitingAction initialItems={coachActionItems} />
+
                     {/* Quick Actions */}
                     <div className="mb-6">
                         <ActionCard
@@ -143,6 +212,9 @@ export default async function AppHomePage() {
             {/* Referee View */}
             {isReferee && (
                 <>
+                    {/* Awaiting Action — real-time updates */}
+                    <RefereeAwaitingAction initialItems={refereeActionItems} />
+
                     {/* Verification Status */}
                     <div className="card p-4 mb-6">
                         <div className="flex items-center justify-between mb-3">
@@ -152,15 +224,12 @@ export default async function AppHomePage() {
                                 size="sm"
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="p-3 bg-[var(--neutral-50)] rounded-lg">
-                                <p className="text-xs text-[var(--foreground-muted)] mb-1">DBS Check</p>
-                                <StatusChip status={refereeProfile?.dbs_status || 'not_provided'} size="sm" />
-                            </div>
-                            <div className="p-3 bg-[var(--neutral-50)] rounded-lg">
-                                <p className="text-xs text-[var(--foreground-muted)] mb-1">Safeguarding</p>
-                                <StatusChip status={refereeProfile?.safeguarding_status || 'not_provided'} size="sm" />
-                            </div>
+                        <div className="p-3 bg-[var(--neutral-50)] rounded-lg flex items-center justify-between">
+                            <p className="text-xs text-[var(--foreground-muted)]">FA Verified</p>
+                            <StatusChip
+                                status={refereeProfile?.verified ? 'verified' : 'pending'}
+                                size="sm"
+                            />
                         </div>
                     </div>
 
@@ -186,21 +255,9 @@ export default async function AppHomePage() {
                                 </svg>
                             }
                             title="View Offers"
-                            subtitle={`${recentBookings.length} pending offers`}
+                            subtitle={`${refereeActionItems.length} pending offers`}
                         />
                     </div>
-
-                    {/* Pending Offers */}
-                    {recentBookings.length > 0 && (
-                        <div className="mb-6">
-                            <h2 className="font-semibold text-[var(--foreground)] mb-3">Pending Offers</h2>
-                            <div className="space-y-2">
-                                {recentBookings.map((booking) => (
-                                    <BookingCardCompact key={booking.id} booking={booking} />
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </>
             )}
 
@@ -215,7 +272,7 @@ export default async function AppHomePage() {
                             </svg>
                         }
                         title="Manage Referees"
-                        subtitle="Verify credentials and compliance"
+                        subtitle="Verify FA registration and credentials"
                         variant="primary"
                     />
 

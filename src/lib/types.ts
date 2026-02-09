@@ -11,8 +11,8 @@ export type BookingStatus = 'draft' | 'pending' | 'offered' | 'confirmed' | 'com
 // Offer Status
 export type OfferStatus = 'sent' | 'accepted' | 'accepted_priced' | 'declined' | 'withdrawn'
 
-// Compliance Status
-export type ComplianceStatus = 'not_provided' | 'provided' | 'verified' | 'expired'
+// FA Verification Status
+export type FAVerificationStatus = 'not_provided' | 'pending' | 'verified'
 
 // Match Formats
 export type MatchFormat = '5v5' | '7v7' | '9v9' | '11v11'
@@ -55,10 +55,7 @@ export interface RefereeProfile {
     travel_radius_km: number
     county: string | null
     verified: boolean
-    dbs_status: ComplianceStatus
-    dbs_expires_at: string | null
-    safeguarding_status: ComplianceStatus
-    safeguarding_expires_at: string | null
+    fa_verified: boolean
     bio: string | null
     central_venue_opt_in: boolean
     created_at: string
@@ -216,8 +213,7 @@ export interface RefereeSearchResult {
     county: string | null
     travel_radius_km: number
     verified: boolean
-    dbs_status: ComplianceStatus
-    safeguarding_status: ComplianceStatus
+    fa_verified: boolean
 }
 
 export interface AvailabilitySlot {
@@ -232,8 +228,7 @@ export interface RefereeProfileWithAvailability {
     level: string | null
     verified: boolean
     travel_radius_km: number
-    dbs_status: ComplianceStatus
-    safeguarding_status: ComplianceStatus
+    fa_verified: boolean
     central_venue_opt_in?: boolean
     profile: {
         id: string
@@ -254,6 +249,7 @@ export interface RegisterFormData {
     role: UserRole
     phone?: string
     postcode?: string
+    fa_number?: string
 }
 
 // ============================================

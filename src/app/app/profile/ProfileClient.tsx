@@ -100,24 +100,29 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
                 </div>
             </Card>
 
-            {/* Referee Compliance (if referee) */}
+            {/* Referee Details (if referee) */}
             {profile?.role === 'referee' && refereeProfile && (
                 <Card variant="default" padding="md" className="mb-4">
                     <h2 className="text-sm font-semibold text-[var(--foreground-muted)] uppercase tracking-wide mb-4">
-                        Compliance Status
+                        Referee Details
                     </h2>
                     <div className="space-y-3">
                         <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
-                            <span className="text-sm">DBS Check</span>
-                            <StatusChip status={refereeProfile.dbs_status || 'not_provided'} size="sm" />
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
-                            <span className="text-sm">Safeguarding</span>
-                            <StatusChip status={refereeProfile.safeguarding_status || 'not_provided'} size="sm" />
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
-                            <span className="text-sm">FA ID</span>
+                            <span className="text-sm">FA Number</span>
                             <span className="text-sm font-medium">{refereeProfile.fa_id || 'Not set'}</span>
+                        </div>
+                        <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
+                            <span className="text-sm">FA Verified</span>
+                            {refereeProfile.verified ? (
+                                <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                    Verified
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                    Pending
+                                </span>
+                            )}
                         </div>
                         <div className="flex justify-between items-center py-2">
                             <span className="text-sm">Level</span>

@@ -3,9 +3,9 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
+import { useUnreadMessages } from '@/components/app/UnreadMessagesProvider'
 
 interface BottomNavProps {
-    unreadMessages?: number
     offerCount?: number
     userRole?: string
 }
@@ -77,8 +77,9 @@ const getNavItems = (userRole?: string, offerCount: number = 0): NavItem[] => {
     return items
 }
 
-export function BottomNav({ unreadMessages = 0, offerCount = 0, userRole }: BottomNavProps) {
+export function BottomNav({ offerCount = 0, userRole }: BottomNavProps) {
     const pathname = usePathname()
+    const { totalUnread } = useUnreadMessages()
     const navItems = getNavItems(userRole, offerCount)
 
     const isActive = (href: string) => {
@@ -121,9 +122,9 @@ export function BottomNav({ unreadMessages = 0, offerCount = 0, userRole }: Bott
                                         {item.badgeCount > 9 ? '9+' : item.badgeCount}
                                     </span>
                                 )}
-                                {item.href === '/app/messages' && unreadMessages > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--wc-red)] text-white text-[10px] font-bold shadow-md">
-                                        {unreadMessages > 9 ? '9+' : unreadMessages}
+                                {item.href === '/app/messages' && totalUnread > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--wc-red)] text-white text-[10px] font-bold shadow-md animate-pulse">
+                                        {totalUnread > 9 ? '9+' : totalUnread}
                                     </span>
                                 )}
                             </span>

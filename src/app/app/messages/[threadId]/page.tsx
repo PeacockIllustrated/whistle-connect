@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { notFound, redirect } from 'next/navigation'
+import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { MessageInput } from './MessageInput'
-import { MessageList } from './MessageList'
+import { ThreadView } from './ThreadView'
 import { markThreadAsRead } from '../actions'
 
 export default async function ThreadPage({
@@ -79,6 +78,11 @@ export default async function ThreadPage({
         (p: any) => p.profile?.id !== user.id
     )?.profile as { id: string; full_name: string; avatar_url: string | null } | undefined
 
+    // Get current user's profile for optimistic sending
+    const currentUserProfile = participants?.find(
+        (p: any) => p.profile?.id === user.id
+    )?.profile as { id: string; full_name: string } | undefined
+
     // Get messages
     const { data: messages } = await supabase
         .from('messages')
@@ -135,15 +139,13 @@ export default async function ThreadPage({
                 )}
             </div>
 
-            {/* Messages */}
-            <MessageList
+            {/* Messages + Input (coordinated via ThreadView for optimistic sends) */}
+            <ThreadView
                 initialMessages={messages || []}
                 threadId={threadId}
                 currentUserId={user.id}
+                currentUserName={currentUserProfile?.full_name || 'You'}
             />
-
-            {/* Input */}
-            <MessageInput threadId={threadId} />
         </div>
     )
 }

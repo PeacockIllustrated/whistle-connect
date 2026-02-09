@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -24,6 +25,7 @@ export default function RegisterPage() {
     const [role, setRole] = useState<UserRole>('coach')
     const [phone, setPhone] = useState('')
     const [postcode, setPostcode] = useState('')
+    const [faNumber, setFaNumber] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
 
@@ -47,6 +49,7 @@ export default function RegisterPage() {
                 role,
                 phone: phone || undefined,
                 postcode: postcode || undefined,
+                fa_number: faNumber || undefined,
             }, returnTo)
             if (result?.error) {
                 setError(result.error)
@@ -66,13 +69,17 @@ export default function RegisterPage() {
         <div className="min-h-screen bg-[var(--background)] flex flex-col">
             {/* Header */}
             <header className="bg-[var(--brand-navy)] text-white py-4 px-4">
-                <div className="max-w-[var(--content-max-width)] mx-auto flex items-center gap-3">
-                    <Link href="/" className="p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+                <div className="max-w-[var(--content-max-width)] mx-auto flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-3">
+                        <Image
+                            src="/assets/logo-main-white.svg"
+                            alt="Whistle Connect"
+                            width={130}
+                            height={45}
+                            priority
+                        />
                     </Link>
-                    <h1 className="text-lg font-semibold">Create Account</h1>
+                    <span className="text-sm font-medium text-white/60">Create Account</span>
                 </div>
             </header>
 
@@ -154,6 +161,15 @@ export default function RegisterPage() {
                             hint={role === 'referee' ? 'For matching with nearby games' : 'Your home ground postcode'}
                         />
 
+                        <Input
+                            label="FA Number (FAN)"
+                            type="text"
+                            value={faNumber}
+                            onChange={(e) => setFaNumber(e.target.value)}
+                            placeholder="e.g. 12345678"
+                            hint="Your Football Association registration number"
+                        />
+
                         <div className="pt-2">
                             <Button
                                 type="submit"
@@ -169,7 +185,7 @@ export default function RegisterPage() {
                     <div className="mt-6 text-center">
                         <p className="text-[var(--foreground-muted)]">
                             Already have an account?{' '}
-                            <Link href="/auth/login" className="text-[var(--color-primary)] font-medium hover:underline">
+                            <Link href={`/auth/login${returnTo !== '/app' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`} className="text-[var(--color-primary)] font-medium hover:underline">
                                 Sign In
                             </Link>
                         </p>

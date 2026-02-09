@@ -18,6 +18,12 @@ export const metadata: Metadata = {
   title: "Whistle Connect | Book Referees Fast",
   description: "The grassroots football operations app. Book referees, manage availability, and communicate seamlessly.",
   keywords: ["football", "referee", "booking", "grassroots", "soccer"],
+  icons: {
+    icon: [
+      { url: "/assets/icon-lightblue.svg", type: "image/svg+xml" },
+    ],
+    apple: "/assets/icon-lightblue.svg",
+  },
 };
 
 export const viewport = {

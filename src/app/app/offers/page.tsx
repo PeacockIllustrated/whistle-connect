@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { StatusChip } from '@/components/ui/StatusChip'
-import { formatDate, formatTime } from '@/lib/utils'
+import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
 import { UserRole } from '@/lib/types'
 
@@ -70,7 +70,7 @@ export default async function OffersPage() {
                         <Link
                             key={offer.id}
                             href={`/app/bookings/${offer.booking.id}`}
-                            className="block card p-4 hover:border-[var(--color-primary)] transition-colors group"
+                            className={`block card p-4 hover:border-[var(--color-primary)] transition-colors group ${getStatusCardStyle(offer.status)}`}
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div>

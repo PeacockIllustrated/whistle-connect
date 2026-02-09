@@ -2,18 +2,8 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/Button'
-import { Select } from '@/components/ui/Select'
-import { Input } from '@/components/ui/Input'
-import { StatusChip } from '@/components/ui/StatusChip'
-import { verifyReferee, updateComplianceStatus } from '../../actions'
-import { RefereeProfile, ComplianceStatus } from '@/lib/types'
-
-const complianceStatusOptions = [
-    { value: 'not_provided', label: 'Not Provided' },
-    { value: 'provided', label: 'Provided' },
-    { value: 'verified', label: 'Verified' },
-    { value: 'expired', label: 'Expired' },
-]
+import { verifyReferee } from '../../actions'
+import { RefereeProfile } from '@/lib/types'
 
 interface AdminRefereeActionsProps {
     refereeId: string
@@ -22,13 +12,6 @@ interface AdminRefereeActionsProps {
 
 export function AdminRefereeActions({ refereeId, refereeProfile }: AdminRefereeActionsProps) {
     const [verifying, setVerifying] = useState(false)
-    const [updatingDBS, setUpdatingDBS] = useState(false)
-    const [updatingSafeguarding, setUpdatingSafeguarding] = useState(false)
-
-    const [dbsStatus, setDbsStatus] = useState<string>(refereeProfile?.dbs_status || 'not_provided')
-    const [dbsExpiry, setDbsExpiry] = useState(refereeProfile?.dbs_expires_at || '')
-    const [safeguardingStatus, setSafeguardingStatus] = useState<string>(refereeProfile?.safeguarding_status || 'not_provided')
-    const [safeguardingExpiry, setSafeguardingExpiry] = useState(refereeProfile?.safeguarding_expires_at || '')
 
     async function handleVerify() {
         setVerifying(true)
@@ -38,28 +21,6 @@ export function AdminRefereeActions({ refereeId, refereeProfile }: AdminRefereeA
             console.error('Failed to update verification:', error)
         } finally {
             setVerifying(false)
-        }
-    }
-
-    async function handleUpdateDBS() {
-        setUpdatingDBS(true)
-        try {
-            await updateComplianceStatus(refereeId, 'dbs_status', dbsStatus as ComplianceStatus, dbsExpiry)
-        } catch (error) {
-            console.error('Failed to update DBS:', error)
-        } finally {
-            setUpdatingDBS(false)
-        }
-    }
-
-    async function handleUpdateSafeguarding() {
-        setUpdatingSafeguarding(true)
-        try {
-            await updateComplianceStatus(refereeId, 'safeguarding_status', safeguardingStatus as ComplianceStatus, safeguardingExpiry)
-        } catch (error) {
-            console.error('Failed to update safeguarding:', error)
-        } finally {
-            setUpdatingSafeguarding(false)
         }
     }
 
@@ -85,71 +46,31 @@ export function AdminRefereeActions({ refereeId, refereeProfile }: AdminRefereeA
                 </div>
             </div>
 
-            {/* DBS Check */}
+            {/* FA Details */}
             <div className="card p-4">
-                <h3 className="font-semibold mb-3">DBS Check</h3>
+                <h3 className="font-semibold mb-3">FA Details</h3>
                 <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-[var(--foreground-muted)]">Current:</span>
-                        <StatusChip status={refereeProfile?.dbs_status || 'not_provided'} size="sm" />
+                    <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]">
+                        <span className="text-sm text-[var(--foreground-muted)]">FA Number</span>
+                        <span className="text-sm font-medium">{refereeProfile?.fa_id || 'Not provided'}</span>
                     </div>
-
-                    <Select
-                        label="Status"
-                        options={complianceStatusOptions}
-                        value={dbsStatus}
-                        onChange={(e) => setDbsStatus(e.target.value)}
-                    />
-
-                    <Input
-                        label="Expiry Date"
-                        type="date"
-                        value={dbsExpiry}
-                        onChange={(e) => setDbsExpiry(e.target.value)}
-                    />
-
-                    <Button
-                        fullWidth
-                        variant="outline"
-                        loading={updatingDBS}
-                        onClick={handleUpdateDBS}
-                    >
-                        Update DBS Status
-                    </Button>
-                </div>
-            </div>
-
-            {/* Safeguarding */}
-            <div className="card p-4">
-                <h3 className="font-semibold mb-3">Safeguarding</h3>
-                <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-[var(--foreground-muted)]">Current:</span>
-                        <StatusChip status={refereeProfile?.safeguarding_status || 'not_provided'} size="sm" />
+                    <div className="flex items-center justify-between py-2 border-b border-[var(--border-color)]">
+                        <span className="text-sm text-[var(--foreground-muted)]">FA Verified</span>
+                        {refereeProfile?.fa_id ? (
+                            <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
+                                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                Verified
+                            </span>
+                        ) : (
+                            <span className="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                Pending
+                            </span>
+                        )}
                     </div>
-
-                    <Select
-                        label="Status"
-                        options={complianceStatusOptions}
-                        value={safeguardingStatus}
-                        onChange={(e) => setSafeguardingStatus(e.target.value)}
-                    />
-
-                    <Input
-                        label="Expiry Date"
-                        type="date"
-                        value={safeguardingExpiry}
-                        onChange={(e) => setSafeguardingExpiry(e.target.value)}
-                    />
-
-                    <Button
-                        fullWidth
-                        variant="outline"
-                        loading={updatingSafeguarding}
-                        onClick={handleUpdateSafeguarding}
-                    >
-                        Update Safeguarding Status
-                    </Button>
+                    <div className="flex items-center justify-between py-2">
+                        <span className="text-sm text-[var(--foreground-muted)]">Level</span>
+                        <span className="text-sm font-medium">{refereeProfile?.level || 'Not set'}</span>
+                    </div>
                 </div>
             </div>
         </div>

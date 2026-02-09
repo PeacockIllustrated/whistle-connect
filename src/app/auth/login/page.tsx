@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -45,13 +46,17 @@ export default function LoginPage() {
         <div className="min-h-screen bg-[var(--background)] flex flex-col">
             {/* Header */}
             <header className="bg-[var(--neutral-900)] text-white py-4 px-4">
-                <div className="max-w-[var(--content-max-width)] mx-auto flex items-center gap-3">
-                    <Link href="/" className="p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                        </svg>
+                <div className="max-w-[var(--content-max-width)] mx-auto flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-3">
+                        <Image
+                            src="/assets/logo-main-white.svg"
+                            alt="Whistle Connect"
+                            width={130}
+                            height={45}
+                            priority
+                        />
                     </Link>
-                    <h1 className="text-lg font-semibold tracking-tight">Sign In</h1>
+                    <span className="text-sm font-medium text-white/60">Sign In</span>
                 </div>
             </header>
 
@@ -59,12 +64,13 @@ export default function LoginPage() {
             <main className="flex-1 flex flex-col justify-center px-4 py-8">
                 <div className="max-w-[var(--content-max-width)] mx-auto w-full">
                     <div className="text-center mb-10">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[var(--brand-primary)]/20">
-                            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </div>
+                        <Image
+                            src="/assets/icon-lightblue.svg"
+                            alt="Whistle Connect"
+                            width={56}
+                            height={56}
+                            className="mx-auto mb-6"
+                        />
                         <h2 className="text-3xl font-bold text-[var(--foreground)] tracking-tight">Welcome Back</h2>
                         <p className="text-[var(--foreground-muted)] mt-1">Sign in to your account</p>
                     </div>
@@ -133,7 +139,7 @@ export default function LoginPage() {
                     <div className="mt-8 text-center border-t border-[var(--border-color)] pt-8">
                         <p className="text-[var(--foreground-muted)]">
                             Don&apos;t have an account?{' '}
-                            <Link href="/auth/register" className="text-[var(--brand-primary)] font-bold hover:underline">
+                            <Link href={`/auth/register${returnTo !== '/app' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`} className="text-[var(--brand-primary)] font-bold hover:underline">
                                 Register Now
                             </Link>
                         </p>

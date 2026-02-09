@@ -24,8 +24,8 @@ export async function sendMessage(threadId: string, body: string) {
         return { error: 'Not a participant of this thread' }
     }
 
-    // Insert message
-    const { error } = await supabase
+    // Insert message and return the created ID
+    const { data: insertedMessage, error } = await supabase
         .from('messages')
         .insert({
             thread_id: threadId,
@@ -33,6 +33,8 @@ export async function sendMessage(threadId: string, body: string) {
             kind: 'user',
             body,
         })
+        .select('id')
+        .single()
 
     if (error) {
         return { error: error.message }
@@ -78,7 +80,7 @@ export async function sendMessage(threadId: string, body: string) {
 
     revalidatePath(`/app/messages/${threadId}`)
     revalidatePath('/app/messages')
-    return { success: true }
+    return { success: true, messageId: insertedMessage?.id }
 }
 
 export async function markThreadAsRead(threadId: string) {

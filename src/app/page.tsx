@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { ActionCard } from '@/components/app/ActionCard'
+import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
+import { HeroSlideshow } from '@/components/app/HeroSlideshow'
 
 export default function LandingPage() {
   return (
@@ -9,17 +10,15 @@ export default function LandingPage() {
       <header className="relative z-10">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--neutral-900)] via-[var(--neutral-800)] to-[var(--neutral-900)]" />
         <div className="relative max-w-[var(--content-max-width)] mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-brand-primary flex items-center justify-center shadow-lg shadow-[var(--brand-primary)]/30">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-              </svg>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white tracking-tight">Whistle Connect</h1>
-              <p className="text-[10px] text-white/50 uppercase tracking-widest font-medium">Grassroots Football</p>
-            </div>
-          </div>
+          <Link href="/" className="flex items-center gap-3">
+            <Image
+              src="/assets/logo-main-white.svg"
+              alt="Whistle Connect"
+              width={160}
+              height={55}
+              priority
+            />
+          </Link>
           <Link
             href="/auth/login"
             className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold text-white transition-all border border-white/10"
@@ -31,13 +30,9 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[500px] flex items-center">
-        {/* Background Image with Overlay */}
+        {/* Background Slideshow with Overlay */}
         <div className="absolute inset-0">
-          <img
-            src="/assets/hero-bg.png"
-            alt="Grassroots football ground"
-            className="w-full h-full object-cover object-center"
-          />
+          <HeroSlideshow />
           {/* Dark Overlay for Legibility */}
           <div className="absolute inset-0 bg-black/60" />
         </div>
@@ -55,7 +50,7 @@ export default function LandingPage() {
 
           <h2 className="text-4xl font-bold text-white mb-4 leading-tight">
             Book Referees
-            <span className="block text-gradient">In Seconds</span>
+            <span className="block text-white">In Seconds</span>
           </h2>
 
           <p className="text-white/60 text-lg max-w-xs mx-auto mb-10">
@@ -74,12 +69,24 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 gap-3 mt-4">
               <Link href="/auth/register?role=coach" className="w-full">
-                <Button variant="ghost" className="w-full text-white bg-white/10 hover:bg-white/20 border border-white/10">
+                <Button variant="ghost" className="w-full text-white bg-white/25 hover:bg-white/35 border border-white/20 flex items-center justify-center gap-2">
+                  <Image
+                    src="/assets/icon-coach.svg"
+                    alt=""
+                    width={20}
+                    height={20}
+                  />
                   Register as a Coach
                 </Button>
               </Link>
               <Link href="/auth/register?role=referee" className="w-full">
-                <Button variant="ghost" className="w-full text-white bg-white/10 hover:bg-white/20 border border-white/10">
+                <Button variant="ghost" className="w-full text-white bg-white/25 hover:bg-white/35 border border-white/20 flex items-center justify-center gap-2">
+                  <Image
+                    src="/assets/icon-referee.svg"
+                    alt=""
+                    width={20}
+                    height={20}
+                  />
                   Register as a Referee
                 </Button>
               </Link>

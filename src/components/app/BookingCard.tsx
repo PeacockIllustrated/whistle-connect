@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import Link from 'next/link'
-import { cn, formatDate, formatTime } from '@/lib/utils'
+import { cn, formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { BookingWithDetails, BookingStatus } from '@/lib/types'
 import { deleteBooking, cancelBooking } from '@/app/app/bookings/actions'
@@ -66,6 +66,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                 'card p-4 block',
                 'transition-all duration-200',
                 'hover:shadow-md active:scale-[0.99]',
+                getStatusCardStyle(effectiveStatus),
                 className
             )}
         >
@@ -184,9 +185,10 @@ export function BookingCardCompact({ booking, className }: { booking: BookingWit
         <Link
             href={`/app/bookings/${booking.id}`}
             className={cn(
-                'flex items-center gap-3 p-3 bg-white border border-[var(--border-color)] rounded-lg',
+                'flex items-center gap-3 p-3 border border-[var(--border-color)] rounded-lg',
                 'transition-all duration-200',
-                'hover:bg-[var(--neutral-50)]',
+                'hover:shadow-sm',
+                getStatusCardStyle(effectiveStatus),
                 className
             )}
         >

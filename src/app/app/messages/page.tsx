@@ -1,7 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import Link from 'next/link'
-import { EmptyState } from '@/components/ui/EmptyState'
-import { formatDate, truncate } from '@/lib/utils'
+import { ThreadListClient, ThreadListItem } from '@/components/app/ThreadListClient'
 
 export default async function MessagesPage() {
     const supabase = await createClient()
@@ -15,7 +13,7 @@ export default async function MessagesPage() {
         .select('thread_id, last_read_at')
         .eq('profile_id', user.id)
 
-    let threads: any[] = []
+    let threads: ThreadListItem[] = []
 
     if (participations && participations.length > 0) {
         const threadIds = participations.map(p => p.thread_id)
@@ -59,11 +57,13 @@ export default async function MessagesPage() {
                     )
 
                     return {
-                        ...thread,
+                        id: thread.id,
+                        updated_at: thread.updated_at,
+                        booking: thread.booking,
+                        other_participant: otherParticipant?.profile || null,
                         last_message: messages?.[0] || null,
                         unread_count: count || 0,
-                        other_participant: otherParticipant?.profile,
-                    }
+                    } as ThreadListItem
                 })
             )
 
@@ -83,85 +83,11 @@ export default async function MessagesPage() {
                 </p>
             </div>
 
-            {/* Thread List */}
-            {threads.length > 0 ? (
-                <div className="space-y-2">
-                    {threads.map((thread) => (
-                        <Link
-                            key={thread.id}
-                            href={`/app/messages/${thread.id}`}
-                            className="block card p-4 hover:shadow-md transition-shadow"
-                        >
-                            <div className="flex items-start gap-3">
-                                {/* Avatar */}
-                                <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[var(--brand-primary)] relative overflow-hidden flex items-center justify-center text-white font-semibold">
-                                    {thread.other_participant?.avatar_url ? (
-                                        <img
-                                            src={thread.other_participant.avatar_url}
-                                            alt={thread.other_participant.full_name}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    ) : (
-                                        thread.other_participant?.full_name?.charAt(0) || '?'
-                                    )}
-                                </div>
-
-                                {/* Content */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <h3 className="font-semibold truncate">
-                                            {thread.other_participant?.full_name || 'Unknown'}
-                                        </h3>
-                                        {thread.last_message && (
-                                            <span className="text-xs text-[var(--foreground-muted)] whitespace-nowrap">
-                                                {new Date(thread.last_message.created_at).toLocaleDateString('en', {
-                                                    month: 'short',
-                                                    day: 'numeric',
-                                                })}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {/* Match reference */}
-                                    {thread.booking && (
-                                        <p className="text-xs text-[var(--foreground-muted)]">
-                                            {thread.booking.ground_name || thread.booking.location_postcode} • {formatDate(thread.booking.match_date)}
-                                        </p>
-                                    )}
-
-                                    {/* Last message preview */}
-                                    {thread.last_message && (
-                                        <p className={`text-sm mt-1 truncate ${thread.unread_count > 0 ? 'font-medium text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>
-                                            {thread.last_message.kind === 'system' ? (
-                                                <span className="italic">{truncate(thread.last_message.body, 50)}</span>
-                                            ) : (
-                                                truncate(thread.last_message.body, 50)
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Unread indicator */}
-                                {thread.unread_count > 0 && (
-                                    <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold flex items-center justify-center">
-                                        {thread.unread_count}
-                                    </div>
-                                )}
-                            </div>
-                        </Link>
-                    ))}
-                </div>
-            ) : (
-                <EmptyState
-                    icon={
-                        <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                        </svg>
-                    }
-                    title="No messages yet"
-                    description="Messages will appear here when you have confirmed bookings with referees or coaches"
-                />
-            )}
+            {/* Thread List - real-time client component */}
+            <ThreadListClient
+                initialThreads={threads}
+                currentUserId={user.id}
+            />
         </div>
     )
 }

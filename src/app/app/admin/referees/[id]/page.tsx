@@ -85,12 +85,10 @@ export default async function AdminRefereeDetailPage({
                         <span className="text-[var(--foreground-muted)]">Phone</span>
                         <span className="font-medium">{referee.phone || 'Not set'}</span>
                     </div>
-                    {refProfile?.fa_id && (
-                        <div className="flex justify-between">
-                            <span className="text-[var(--foreground-muted)]">FA ID</span>
-                            <span className="font-medium">{refProfile.fa_id}</span>
-                        </div>
-                    )}
+                    <div className="flex justify-between">
+                        <span className="text-[var(--foreground-muted)]">FA Number</span>
+                        <span className="font-medium">{refProfile?.fa_id || 'Not provided'}</span>
+                    </div>
                     {refProfile?.level && (
                         <div className="flex justify-between">
                             <span className="text-[var(--foreground-muted)]">Level</span>

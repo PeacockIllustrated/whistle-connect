@@ -98,7 +98,12 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                 if (data.role === 'referee') {
                     await adminClient
                         .from('referee_profiles')
-                        .insert({ profile_id: authData.user.id })
+                        .insert({ profile_id: authData.user.id, fa_id: data.fa_number || null })
+                } else if (data.fa_number) {
+                    // Store FA number in user metadata for coaches
+                    await adminClient.auth.admin.updateUserById(authData.user.id, {
+                        user_metadata: { fa_number: data.fa_number }
+                    })
                 }
             }
         } else {
@@ -121,7 +126,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
             if (data.role === 'referee') {
                 await supabase
                     .from('referee_profiles')
-                    .insert({ profile_id: authData.user.id })
+                    .insert({ profile_id: authData.user.id, fa_id: data.fa_number || null })
             }
         }
     }

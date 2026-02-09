@@ -1,15 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { UK_COUNTIES, AGE_GROUPS, MATCH_FORMATS, COMPETITION_TYPES } from '@/lib/constants'
+import { createBooking } from '@/app/app/bookings/actions'
+import { MatchFormat, CompetitionType } from '@/lib/types'
 
 export default function IndividualBookingPage() {
-    const router = useRouter()
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [error, setError] = useState('')
     const [formData, setFormData] = useState({
         county: '',
         match_date: '',
@@ -27,13 +29,45 @@ export default function IndividualBookingPage() {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    // Prevent Enter key from submitting form (stops autofill auto-submit)
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement)) {
+            e.preventDefault()
+        }
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        const params = new URLSearchParams({
-            type: 'individual',
-            ...formData
-        })
-        router.push(`/app/bookings/new?${params.toString()}`)
+        if (isSubmitting) return
+
+        setIsSubmitting(true)
+        setError('')
+
+        try {
+            const result = await createBooking({
+                match_date: formData.match_date,
+                kickoff_time: formData.kickoff_time,
+                location_postcode: formData.location_postcode,
+                county: formData.county,
+                ground_name: formData.address_text,
+                age_group: formData.age_group,
+                format: formData.format as MatchFormat || undefined,
+                competition_type: formData.competition_type as CompetitionType || undefined,
+                home_team: formData.home_team,
+                away_team: formData.away_team,
+                address_text: formData.address_text,
+                notes: '',
+                booking_type: 'individual',
+            })
+            if (result?.error) {
+                setError(result.error)
+                setIsSubmitting(false)
+            }
+            // On success, createBooking redirects to the match page automatically
+        } catch (err) {
+            setError('Failed to create booking')
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -58,7 +92,13 @@ export default function IndividualBookingPage() {
                         </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    {error && (
+                        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                            {error}
+                        </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
                             <Select
                                 label="County"
@@ -150,8 +190,14 @@ export default function IndividualBookingPage() {
                             </div>
                         </div>
 
-                        <Button type="submit" size="lg" className="w-full h-14 text-lg font-bold bg-[var(--wc-blue)] hover:bg-[#1e1c45] text-white">
-                            Continue to Booking
+                        <Button
+                            type="submit"
+                            size="lg"
+                            loading={isSubmitting}
+                            disabled={isSubmitting}
+                            className="w-full h-14 text-lg font-bold bg-[var(--wc-blue)] hover:bg-[#1e1c45] text-white"
+                        >
+                            {isSubmitting ? 'Creating Booking...' : 'Find Matching Referees'}
                         </Button>
                     </form>
                 </div>

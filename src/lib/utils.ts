@@ -40,16 +40,6 @@ export function getStatusColor(status: string): string {
     return colors[status] || 'chip-draft'
 }
 
-export function getComplianceColor(status: string): string {
-    const colors: Record<string, string> = {
-        not_provided: 'text-gray-500 bg-gray-100',
-        provided: 'text-blue-700 bg-blue-100',
-        verified: 'text-green-700 bg-green-100',
-        expired: 'text-red-700 bg-red-100',
-    }
-    return colors[status] || 'text-gray-500 bg-gray-100'
-}
-
 export function truncate(str: string, length: number): string {
     if (str.length <= length) return str
     return str.slice(0, length) + '...'
@@ -62,4 +52,24 @@ export function getInitials(name: string): string {
         .join('')
         .toUpperCase()
         .slice(0, 2)
+}
+
+// Faint background tint + left border accent for status-at-a-glance on cards
+const statusCardStyles: Record<string, string> = {
+    draft: '!bg-slate-50/60 border-l-4 border-l-slate-300',
+    pending: '!bg-amber-50/50 border-l-4 border-l-amber-400',
+    offered: '!bg-violet-50/50 border-l-4 border-l-violet-400',
+    confirmed: '!bg-emerald-50/50 border-l-4 border-l-emerald-500',
+    completed: '!bg-cyan-50/40 border-l-4 border-l-cyan-400',
+    cancelled: '!bg-red-50/50 border-l-4 border-l-red-400',
+    sent: '!bg-blue-50/50 border-l-4 border-l-blue-400',
+    accepted: '!bg-emerald-50/50 border-l-4 border-l-emerald-500',
+    declined: '!bg-red-50/50 border-l-4 border-l-red-400',
+    withdrawn: '!bg-slate-50/60 border-l-4 border-l-slate-300',
+    accepted_priced: '!bg-indigo-50/50 border-l-4 border-l-indigo-400',
+    expired: '!bg-orange-50/50 border-l-4 border-l-orange-400',
+}
+
+export function getStatusCardStyle(status: string): string {
+    return statusCardStyles[status] || ''
 }

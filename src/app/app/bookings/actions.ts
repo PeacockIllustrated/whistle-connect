@@ -323,7 +323,10 @@ export async function cancelBooking(bookingId: string) {
 
     // Check authorization: user must be the coach OR an assigned referee
     const isCoach = booking.coach_id === user.id
-    const isAssignedReferee = booking.assignments?.some(
+    const assignments = Array.isArray(booking.assignments)
+        ? booking.assignments
+        : booking.assignments ? [booking.assignments] : []
+    const isAssignedReferee = assignments.some(
         (a: { referee_id: string }) => a.referee_id === user.id
     )
 
@@ -331,24 +334,61 @@ export async function cancelBooking(bookingId: string) {
         return { error: 'Unauthorized - you do not have permission to cancel this booking' }
     }
 
-    const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'cancelled' })
-        .eq('id', bookingId)
+    if (isAssignedReferee && !isCoach && booking.status === 'confirmed') {
+        // Referee is cancelling a confirmed booking:
+        // Revert booking to 'pending' so the coach can find a new referee
+        const { error } = await supabase
+            .from('bookings')
+            .update({ status: 'pending' })
+            .eq('id', bookingId)
 
-    if (error) {
-        return { error: error.message }
-    }
+        if (error) {
+            return { error: error.message }
+        }
 
-    // Notify the coach if the user cancelling is NOT the coach (i.e. it's the referee)
-    if (booking && booking.coach_id !== user.id) {
+        // Remove the assignment so the booking is open again
+        await supabase
+            .from('booking_assignments')
+            .delete()
+            .eq('booking_id', bookingId)
+            .eq('referee_id', user.id)
+
+        // Mark the referee's offer as withdrawn
+        await supabase
+            .from('booking_offers')
+            .update({ status: 'withdrawn' })
+            .eq('booking_id', bookingId)
+            .eq('referee_id', user.id)
+
+        // Notify the coach that the referee pulled out
         await createNotification({
             userId: booking.coach_id,
-            title: 'Booking Cancelled',
-            message: `Referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}.`,
+            title: 'Referee Pulled Out',
+            message: `The assigned referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}. You can now search for a new referee.`,
             type: 'warning',
             link: `/app/bookings/${bookingId}`
         })
+    } else {
+        // Coach is cancelling, or non-confirmed booking cancellation
+        const { error } = await supabase
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .eq('id', bookingId)
+
+        if (error) {
+            return { error: error.message }
+        }
+
+        // Notify the coach if the user cancelling is NOT the coach (i.e. it's the referee)
+        if (booking && booking.coach_id !== user.id) {
+            await createNotification({
+                userId: booking.coach_id,
+                title: 'Booking Cancelled',
+                message: `Referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}.`,
+                type: 'warning',
+                link: `/app/bookings/${bookingId}`
+            })
+        }
     }
 
     revalidatePath(`/app/bookings/${bookingId}`)
@@ -607,8 +647,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
             level,
             verified,
             travel_radius_km,
-            dbs_status,
-            safeguarding_status,
+            fa_id,
             profile:profiles!inner(
                 id,
                 full_name,
@@ -634,8 +673,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 county: r.county,
                 travel_radius_km: r.travel_radius_km,
                 verified: r.verified,
-                dbs_status: r.dbs_status,
-                safeguarding_status: r.safeguarding_status
+                fa_verified: !!r.fa_id
             }
         })
 
@@ -738,8 +776,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
             level,
             verified,
             travel_radius_km,
-            dbs_status,
-            safeguarding_status,
+            fa_id,
             central_venue_opt_in,
             profile:profiles!inner(
                 id,
@@ -775,8 +812,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 county: r.county,
                 travel_radius_km: r.travel_radius_km,
                 verified: r.verified,
-                dbs_status: r.dbs_status,
-                safeguarding_status: r.safeguarding_status
+                fa_verified: !!r.fa_id
             }
         })
 

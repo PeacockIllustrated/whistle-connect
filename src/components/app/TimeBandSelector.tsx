@@ -3,12 +3,12 @@
 import { cn } from '@/lib/utils'
 
 export const TIME_BANDS = [
-    { start: '09:00', end: '11:00', label: '09-11' },
-    { start: '11:00', end: '13:00', label: '11-13' },
-    { start: '13:00', end: '15:00', label: '13-15' },
-    { start: '15:00', end: '17:00', label: '15-17' },
-    { start: '17:00', end: '19:00', label: '17-19' },
-    { start: '19:00', end: '21:00', label: '19-21' },
+    { start: '09:00', end: '11:00', label: '09:00 - 11:00' },
+    { start: '11:00', end: '13:00', label: '11:00 - 13:00' },
+    { start: '13:00', end: '15:00', label: '13:00 - 15:00' },
+    { start: '15:00', end: '17:00', label: '15:00 - 17:00' },
+    { start: '17:00', end: '19:00', label: '17:00 - 19:00' },
+    { start: '19:00', end: '21:00', label: '19:00 - 21:00' },
 ]
 
 interface TimeBandSelectorProps {
@@ -33,7 +33,7 @@ export function TimeBandSelector({ selectedBands, onToggle, className }: TimeBan
                                 : "bg-white border-[var(--border-color)] text-[var(--foreground)] hover:border-[var(--color-primary)]/50"
                         )}
                     >
-                        <span className="text-lg font-bold">{band.label}</span>
+                        <span className="text-base font-bold">{band.label}</span>
                         <span className="text-[10px] opacity-70">AVAILABLE</span>
                     </button>
                 )

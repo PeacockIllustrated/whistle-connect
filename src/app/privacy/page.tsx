@@ -57,7 +57,7 @@ export default function PrivacyPage() {
                         <ul className="list-disc pl-5 space-y-2 text-[var(--neutral-600)]">
                             <li>Facilitate connections between coaches and referees</li>
                             <li>Process bookings and payments</li>
-                            <li>Verify qualifications and safeguarding status</li>
+                            <li>Verify FA registration and qualifications</li>
                             <li>Send you technical notices, updates, and support messages</li>
                             <li>Monitor and analyze trends, usage, and activities in connection with our application</li>
                         </ul>
