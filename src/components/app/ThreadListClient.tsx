@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useUnreadMessages } from '@/components/app/UnreadMessagesProvider'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { formatDate, truncate } from '@/lib/utils'
+import { MessageCircle } from 'lucide-react'
 
 export interface ThreadListItem {
     id: string
@@ -80,9 +81,7 @@ export function ThreadListClient({ initialThreads, currentUserId }: ThreadListCl
         return (
             <EmptyState
                 icon={
-                    <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                    </svg>
+                    <MessageCircle className="w-12 h-12" strokeWidth={1.5} />
                 }
                 title="No messages yet"
                 description="Messages will appear here when you have confirmed bookings with referees or coaches"

@@ -7,6 +7,7 @@ import { searchRefereesForBooking, sendBookingRequest } from '../../actions'
 import { RefereeSearchResult } from '@/lib/types'
 import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCard'
 import { StatusChip } from '@/components/ui/StatusChip'
+import { ChevronLeft, Check, Search, X, CheckCircle } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -66,9 +67,7 @@ export default function BookingMatchPage({ params }: Props) {
             {/* Header */}
             <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-[var(--border-color)]">
                 <Link href={`/app/bookings/${id}`} className="p-2 -ml-2 hover:bg-[var(--neutral-100)] rounded-lg">
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <ChevronLeft className="w-5 h-5" />
                 </Link>
                 <div className="flex-1">
                     <h1 className="text-lg font-semibold">Matching Referees</h1>
@@ -115,9 +114,7 @@ export default function BookingMatchPage({ params }: Props) {
                                         {sentRequests.includes(referee.id) && (
                                             <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] rounded-xl flex items-center justify-center z-10 transition-all animate-in fade-in duration-300">
                                                 <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow-sm border border-green-200">
-                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                                    </svg>
+                                                    <Check className="w-5 h-5" />
                                                     Request Sent
                                                 </div>
                                             </div>
@@ -129,9 +126,7 @@ export default function BookingMatchPage({ params }: Props) {
                     ) : (
                         <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-[var(--border-color)] px-6">
                             <div className="w-20 h-20 bg-[var(--neutral-50)] rounded-full flex items-center justify-center mx-auto mb-6">
-                                <svg className="w-10 h-10 text-[var(--neutral-300)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
+                                <Search className="w-10 h-10 text-[var(--neutral-300)]" strokeWidth={1.5} />
                             </div>
                             <h3 className="text-xl font-bold mb-2">No matches found</h3>
                             <p className="text-[var(--foreground-muted)] mb-8 max-w-[280px] mx-auto">
@@ -156,9 +151,7 @@ export default function BookingMatchPage({ params }: Props) {
                                 onClick={() => setSelectedReferee(null)}
                                 className="absolute top-3 right-3 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors"
                             >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
+                                <X className="w-5 h-5" />
                             </button>
                             <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-2xl bg-white p-1 shadow-lg">
                                 <div className="w-full h-full rounded-xl bg-[var(--neutral-100)] flex items-center justify-center overflow-hidden">
@@ -183,7 +176,7 @@ export default function BookingMatchPage({ params }: Props) {
                                     <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)]">FA Status</p>
                                     {selectedReferee.fa_verified ? (
                                         <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" /></svg>
+                                            <CheckCircle className="w-3 h-3" fill="currentColor" stroke="white" strokeWidth={1.5} />
                                             FA Verified
                                         </span>
                                     ) : (
