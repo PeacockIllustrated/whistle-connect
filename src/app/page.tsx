@@ -55,7 +55,7 @@ export default function LandingPage() {
           </h2>
 
           <p className="text-white/60 text-lg max-w-xs mx-auto mb-10">
-            Connect coaches with qualified, verified officials instantly
+            Connecting Grass Roots coaches with Local Referees
           </p>
 
           <div className="flex flex-col gap-4 max-w-xs mx-auto">
@@ -69,23 +69,11 @@ export default function LandingPage() {
             <div className="grid grid-cols-1 gap-3 mt-4">
               <Link href="/auth/register?role=coach" className="w-full">
                 <Button variant="ghost" className="w-full text-white bg-white/25 hover:bg-white/35 border border-white/20 flex items-center justify-center gap-2">
-                  <Image
-                    src="/assets/icon-coach.svg"
-                    alt=""
-                    width={20}
-                    height={20}
-                  />
                   Register as a Coach
                 </Button>
               </Link>
               <Link href="/auth/register?role=referee" className="w-full">
                 <Button variant="ghost" className="w-full text-white bg-white/25 hover:bg-white/35 border border-white/20 flex items-center justify-center gap-2">
-                  <Image
-                    src="/assets/icon-referee.svg"
-                    alt=""
-                    width={20}
-                    height={20}
-                  />
                   Register as a Referee
                 </Button>
               </Link>
