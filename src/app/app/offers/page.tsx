@@ -7,6 +7,26 @@ import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
 import { UserRole } from '@/lib/types'
 import { Users, CalendarDays, Clock, ChevronRight, Inbox } from 'lucide-react'
 
+interface OfferWithBooking {
+    id: string
+    status: string
+    created_at: string
+    booking: {
+        id: string
+        match_date: string
+        kickoff_time: string
+        ground_name: string | null
+        location_postcode: string
+        age_group: string | null
+        format: string | null
+        competition_type: string | null
+        notes: string | null
+        home_team: string | null
+        away_team: string | null
+        coach: { full_name: string }
+    }
+}
+
 export default async function OffersPage() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -67,7 +87,7 @@ export default async function OffersPage() {
 
             {offers && offers.length > 0 ? (
                 <div className="space-y-4">
-                    {offers.map((offer: any) => (
+                    {(offers as OfferWithBooking[]).map((offer) => (
                         <Link
                             key={offer.id}
                             href={`/app/bookings/${offer.booking.id}`}

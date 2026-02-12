@@ -1,22 +1,16 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import type { LucideIcon } from 'lucide-react'
+import type { LucideIcon, LucideProps } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type IconAnimation = 'bounce' | 'pop' | 'wiggle' | 'ring' | 'send' | 'pulse-soft'
 
-interface AnimatedIconProps {
+interface AnimatedIconProps extends Omit<LucideProps, 'ref'> {
     icon: LucideIcon
-    className?: string
-    size?: number
-    strokeWidth?: number
     animation?: IconAnimation
     /** 'tap' = animate on click, 'hover' = animate on hover */
     trigger?: 'tap' | 'hover'
-    fill?: string
-    /** Pass extra props to the SVG */
-    [key: string]: any
 }
 
 /**

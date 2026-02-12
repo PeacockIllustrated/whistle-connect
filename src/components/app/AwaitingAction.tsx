@@ -13,6 +13,37 @@ import { confirmPrice, cancelBooking } from '@/app/app/bookings/actions'
 import { Check, X } from 'lucide-react'
 
 /* ──────────────────────────────────────────────
+   Supabase join result type for offer queries
+   ────────────────────────────────────────────── */
+interface OfferQueryResult {
+    id: string
+    status: string
+    price_pence?: number | null
+    booking: {
+        id: string
+        status: string
+        match_date: string
+        kickoff_time: string
+        ground_name: string | null
+        location_postcode: string
+        address_text: string | null
+        coach_id?: string
+    } | {
+        id: string
+        status: string
+        match_date: string
+        kickoff_time: string
+        ground_name: string | null
+        location_postcode: string
+        address_text: string | null
+        coach_id?: string
+    }[]
+    referee?: { full_name: string } | { full_name: string }[]
+    coach?: { coach: { full_name: string } | { full_name: string }[] } | { coach: { full_name: string } | { full_name: string }[] }[]
+    created_at: string
+}
+
+/* ──────────────────────────────────────────────
    Shared types
    ────────────────────────────────────────────── */
 interface ActionItem {
@@ -42,6 +73,11 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
     const router = useRouter()
     const supabase = createClient()
 
+    // Sync state when server re-renders with updated initialItems
+    useEffect(() => {
+        setItems(initialItems)
+    }, [initialItems])
+
     const refetch = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
@@ -54,19 +90,20 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
                 price_pence,
                 booking:bookings!inner(
                     id, status, match_date, kickoff_time,
-                    ground_name, location_postcode, address_text
+                    ground_name, location_postcode, address_text, coach_id
                 ),
                 referee:profiles!booking_offers_referee_id_fkey(full_name)
             `)
             .eq('status', 'accepted_priced')
+            .eq('bookings.coach_id', user.id)
             .order('created_at', { ascending: false })
 
         if (!data) return
 
         setItems(
-            data.map((o: any) => {
+            (data as OfferQueryResult[]).map((o) => {
                 const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
-                const referee = Array.isArray(o.referee) ? o.referee[0] : o.referee
+                const referee = o.referee ? (Array.isArray(o.referee) ? o.referee[0] : o.referee) : null
                 return {
                     id: o.id,
                     bookingId: booking.id,
@@ -127,6 +164,8 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
                 if (result.threadId) {
                     router.push(`/app/messages/${result.threadId}`)
                 } else {
+                    // Refetch from DB to confirm removal, then refresh server component
+                    await refetch()
                     router.refresh()
                 }
             } else {
@@ -148,8 +187,9 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
                 showToast({ message: result.error, type: 'error' })
             } else {
                 showToast({ message: 'Booking cancelled', type: 'success' })
-                // Optimistically remove
+                // Optimistically remove, then refetch from DB to confirm
                 setItems(prev => prev.filter(i => i.id !== item.id))
+                await refetch()
                 router.refresh()
             }
         } catch {
@@ -280,6 +320,11 @@ export function RefereeAwaitingAction({ initialItems }: { initialItems: ActionIt
     const { subscribe } = useBookingUpdates()
     const supabase = createClient()
 
+    // Sync state when server re-renders with updated initialItems
+    useEffect(() => {
+        setItems(initialItems)
+    }, [initialItems])
+
     const refetch = useCallback(async () => {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
@@ -302,9 +347,9 @@ export function RefereeAwaitingAction({ initialItems }: { initialItems: ActionIt
         if (!data) return
 
         setItems(
-            data.map((o: any) => {
+            (data as OfferQueryResult[]).map((o) => {
                 const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
-                const coachJoin = Array.isArray(o.coach) ? o.coach[0] : o.coach
+                const coachJoin = o.coach ? (Array.isArray(o.coach) ? o.coach[0] : o.coach) : null
                 const coach = coachJoin?.coach
                     ? (Array.isArray(coachJoin.coach) ? coachJoin.coach[0] : coachJoin.coach)
                     : null

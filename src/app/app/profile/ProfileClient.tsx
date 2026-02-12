@@ -8,11 +8,13 @@ import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
 import { CheckCircle } from 'lucide-react'
+import Image from 'next/image'
+import type { Profile, RefereeProfile } from '@/lib/types'
 
 interface ProfileClientProps {
-    user: any
-    profile: any
-    refereeProfile: any
+    user: { id: string; email?: string }
+    profile: Profile
+    refereeProfile: RefereeProfile | null
 }
 
 export function ProfileClient({ user, profile: initialProfile, refereeProfile }: ProfileClientProps) {
@@ -59,7 +61,7 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
             <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden">
                     {profile?.avatar_url ? (
-                        <img src={profile.avatar_url} alt={profile.full_name} className="w-full h-full object-cover" />
+                        <Image src={profile.avatar_url} alt={profile.full_name} width={64} height={64} className="w-full h-full object-cover" unoptimized />
                     ) : (
                         profile?.full_name?.charAt(0) || '?'
                     )}

@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/Toast'
 import { acceptOffer, declineOffer, cancelBooking, confirmPrice } from '../actions'
 import { Booking, BookingOffer, BookingWithDetails } from '@/lib/types'
 import { Input } from '@/components/ui/Input'
-import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil } from 'lucide-react'
+import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil, Search } from 'lucide-react'
 
 interface BookingActionsProps {
     booking: BookingWithDetails
@@ -170,6 +170,7 @@ export function BookingActions({
 
                 <Button
                     fullWidth
+                    variant="success"
                     onClick={handleAcceptWithPrice}
                     loading={accepting}
                     disabled={declining || !price}
@@ -230,6 +231,7 @@ export function BookingActions({
 
                 <Button
                     fullWidth
+                    variant="success"
                     onClick={() => handleConfirmPrice(pricedOffer.id)}
                     loading={accepting}
                 >
@@ -265,7 +267,7 @@ export function BookingActions({
             <div className="space-y-3">
                 {/* Message button */}
                 {threadId && (
-                    <Link href={`/app/messages/${threadId}`}>
+                    <Link href={`/app/messages/${threadId}`} className="block">
                         <Button fullWidth variant="primary">
                             <MessageCircle className="w-5 h-5 mr-2" />
                             Message
@@ -336,7 +338,13 @@ export function BookingActions({
                             : 'Waiting for referees to respond...'}
                     </p>
                 </div>
-                <Link href={`/app/bookings/${booking.id}/edit`}>
+                <Link href={`/app/bookings/${booking.id}/match`} className="block">
+                    <Button fullWidth variant="primary">
+                        <Search className="w-5 h-5 mr-2" />
+                        Find Referees
+                    </Button>
+                </Link>
+                <Link href={`/app/bookings/${booking.id}/edit`} className="block">
                     <Button fullWidth variant="outline">
                         <Pencil className="w-5 h-5 mr-2" />
                         Edit Booking

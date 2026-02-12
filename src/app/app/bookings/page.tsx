@@ -1,10 +1,63 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { BookingCard } from '@/components/app/BookingCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { StatusChip } from '@/components/ui/StatusChip'
-import { BookingStatus } from '@/lib/types'
+import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/AwaitingAction'
+import { BookingStatus, BookingWithDetails } from '@/lib/types'
 import { CalendarDays } from 'lucide-react'
+
+// Supabase join result types for offer queries
+interface OfferBookingJoin {
+    id: string
+    status: string
+    match_date: string
+    kickoff_time: string
+    ground_name: string | null
+    location_postcode: string
+    address_text: string | null
+    coach_id: string
+}
+
+interface CoachOfferResult {
+    id: string
+    status: string
+    price_pence: number | null
+    booking: OfferBookingJoin | OfferBookingJoin[]
+    referee: { full_name: string } | { full_name: string }[]
+    created_at: string
+}
+
+interface RefereeOfferResult {
+    id: string
+    status: string
+    booking: OfferBookingJoin | OfferBookingJoin[]
+    created_at: string
+}
+
+interface CoachActionItem {
+    id: string
+    bookingId: string
+    status: string
+    bookingStatus: string
+    matchDate: string
+    kickoffTime: string
+    venue: string
+    price: number | null
+    refereeName?: string
+}
+
+interface RefereeActionItem {
+    id: string
+    bookingId: string
+    status: string
+    bookingStatus: string
+    matchDate: string
+    kickoffTime: string
+    venue: string
+}
 
 const statusFilters: { value: BookingStatus | 'all'; label: string }[] = [
     { value: 'all', label: 'All' },
@@ -35,7 +88,7 @@ export default async function BookingsPage({
     const isReferee = profile?.role === 'referee'
     const statusFilter = params.status as BookingStatus | 'all' | undefined
 
-    let bookings: any[] = []
+    let bookings: BookingWithDetails[] = []
 
     if (isCoach) {
         let query = supabase
@@ -89,6 +142,74 @@ export default async function BookingsPage({
             .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
     }
 
+    // ── Awaiting Action data ────────────────────────────
+    let coachActionItems: CoachActionItem[] = []
+    let refereeActionItems: RefereeActionItem[] = []
+
+    if (isCoach) {
+        const { data: awaitingOffers } = await supabase
+            .from('booking_offers')
+            .select(`
+                id, status, price_pence,
+                booking:bookings!inner(
+                    id, status, match_date, kickoff_time,
+                    ground_name, location_postcode, address_text, coach_id
+                ),
+                referee:profiles!booking_offers_referee_id_fkey(full_name)
+            `)
+            .eq('status', 'accepted_priced')
+            .eq('bookings.coach_id', user.id)
+            .order('created_at', { ascending: false })
+
+        if (awaitingOffers) {
+            coachActionItems = (awaitingOffers as CoachOfferResult[]).map((o) => {
+                const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
+                const referee = Array.isArray(o.referee) ? o.referee[0] : o.referee
+                return {
+                    id: o.id,
+                    bookingId: booking.id,
+                    status: o.status,
+                    bookingStatus: booking.status,
+                    matchDate: booking.match_date,
+                    kickoffTime: booking.kickoff_time,
+                    venue: booking.address_text || booking.ground_name || booking.location_postcode,
+                    price: o.price_pence,
+                    refereeName: referee?.full_name,
+                }
+            })
+        }
+    }
+
+    if (isReferee) {
+        const { data: sentOffers } = await supabase
+            .from('booking_offers')
+            .select(`
+                id, status,
+                booking:bookings!inner(
+                    id, status, match_date, kickoff_time,
+                    ground_name, location_postcode, address_text
+                )
+            `)
+            .eq('referee_id', user.id)
+            .eq('status', 'sent')
+            .order('created_at', { ascending: false })
+
+        if (sentOffers) {
+            refereeActionItems = (sentOffers as RefereeOfferResult[]).map((o) => {
+                const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
+                return {
+                    id: o.id,
+                    bookingId: booking.id,
+                    status: o.status,
+                    bookingStatus: booking.status,
+                    matchDate: booking.match_date,
+                    kickoffTime: booking.kickoff_time,
+                    venue: booking.address_text || booking.ground_name || booking.location_postcode,
+                }
+            })
+        }
+    }
+
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
             {/* Header */}
@@ -105,6 +226,10 @@ export default async function BookingsPage({
                     </Link>
                 )}
             </div>
+
+            {/* Awaiting Action — real-time updates */}
+            {isCoach && <CoachAwaitingAction initialItems={coachActionItems} />}
+            {isReferee && <RefereeAwaitingAction initialItems={refereeActionItems} />}
 
             {/* Status Filters */}
             {isCoach && (
@@ -132,7 +257,7 @@ export default async function BookingsPage({
                             key={booking.id}
                             booking={booking}
                             showCoach={isReferee}
-                            showReferee={isCoach && booking.assignment?.referee}
+                            showReferee={isCoach && !!booking.assignment?.referee}
                         />
                     ))}
                 </div>
@@ -150,7 +275,7 @@ export default async function BookingsPage({
                         isCoach ? (
                             <Link
                                 href="/app/bookings/new"
-                                className="inline-flex items-center px-4 py-2 bg-[var(--brand-secondary)] text-white rounded-lg font-medium text-sm"
+                                className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm transition-colors"
                             >
                                 Create Booking
                             </Link>

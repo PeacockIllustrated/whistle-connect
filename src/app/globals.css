@@ -15,6 +15,8 @@
   /* Referee Color */
   --wc-ink: #1d2557;
   /* Deep Navy */
+  --wc-coach-blue: var(--neutral-800);
+  --wc-ref-red: var(--wc-red);
 
   --brand-navy: var(--wc-ink);
 

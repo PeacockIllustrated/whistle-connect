@@ -22,6 +22,12 @@ export function ProfileEditForm({ initialData, onCancel, onSuccess }: ProfileEdi
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+            e.preventDefault()
+        }
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setLoading(true)
@@ -39,15 +45,15 @@ export function ProfileEditForm({ initialData, onCancel, onSuccess }: ProfileEdi
             } else {
                 onSuccess()
             }
-        } catch (err: any) {
-            setError(err.message || 'An unexpected error occurred')
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'An unexpected error occurred')
         } finally {
             setLoading(false)
         }
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-4">
             {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                     {error}
@@ -87,6 +93,7 @@ export function ProfileEditForm({ initialData, onCancel, onSuccess }: ProfileEdi
                     type="submit"
                     className="flex-1"
                     loading={loading}
+                    variant="success"
                 >
                     Save Changes
                 </Button>

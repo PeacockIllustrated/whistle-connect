@@ -44,7 +44,7 @@ export default function NewBookingPage() {
             address_text: params.get('address_text') || '',
             notes: params.get('notes') || '',
             budget_pounds: params.get('budget_pounds') ? parseInt(params.get('budget_pounds')!) : undefined,
-            booking_type: (params.get('type') as any) || 'individual',
+            booking_type: (params.get('type') as 'individual' | 'central') || 'individual',
         }
     })
 

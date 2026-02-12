@@ -12,7 +12,7 @@ export async function updateProfile(formData: {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-        throw new Error('Not authenticated')
+        return { error: 'Not authenticated' }
     }
 
     const { error } = await supabase
@@ -39,7 +39,7 @@ export async function updateAvatarUrl(url: string) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-        throw new Error('Not authenticated')
+        return { error: 'Not authenticated' }
     }
 
     const { error } = await supabase

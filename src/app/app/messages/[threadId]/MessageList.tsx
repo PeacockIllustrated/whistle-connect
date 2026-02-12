@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { MessageWithSender } from '@/lib/types'
+import { MessageWithSender, MessageKind } from '@/lib/types'
 import { MessageBubble, MessageDateSeparator } from '@/components/app/MessageBubble'
 import { markThreadAsRead } from '../actions'
 
@@ -74,8 +74,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
                         table: 'messages',
                         filter: `thread_id=eq.${threadId}`,
                     },
-                    async (payload: any) => {
-                        const newMessage = payload.new as any
+                    async (payload: { new: Record<string, string> }) => {
+                        const newMessage = payload.new as { id: string; thread_id: string; sender_id: string; kind: MessageKind; body: string; created_at: string }
 
                         // Fetch the sender's profile to match MessageWithSender type
                         const { data: sender } = await supabase

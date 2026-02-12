@@ -125,35 +125,25 @@ export async function getThreads() {
         .in('id', threadIds)
         .order('updated_at', { ascending: false })
 
-    // Batch fetch last messages for all threads in a single query
-    // Using a raw query to get the last message per thread efficiently
-    const { data: allLastMessages } = await supabase
+    // Single batch fetch of all messages for all threads (avoids duplicate query)
+    const { data: allMessages } = await supabase
         .from('messages')
         .select('*')
         .in('thread_id', threadIds)
         .order('created_at', { ascending: false })
 
-    // Group messages by thread_id and take the first (most recent) for each
-    const lastMessageByThread = new Map<string, typeof allLastMessages extends (infer T)[] | null ? T : never>()
-    if (allLastMessages) {
-        for (const msg of allLastMessages) {
+    // Compute both last message and unread count from the same dataset
+    const lastMessageByThread = new Map<string, typeof allMessages extends (infer T)[] | null ? T : never>()
+    const unreadCountByThread = new Map<string, number>()
+
+    if (allMessages) {
+        for (const msg of allMessages) {
+            // Track last message per thread (first occurrence = most recent due to DESC order)
             if (!lastMessageByThread.has(msg.thread_id)) {
                 lastMessageByThread.set(msg.thread_id, msg)
             }
-        }
-    }
 
-    // Batch fetch unread counts for all threads
-    // We need to count messages created after last_read_at for each thread
-    const { data: allMessages } = await supabase
-        .from('messages')
-        .select('thread_id, created_at')
-        .in('thread_id', threadIds)
-
-    // Calculate unread counts for each thread
-    const unreadCountByThread = new Map<string, number>()
-    if (allMessages) {
-        for (const msg of allMessages) {
+            // Count unread messages
             const participation = participations.find(p => p.thread_id === msg.thread_id)
             const lastReadAt = participation?.last_read_at || '1970-01-01'
             if (new Date(msg.created_at) > new Date(lastReadAt)) {

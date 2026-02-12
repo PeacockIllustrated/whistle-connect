@@ -3,9 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { StatusChip } from '@/components/ui/StatusChip'
-import { ThemeToggle } from '@/lib/theme/ThemeProvider'
 import { UserRole } from '@/lib/types'
-import { NotificationDropdown } from './NotificationDropdown'
 
 interface AppHeaderProps {
     userName?: string | null
@@ -41,12 +39,6 @@ export function AppHeader({ userName, userRole }: AppHeaderProps) {
                     {userRole && (
                         <StatusChip status={userRole} size="sm" />
                     )}
-
-                    {/* Theme Toggle */}
-                    <ThemeToggle />
-
-                    {/* Notifications */}
-                    <NotificationDropdown />
                 </div>
             </div>
         </header>

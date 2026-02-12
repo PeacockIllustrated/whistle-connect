@@ -5,7 +5,7 @@ import { Eye, EyeOff } from 'lucide-react'
 
 interface PrivacyToggleRowProps {
     label: string
-    value: string
+    value: string | null
     className?: string
 }
 

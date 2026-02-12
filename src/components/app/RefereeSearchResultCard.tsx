@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { RefereeSearchResult } from '@/lib/types'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { CheckCircle } from 'lucide-react'
@@ -19,7 +20,7 @@ export function RefereeSearchResultCard({
                 {/* Avatar */}
                 <div className="w-12 h-12 rounded-full bg-[var(--neutral-100)] flex-shrink-0 flex items-center justify-center overflow-hidden">
                     {referee.avatar_url ? (
-                        <img src={referee.avatar_url} alt={referee.full_name} className="w-full h-full object-cover" />
+                        <Image src={referee.avatar_url} alt={referee.full_name} width={48} height={48} className="w-full h-full object-cover" unoptimized />
                     ) : (
                         <span className="text-[var(--neutral-400)] font-semibold text-lg">
                             {referee.full_name[0]}

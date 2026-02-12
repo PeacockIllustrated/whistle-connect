@@ -7,6 +7,7 @@ import { searchRefereesForBooking, sendBookingRequest } from '../../actions'
 import { RefereeSearchResult } from '@/lib/types'
 import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCard'
 import { StatusChip } from '@/components/ui/StatusChip'
+import Image from 'next/image'
 import { ChevronLeft, Check, Search, X, CheckCircle } from 'lucide-react'
 
 interface Props {
@@ -156,7 +157,7 @@ export default function BookingMatchPage({ params }: Props) {
                             <div className="absolute -bottom-10 left-6 w-20 h-20 rounded-2xl bg-white p-1 shadow-lg">
                                 <div className="w-full h-full rounded-xl bg-[var(--neutral-100)] flex items-center justify-center overflow-hidden">
                                     {selectedReferee.avatar_url ? (
-                                        <img src={selectedReferee.avatar_url} alt={selectedReferee.full_name} className="w-full h-full object-cover" />
+                                        <Image src={selectedReferee.avatar_url} alt={selectedReferee.full_name} width={80} height={80} className="w-full h-full object-cover" unoptimized />
                                     ) : (
                                         <span className="text-2xl font-bold text-[var(--neutral-400)]">
                                             {selectedReferee.full_name[0]}

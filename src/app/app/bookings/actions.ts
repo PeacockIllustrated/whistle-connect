@@ -471,32 +471,59 @@ export async function confirmPrice(offerId: string) {
         return { error: 'Unauthorized' }
     }
 
+    // TODO: Move steps 1-7 to a Supabase RPC function for true transaction safety.
+    // Currently uses error checking with partial rollback as a pragmatic solution.
+
     // 1. Update offer status to accepted
-    await supabase
+    const { error: step1Error } = await supabase
         .from('booking_offers')
         .update({ status: 'accepted' })
         .eq('id', offerId)
 
+    if (step1Error) {
+        return { error: 'Failed to accept offer: ' + step1Error.message }
+    }
+
     // 2. Create assignment
-    await supabase
+    const { error: step2Error } = await supabase
         .from('booking_assignments')
         .insert({
             booking_id: offer.booking_id,
             referee_id: offer.referee_id,
         })
 
+    if (step2Error) {
+        // Rollback step 1
+        await supabase.from('booking_offers').update({ status: 'accepted_priced' }).eq('id', offerId)
+        return { error: 'Failed to create assignment: ' + step2Error.message }
+    }
+
     // 3. Update booking status
-    await supabase
+    const { error: step3Error } = await supabase
         .from('bookings')
         .update({ status: 'confirmed' })
         .eq('id', offer.booking_id)
 
+    if (step3Error) {
+        // Rollback steps 1-2
+        await supabase.from('booking_assignments').delete().eq('booking_id', offer.booking_id).eq('referee_id', offer.referee_id)
+        await supabase.from('booking_offers').update({ status: 'accepted_priced' }).eq('id', offerId)
+        return { error: 'Failed to confirm booking: ' + step3Error.message }
+    }
+
+    // --- Core booking is now committed. Steps 4-7 are secondary ---
+    // Failures in these steps are logged but don't fail the overall operation.
+
     // 4. Withdraw other offers for this booking
-    await supabase
+    const { error: step4Error } = await supabase
         .from('booking_offers')
         .update({ status: 'withdrawn' })
         .eq('booking_id', offer.booking_id)
         .neq('id', offerId)
+
+    if (step4Error) {
+        console.error('Failed to withdraw competing offers:', step4Error)
+    }
 
     // 5. Create or get a thread for communication
     let { data: thread } = await supabase
@@ -517,22 +544,27 @@ export async function confirmPrice(offerId: string) {
 
         if (threadError || !newThread) {
             console.error('Thread creation error:', threadError)
-            return { error: 'Failed to create message thread' }
+            // Don't fail — core booking is confirmed
+        } else {
+            thread = newThread
         }
-        thread = newThread
     }
 
     if (thread) {
         // Add participants
-        await supabase
+        const { error: participantError } = await supabase
             .from('thread_participants')
             .upsert([
                 { thread_id: thread.id, profile_id: offer.booking.coach_id },
                 { thread_id: thread.id, profile_id: offer.referee_id },
             ], { onConflict: 'thread_id, profile_id' })
 
+        if (participantError) {
+            console.error('Failed to add thread participants:', participantError)
+        }
+
         // Add system message
-        await supabase
+        const { error: messageError } = await supabase
             .from('messages')
             .insert({
                 thread_id: thread.id,
@@ -540,6 +572,10 @@ export async function confirmPrice(offerId: string) {
                 kind: 'system',
                 body: 'Booking confirmed. Use chat to finalise details.',
             })
+
+        if (messageError) {
+            console.error('Failed to add system message:', messageError)
+        }
     }
 
     // 6. Notify Referee
@@ -552,17 +588,20 @@ export async function confirmPrice(offerId: string) {
     })
 
     // 7. Auto-remove availability slot
-    // Find slot that overlaps with the booking on that date
     const bookingDate = offer.booking.match_date
     const bookingTime = offer.booking.kickoff_time
 
-    await supabase
+    const { error: availError } = await supabase
         .from('referee_date_availability')
         .delete()
         .eq('referee_id', offer.referee_id)
         .eq('date', bookingDate)
         .lte('start_time', bookingTime)
         .gte('end_time', bookingTime)
+
+    if (availError) {
+        console.error('Failed to remove availability slot:', availError)
+    }
 
     revalidatePath('/app/bookings')
     revalidatePath(`/app/bookings/${offer.booking_id}`)
@@ -747,6 +786,11 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
 
     if (bookingError || !booking) return { error: 'Booking not found' }
 
+    // Verify the requesting user owns this booking
+    if (booking.coach_id !== user.id) {
+        return { error: 'Unauthorized' }
+    }
+
     // 2. Prepare Match Criteria
     const kickoff = booking.kickoff_time
 
@@ -824,6 +868,16 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { error: 'Unauthorized' }
+
+    // Verify user owns this booking
+    const { data: bookingCheck, error: bookingCheckError } = await supabase
+        .from('bookings')
+        .select('coach_id')
+        .eq('id', bookingId)
+        .single()
+
+    if (bookingCheckError || !bookingCheck) return { error: 'Booking not found' }
+    if (bookingCheck.coach_id !== user.id) return { error: 'Unauthorized' }
 
     // 1. Create Offer
     const { error: offerError } = await supabase

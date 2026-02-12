@@ -4,8 +4,8 @@ import { ActionCard } from '@/components/app/ActionCard'
 import { BookingCardCompact } from '@/components/app/BookingCard'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/AwaitingAction'
 import { Plus, Clock, ClipboardList, ShieldCheck, CalendarDays } from 'lucide-react'
+import type { BookingWithDetails } from '@/lib/types'
 
 export default async function AppHomePage() {
     const supabase = await createClient()
@@ -46,11 +46,9 @@ export default async function AppHomePage() {
     const isAdmin = profile.role === 'admin'
 
     // ── Coach data ──────────────────────────────────────
-    let recentBookings: any[] = []
-    let coachActionItems: any[] = []
+    let recentBookings: BookingWithDetails[] = []
 
     if (isCoach) {
-        // Recent bookings
         const { data } = await supabase
             .from('bookings')
             .select('*, coach:profiles!bookings_coach_id_fkey(*)')
@@ -58,89 +56,18 @@ export default async function AppHomePage() {
             .order('match_date', { ascending: true })
             .limit(3)
         recentBookings = data || []
-
-        // Offers awaiting coach confirmation (accepted_priced)
-        const { data: awaitingOffers } = await supabase
-            .from('booking_offers')
-            .select(`
-                id,
-                status,
-                price_pence,
-                booking:bookings!inner(
-                    id, status, match_date, kickoff_time,
-                    ground_name, location_postcode, address_text, coach_id
-                ),
-                referee:profiles!booking_offers_referee_id_fkey(full_name)
-            `)
-            .eq('status', 'accepted_priced')
-            .order('created_at', { ascending: false })
-
-        if (awaitingOffers) {
-            coachActionItems = awaitingOffers
-                .filter((o: any) => {
-                    const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
-                    return booking?.coach_id === user.id
-                })
-                .map((o: any) => {
-                    const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
-                    const referee = Array.isArray(o.referee) ? o.referee[0] : o.referee
-                    return {
-                        id: o.id,
-                        bookingId: booking.id,
-                        status: o.status,
-                        bookingStatus: booking.status,
-                        matchDate: booking.match_date,
-                        kickoffTime: booking.kickoff_time,
-                        venue: booking.address_text || booking.ground_name || booking.location_postcode,
-                        price: o.price_pence,
-                        refereeName: referee?.full_name,
-                    }
-                })
-        }
     }
 
     // ── Referee data ────────────────────────────────────
-    let refereeActionItems: any[] = []
     let refereeProfile = null
 
     if (isReferee) {
-        // Referee profile
         const { data: refData } = await supabase
             .from('referee_profiles')
             .select('*')
             .eq('profile_id', user.id)
             .single()
         refereeProfile = refData
-
-        // Offers awaiting referee response (sent)
-        const { data: sentOffers } = await supabase
-            .from('booking_offers')
-            .select(`
-                id,
-                status,
-                booking:bookings!inner(
-                    id, status, match_date, kickoff_time,
-                    ground_name, location_postcode, address_text
-                )
-            `)
-            .eq('referee_id', user.id)
-            .eq('status', 'sent')
-            .order('created_at', { ascending: false })
-
-        if (sentOffers) {
-            refereeActionItems = sentOffers.map((o: any) => {
-                const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
-                return {
-                    id: o.id,
-                    bookingId: booking.id,
-                    status: o.status,
-                    bookingStatus: booking.status,
-                    matchDate: booking.match_date,
-                    kickoffTime: booking.kickoff_time,
-                    venue: booking.address_text || booking.ground_name || booking.location_postcode,
-                }
-            })
-        }
     }
 
     return (
@@ -160,9 +87,6 @@ export default async function AppHomePage() {
             {/* Coach View */}
             {isCoach && (
                 <>
-                    {/* Awaiting Action — real-time updates */}
-                    <CoachAwaitingAction initialItems={coachActionItems} />
-
                     {/* Quick Actions */}
                     <div className="mb-6">
                         <ActionCard
@@ -211,9 +135,6 @@ export default async function AppHomePage() {
             {/* Referee View */}
             {isReferee && (
                 <>
-                    {/* Awaiting Action — real-time updates */}
-                    <RefereeAwaitingAction initialItems={refereeActionItems} />
-
                     {/* Verification Status */}
                     <div className="card p-4 mb-6">
                         <div className="flex items-center justify-between mb-3">
@@ -250,7 +171,7 @@ export default async function AppHomePage() {
                                 <ClipboardList className="w-6 h-6" />
                             }
                             title="View Offers"
-                            subtitle={`${refereeActionItems.length} pending offers`}
+                            subtitle="View and respond to match requests"
                         />
                     </div>
                 </>

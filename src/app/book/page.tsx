@@ -12,7 +12,7 @@ import { UserRole } from '@/lib/types'
 export default function BookInterstitialPage() {
     const router = useRouter()
     const supabase = createClient()
-    const [user, setUser] = useState<any>(null)
+    const [user, setUser] = useState<{ id: string } | null>(null)
     const [userRole, setUserRole] = useState<UserRole | null>(null)
     const [loading, setLoading] = useState(true)
 

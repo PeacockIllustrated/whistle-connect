@@ -40,7 +40,7 @@ export function PushNotificationManager() {
 
     useEffect(() => {
         if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
-            setIsSupported(true)
+            setIsSupported(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: standard feature-detection pattern
             registerServiceWorker()
         }
     }, [VAPID_PUBLIC_KEY])

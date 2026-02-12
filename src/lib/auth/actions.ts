@@ -3,6 +3,29 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { RegisterFormData } from '@/lib/types'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+/**
+ * Polls for a profile record to appear after the auth trigger fires.
+ * Uses increasing delays (200ms, 400ms, 600ms, 800ms, 1000ms) for a max ~3s wait.
+ */
+async function waitForProfile(
+    supabase: SupabaseClient,
+    userId: string,
+    maxRetries = 5,
+    baseDelay = 200
+): Promise<boolean> {
+    for (let i = 0; i < maxRetries; i++) {
+        const { data } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('id', userId)
+            .maybeSingle()
+        if (data) return true
+        await new Promise(r => setTimeout(r, baseDelay * (i + 1)))
+    }
+    return false
+}
 
 export async function signIn(email: string, password: string, redirectTo: string = '/app') {
     const supabase = await createClient()
@@ -65,18 +88,11 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
 
     // If we have a session, user is logged in
     // The database trigger should have created the profile
-    // Wait a moment for trigger to complete
-    await new Promise(resolve => setTimeout(resolve, 500))
+    // Poll with backoff instead of a fixed delay
+    const profileCreated = await waitForProfile(supabase, authData.user.id)
 
-    // Verify profile was created
-    const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', authData.user.id)
-        .single()
-
-    if (profileError || !profile) {
-        console.error('Profile creation issue:', profileError)
+    if (!profileCreated) {
+        console.error('Profile not created by trigger after retries')
 
         // Try to create profile using admin client (bypasses RLS)
         const adminClient = createAdminClient()

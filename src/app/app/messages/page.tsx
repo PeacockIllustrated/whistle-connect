@@ -53,7 +53,7 @@ export default async function MessagesPage() {
 
                     // Get other participant
                     const otherParticipant = thread.participants?.find(
-                        (p: any) => p.profile_id !== user.id
+                        (p: { profile_id: string }) => p.profile_id !== user.id
                     )
 
                     return {

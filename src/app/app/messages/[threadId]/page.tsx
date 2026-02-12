@@ -73,14 +73,15 @@ export default async function ThreadPage({
         .select('profile:profiles(*)')
         .eq('thread_id', threadId)
 
-    const otherParticipant = participants?.find(
-        (p: any) => p.profile?.id !== user.id
-    )?.profile as { id: string; full_name: string; avatar_url: string | null } | undefined
+    type ParticipantRow = { profile: { id: string; full_name: string; avatar_url: string | null }[] }
+    const otherParticipant = (participants as ParticipantRow[] | null)?.find(
+        (p) => p.profile?.[0]?.id !== user.id
+    )?.profile?.[0]
 
     // Get current user's profile for optimistic sending
-    const currentUserProfile = participants?.find(
-        (p: any) => p.profile?.id === user.id
-    )?.profile as { id: string; full_name: string } | undefined
+    const currentUserProfile = (participants as ParticipantRow[] | null)?.find(
+        (p) => p.profile?.[0]?.id === user.id
+    )?.profile?.[0]
 
     // Get messages
     const { data: messages } = await supabase
@@ -93,7 +94,7 @@ export default async function ThreadPage({
     await markThreadAsRead(threadId)
 
     return (
-        <div className="flex flex-col h-[calc(100vh-var(--header-height)-var(--bottom-nav-height))]">
+        <div className="flex flex-col h-[calc(100dvh-var(--header-height)-var(--bottom-nav-height))]">
             {/* Header */}
             <div className="flex-shrink-0 flex items-center gap-3 px-4 py-3 border-b border-[var(--border-color)] bg-white">
                 <Link href="/app/messages" className="p-2 -ml-2 hover:bg-[var(--neutral-100)] rounded-lg">

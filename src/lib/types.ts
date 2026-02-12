@@ -55,6 +55,7 @@ export interface RefereeProfile {
     travel_radius_km: number
     county: string | null
     verified: boolean
+    /** Computed field: derived from !!fa_id, not stored in database */
     fa_verified: boolean
     bio: string | null
     central_venue_opt_in: boolean
@@ -111,6 +112,7 @@ export interface BookingOffer {
     status: OfferStatus
     price_pence: number | null
     currency: string
+    sent_at: string
     created_at: string
     responded_at: string | null
 }
@@ -119,7 +121,8 @@ export interface BookingAssignment {
     id: string
     booking_id: string
     referee_id: string
-    assigned_at: string
+    confirmed_at: string
+    created_at: string
 }
 
 export interface Thread {
@@ -133,7 +136,7 @@ export interface Thread {
 export interface ThreadParticipant {
     thread_id: string
     profile_id: string
-    joined_at: string
+    created_at: string
     last_read_at: string | null
 }
 

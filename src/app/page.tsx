@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { HeroSlideshow } from '@/components/app/HeroSlideshow'
+import { ActionCard } from '@/components/app/ActionCard'
 
 export default function LandingPage() {
   return (
@@ -31,9 +31,16 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="relative overflow-hidden min-h-[500px] flex items-center">
-        {/* Background Slideshow with Overlay */}
+        {/* Background Image with Overlay */}
         <div className="absolute inset-0">
-          <HeroSlideshow />
+          <Image
+            src="/assets/coach-shake.jpeg"
+            alt="Coach and referee shaking hands on the pitch"
+            fill
+            className="object-cover object-center"
+            priority
+            sizes="100vw"
+          />
           {/* Dark Overlay for Legibility */}
           <div className="absolute inset-0 bg-black/60" />
         </div>
@@ -59,21 +66,22 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col gap-4 max-w-xs mx-auto">
-            <Link href="/book" className="w-full">
-              <Button size="lg" className="w-full bg-[var(--wc-blue)] hover:bg-[#1e1c45] text-white border-none shadow-xl text-lg h-14 font-bold flex items-center justify-center gap-2">
-                <Plus className="w-5 h-5" strokeWidth={2.5} />
-                Book a Referee
-              </Button>
-            </Link>
+            <ActionCard
+              href="/book"
+              icon={<Plus className="w-6 h-6" />}
+              title="Book a Referee"
+              subtitle="Find a ref for your next match"
+              variant="success"
+            />
 
             <div className="grid grid-cols-1 gap-3 mt-4">
               <Link href="/auth/register?role=coach" className="w-full">
-                <Button variant="ghost" className="w-full text-white bg-white/25 hover:bg-white/35 border border-white/20 flex items-center justify-center gap-2">
+                <Button variant="ghost" className="w-full bg-white hover:bg-white/90 text-[var(--neutral-800)] font-bold border border-white/20 flex items-center justify-center gap-2">
                   Register as a Coach
                 </Button>
               </Link>
               <Link href="/auth/register?role=referee" className="w-full">
-                <Button variant="ghost" className="w-full text-white bg-white/25 hover:bg-white/35 border border-white/20 flex items-center justify-center gap-2">
+                <Button variant="ghost" className="w-full bg-white hover:bg-white/90 text-[var(--wc-red)] font-bold border border-white/20 flex items-center justify-center gap-2">
                   Register as a Referee
                 </Button>
               </Link>

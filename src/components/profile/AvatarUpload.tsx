@@ -3,8 +3,8 @@
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { updateAvatarUrl } from '@/app/app/profile/actions'
-import { Button } from '@/components/ui/Button'
 import { Camera } from 'lucide-react'
+import Image from 'next/image'
 
 interface AvatarUploadProps {
     userId: string
@@ -32,7 +32,7 @@ export function AvatarUpload({ userId, currentAvatarUrl, onSuccess }: AvatarUplo
             const fileName = `${Math.random()}.${fileExt}`
             const filePath = `${userId}/${fileName}`
 
-            const { error: uploadError, data } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(filePath, file, {
                     upsert: true
@@ -50,8 +50,8 @@ export function AvatarUpload({ userId, currentAvatarUrl, onSuccess }: AvatarUplo
             if (result.error) throw new Error(result.error)
 
             onSuccess(publicUrl)
-        } catch (error: any) {
-            alert(error.message || 'Error uploading avatar')
+        } catch (error: unknown) {
+            alert(error instanceof Error ? error.message : 'Error uploading avatar')
             setPreviewUrl(currentAvatarUrl || null)
         } finally {
             setUploading(false)
@@ -65,7 +65,7 @@ export function AvatarUpload({ userId, currentAvatarUrl, onSuccess }: AvatarUplo
                 onClick={() => fileInputRef.current?.click()}
             >
                 {previewUrl ? (
-                    <img src={previewUrl} alt="Avatar" className="w-full h-full object-cover" />
+                    <Image src={previewUrl} alt="Avatar" width={96} height={96} className="w-full h-full object-cover" unoptimized />
                 ) : (
                     <span>?</span>
                 )}

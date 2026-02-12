@@ -11,7 +11,7 @@ interface ActionCardProps {
     icon: ReactNode
     title: string
     subtitle?: string
-    variant?: 'primary' | 'secondary' | 'glass' | 'outline'
+    variant?: 'primary' | 'secondary' | 'glass' | 'outline' | 'success'
     disabled?: boolean
     badge?: string | number
     className?: string
@@ -55,6 +55,13 @@ export function ActionCard({
       text-[var(--foreground)]
       hover:border-[var(--color-primary)] hover:bg-[var(--neutral-50)]
     `,
+        success: `
+      bg-gradient-to-br from-emerald-500 via-emerald-500 to-emerald-600
+      text-white
+      shadow-lg shadow-emerald-500/20
+      hover:shadow-xl hover:shadow-emerald-500/30
+      hover:-translate-y-1
+    `,
     }
 
     const content = (
@@ -62,12 +69,12 @@ export function ActionCard({
             {/* Icon Container */}
             <div className={cn(
                 'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110',
-                variant === 'primary'
+                (variant === 'primary' || variant === 'success')
                     ? 'bg-white/20'
                     : 'bg-gradient-to-br from-[var(--brand-primary)]/10 to-[var(--brand-primary)]/5'
             )}>
                 <span className={cn(
-                    variant === 'primary' ? 'text-white' : 'text-[var(--brand-primary)]'
+                    (variant === 'primary' || variant === 'success') ? 'text-white' : 'text-[var(--brand-primary)]'
                 )}>
                     {icon}
                 </span>
@@ -86,7 +93,7 @@ export function ActionCard({
                 {subtitle && (
                     <p className={cn(
                         'text-sm truncate mt-0.5',
-                        variant === 'primary' ? 'text-white/70' : 'text-[var(--foreground-muted)]'
+                        (variant === 'primary' || variant === 'success') ? 'text-white/70' : 'text-[var(--foreground-muted)]'
                     )}>
                         {subtitle}
                     </p>
@@ -97,11 +104,11 @@ export function ActionCard({
             <div className={cn(
                 'flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-all',
                 'group-hover:translate-x-1',
-                variant === 'primary' ? 'bg-white/10' : 'bg-[var(--neutral-100)]'
+                (variant === 'primary' || variant === 'success') ? 'bg-white/10' : 'bg-[var(--neutral-100)]'
             )}>
                 <ChevronRight className={cn(
                     'w-4 h-4',
-                    variant === 'primary' ? 'text-white' : 'text-[var(--neutral-500)]'
+                    (variant === 'primary' || variant === 'success') ? 'text-white' : 'text-[var(--neutral-500)]'
                 )} />
             </div>
         </>

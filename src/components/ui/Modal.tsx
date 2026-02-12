@@ -16,7 +16,7 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalPr
 
     useEffect(() => {
         if (isOpen) {
-            setIsAnimating(true)
+            setIsAnimating(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: syncing animation state with isOpen prop
             document.body.style.overflow = 'hidden'
         } else {
             document.body.style.overflow = ''

@@ -12,20 +12,21 @@ interface CreateNotificationParams {
     link?: string
 }
 
-export async function createNotification({ userId, title, message, type, link }: CreateNotificationParams) {
+export async function createNotification({ userId, title, message, type, link }: CreateNotificationParams): Promise<{ success: boolean; error?: string }> {
     const supabase = await createClient()
 
-    // 1. Create in-app notification
-    const { error } = await supabase.from('notifications').insert({
-        user_id: userId,
-        title,
-        message,
-        type,
-        link
+    // 1. Create in-app notification via SECURITY DEFINER RPC function
+    const { error } = await supabase.rpc('create_notification', {
+        p_user_id: userId,
+        p_title: title,
+        p_message: message,
+        p_type: type,
+        p_link: link || null
     })
 
     if (error) {
         console.error('Failed to create notification:', error)
+        return { success: false, error: error.message }
     }
 
     // 2. Send Push Notification
@@ -65,16 +66,25 @@ export async function createNotification({ userId, title, message, type, link }:
                     })
                 )
 
-                // Cleanup invalid subscriptions
-                results.forEach(async (result, index) => {
-                    if (result.status === 'rejected' && result.reason.statusCode === 410) {
-                        const sub = subscriptions[index]
-                        await supabase.from('push_subscriptions').delete().eq('id', sub.id)
-                    }
-                })
+                // Cleanup invalid subscriptions (properly awaited)
+                const cleanupPromises = results
+                    .map((result, index) => {
+                        if (result.status === 'rejected' &&
+                            (result.reason as { statusCode?: number })?.statusCode === 410) {
+                            return supabase.from('push_subscriptions').delete().eq('id', subscriptions[index].id)
+                        }
+                        return null
+                    })
+                    .filter(Boolean)
+
+                if (cleanupPromises.length > 0) {
+                    await Promise.allSettled(cleanupPromises)
+                }
             }
         } catch (error) {
             console.error('Failed to send push notifications:', error)
         }
     }
+
+    return { success: true }
 }

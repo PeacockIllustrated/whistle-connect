@@ -95,7 +95,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     // Load settings from localStorage on mount
     useEffect(() => {
-        setMounted(true)
+        setMounted(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: standard hydration pattern for client-side storage
         try {
             const saved = localStorage.getItem(THEME_STORAGE_KEY)
             if (saved) {

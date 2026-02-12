@@ -36,6 +36,12 @@ export default function RegisterPage() {
         }
     }, [searchParams])
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
+            e.preventDefault()
+        }
+    }
+
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
         setError('')
@@ -57,9 +63,9 @@ export default function RegisterPage() {
                 // Email confirmation required
                 setError(result.message)
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Registration error:', err)
-            setError(err?.message || 'An unexpected error occurred')
+            setError(err instanceof Error ? err.message : 'An unexpected error occurred')
         } finally {
             setLoading(false)
         }
@@ -109,7 +115,7 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-4">
                         {error && (
                             <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                                 {error}
@@ -161,14 +167,16 @@ export default function RegisterPage() {
                             hint={role === 'referee' ? 'For matching with nearby games' : 'Your home ground postcode'}
                         />
 
-                        <Input
-                            label="FA Number (FAN)"
-                            type="text"
-                            value={faNumber}
-                            onChange={(e) => setFaNumber(e.target.value)}
-                            placeholder="e.g. 12345678"
-                            hint="Your Football Association registration number"
-                        />
+                        {role === 'referee' && (
+                            <Input
+                                label="FA Number (FAN)"
+                                type="text"
+                                value={faNumber}
+                                onChange={(e) => setFaNumber(e.target.value)}
+                                placeholder="e.g. 12345678"
+                                hint="Your Football Association registration number"
+                            />
+                        )}
 
                         <div className="pt-2">
                             <Button
@@ -176,6 +184,7 @@ export default function RegisterPage() {
                                 fullWidth
                                 loading={loading}
                                 size="lg"
+                                variant="success"
                             >
                                 Create Account
                             </Button>
