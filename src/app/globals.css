@@ -9,13 +9,13 @@
   /* ----------------------------------------
      BRAND PALETTE - WHISTLE CONNECT
      ---------------------------------------- */
-  --wc-blue: #1d2557;
+  --wc-blue: #1b2537;
   /* Coach Color */
   --wc-red: #cd1719;
   /* Referee Color */
   --wc-ink: #1d2557;
   /* Deep Navy */
-  --wc-coach-blue: var(--neutral-800);
+  --wc-coach-blue: var(--wc-blue);
   --wc-ref-red: var(--wc-red);
 
   --brand-navy: var(--wc-ink);
