@@ -3,6 +3,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { RegisterFormData } from '@/lib/types'
+import { isValidFANumber } from '@/lib/utils'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
@@ -44,6 +45,23 @@ export async function signIn(email: string, password: string, redirectTo: string
 
 export async function signUp(data: RegisterFormData, redirectTo: string = '/app') {
     const supabase = await createClient()
+
+    // Validate FA number format if provided
+    if (data.fa_number) {
+        if (!isValidFANumber(data.fa_number)) {
+            return { error: 'FA number must be 8-10 digits' }
+        }
+
+        // Check for duplicate FA numbers
+        const { data: existing } = await supabase
+            .from('referee_profiles')
+            .select('profile_id')
+            .eq('fa_id', data.fa_number)
+            .maybeSingle()
+        if (existing) {
+            return { error: 'This FA number is already registered to another referee' }
+        }
+    }
 
     // Create auth user with metadata
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -114,7 +132,11 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                 if (data.role === 'referee') {
                     await adminClient
                         .from('referee_profiles')
-                        .insert({ profile_id: authData.user.id, fa_id: data.fa_number || null })
+                        .insert({
+                            profile_id: authData.user.id,
+                            fa_id: data.fa_number || null,
+                            fa_verification_status: data.fa_number ? 'pending' : 'not_provided',
+                        })
                 } else if (data.fa_number) {
                     // Store FA number in user metadata for coaches
                     await adminClient.auth.admin.updateUserById(authData.user.id, {
@@ -142,7 +164,11 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
             if (data.role === 'referee') {
                 await supabase
                     .from('referee_profiles')
-                    .insert({ profile_id: authData.user.id, fa_id: data.fa_number || null })
+                    .insert({
+                        profile_id: authData.user.id,
+                        fa_id: data.fa_number || null,
+                        fa_verification_status: data.fa_number ? 'pending' : 'not_provided',
+                    })
             }
         }
     }

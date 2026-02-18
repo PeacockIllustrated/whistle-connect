@@ -2,8 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { StatusChip } from '@/components/ui/StatusChip'
+import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { ChevronLeft, CheckCircle } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 
 export default async function AdminRefereesPage() {
     const supabase = await createClient()
@@ -81,16 +82,7 @@ export default async function AdminRefereesPage() {
                                     </div>
 
                                     <div className="text-right">
-                                        {refProfile?.fa_id ? (
-                                            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                                                <CheckCircle className="w-3 h-3" fill="currentColor" stroke="white" strokeWidth={1.5} />
-                                                FA Verified
-                                            </span>
-                                        ) : (
-                                            <span className="inline-flex items-center text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                                FA Unverified
-                                            </span>
-                                        )}
+                                        <FAStatusBadge status={refProfile?.fa_verification_status || 'not_provided'} />
                                     </div>
                                 </div>
                             </Link>

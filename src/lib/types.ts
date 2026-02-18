@@ -12,7 +12,7 @@ export type BookingStatus = 'draft' | 'pending' | 'offered' | 'confirmed' | 'com
 export type OfferStatus = 'sent' | 'accepted' | 'accepted_priced' | 'declined' | 'withdrawn'
 
 // FA Verification Status
-export type FAVerificationStatus = 'not_provided' | 'pending' | 'verified'
+export type FAVerificationStatus = 'not_provided' | 'pending' | 'verified' | 'rejected'
 
 // Match Formats
 export type MatchFormat = '5v5' | '7v7' | '9v9' | '11v11'
@@ -51,12 +51,11 @@ export interface Club {
 export interface RefereeProfile {
     profile_id: string
     fa_id: string | null
+    fa_verification_status: FAVerificationStatus
     level: string | null
     travel_radius_km: number
     county: string | null
     verified: boolean
-    /** Computed field: derived from !!fa_id, not stored in database */
-    fa_verified: boolean
     bio: string | null
     central_venue_opt_in: boolean
     created_at: string
@@ -216,7 +215,7 @@ export interface RefereeSearchResult {
     county: string | null
     travel_radius_km: number
     verified: boolean
-    fa_verified: boolean
+    fa_verification_status: FAVerificationStatus
 }
 
 export interface AvailabilitySlot {
@@ -231,7 +230,7 @@ export interface RefereeProfileWithAvailability {
     level: string | null
     verified: boolean
     travel_radius_km: number
-    fa_verified: boolean
+    fa_verification_status: FAVerificationStatus
     central_venue_opt_in?: boolean
     profile: {
         id: string
@@ -273,4 +272,30 @@ export interface ActionCardProps {
     href?: string
     onClick?: () => void
     disabled?: boolean
+}
+
+// ============================================
+// FA VERIFICATION TYPES
+// ============================================
+
+export type FAVerificationRequestStatus = 'awaiting_fa_response' | 'confirmed' | 'rejected'
+
+export interface FAVerificationRequest {
+    id: string
+    referee_id: string
+    fa_id: string
+    county: string
+    status: FAVerificationRequestStatus
+    requested_by: string
+    requested_at: string
+    resolved_at: string | null
+    resolved_by: string | null
+    notes: string | null
+    created_at: string
+}
+
+export interface CountyFAContact {
+    id: string
+    county_name: string
+    email: string
 }

@@ -73,3 +73,8 @@ const statusCardStyles: Record<string, string> = {
 export function getStatusCardStyle(status: string): string {
     return statusCardStyles[status] || ''
 }
+
+/** Validates an FA number: must be 8-10 digits */
+export function isValidFANumber(fan: string): boolean {
+    return /^\d{8,10}$/.test(fan)
+}

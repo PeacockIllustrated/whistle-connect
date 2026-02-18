@@ -47,6 +47,13 @@ export default function RegisterPage() {
         setError('')
         setLoading(true)
 
+        // Validate FA number format before submission
+        if (role === 'referee' && faNumber && !/^\d{8,10}$/.test(faNumber)) {
+            setError('FA number must be 8-10 digits')
+            setLoading(false)
+            return
+        }
+
         try {
             const result = await signUp({
                 email,
@@ -171,10 +178,12 @@ export default function RegisterPage() {
                             <Input
                                 label="FA Number (FAN)"
                                 type="text"
+                                inputMode="numeric"
                                 value={faNumber}
-                                onChange={(e) => setFaNumber(e.target.value)}
+                                onChange={(e) => setFaNumber(e.target.value.replace(/\D/g, ''))}
                                 placeholder="e.g. 12345678"
-                                hint="Your Football Association registration number"
+                                hint="Your 8-10 digit Football Association registration number"
+                                maxLength={10}
                             />
                         )}
 

@@ -7,6 +7,7 @@ import { searchRefereesForBooking, sendBookingRequest } from '../../actions'
 import { RefereeSearchResult } from '@/lib/types'
 import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCard'
 import { StatusChip } from '@/components/ui/StatusChip'
+import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import Image from 'next/image'
 import { ChevronLeft, Check, Search, X, CheckCircle } from 'lucide-react'
 
@@ -175,16 +176,7 @@ export default function BookingMatchPage({ params }: Props) {
                             <div className="mb-6">
                                 <div className="bg-[var(--neutral-50)] p-3 rounded-xl border border-[var(--border-color)] flex items-center justify-between">
                                     <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)]">FA Status</p>
-                                    {selectedReferee.fa_verified ? (
-                                        <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                                            <CheckCircle className="w-3 h-3" fill="currentColor" stroke="white" strokeWidth={1.5} />
-                                            FA Verified
-                                        </span>
-                                    ) : (
-                                        <span className="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                            FA Unverified
-                                        </span>
-                                    )}
+                                    <FAStatusBadge status={selectedReferee.fa_verification_status} />
                                 </div>
                             </div>
 

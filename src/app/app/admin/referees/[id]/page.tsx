@@ -48,6 +48,13 @@ export default async function AdminRefereeDetailPage({
         ? referee.referee_profile[0]
         : referee.referee_profile
 
+    // Fetch FA verification requests for this referee
+    const { data: verificationRequests } = await supabase
+        .from('fa_verification_requests')
+        .select('*')
+        .eq('referee_id', id)
+        .order('requested_at', { ascending: false })
+
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
             {/* Header */}
@@ -113,6 +120,8 @@ export default async function AdminRefereeDetailPage({
             <AdminRefereeActions
                 refereeId={referee.id}
                 refereeProfile={refProfile}
+                refereeName={referee.full_name}
+                verificationRequests={verificationRequests || []}
             />
         </div>
     )

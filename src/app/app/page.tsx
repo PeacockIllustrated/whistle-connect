@@ -4,7 +4,7 @@ import { ActionCard } from '@/components/app/ActionCard'
 import { BookingCardCompact } from '@/components/app/BookingCard'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Plus, Clock, ClipboardList, ShieldCheck, CalendarDays } from 'lucide-react'
+import { Plus, Clock, ClipboardList, ShieldCheck, CalendarDays, FileCheck } from 'lucide-react'
 import type { BookingWithDetails } from '@/lib/types'
 
 export default async function AppHomePage() {
@@ -188,6 +188,15 @@ export default async function AppHomePage() {
                         title="Manage Referees"
                         subtitle="Verify FA registration and credentials"
                         variant="primary"
+                    />
+
+                    <ActionCard
+                        href="/app/admin/verification"
+                        icon={
+                            <FileCheck className="w-6 h-6" />
+                        }
+                        title="FA Verification Queue"
+                        subtitle="Review pending County FA responses"
                     />
 
                     <ActionCard

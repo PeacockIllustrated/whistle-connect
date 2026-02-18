@@ -97,7 +97,7 @@ export default function IndividualBookingPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
+                    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
                             <Select
                                 label="County"
@@ -141,6 +141,7 @@ export default function IndividualBookingPage() {
                                     value={formData.home_team}
                                     onChange={(e) => updateField('home_team', e.target.value)}
                                     placeholder="Enter team name"
+                                    autoComplete="off"
                                     required
                                 />
                                 <Input
@@ -148,6 +149,7 @@ export default function IndividualBookingPage() {
                                     value={formData.away_team}
                                     onChange={(e) => updateField('away_team', e.target.value)}
                                     placeholder="Enter team name"
+                                    autoComplete="off"
                                     required
                                 />
                             </div>
@@ -158,6 +160,7 @@ export default function IndividualBookingPage() {
                                     value={formData.address_text}
                                     onChange={(e) => updateField('address_text', e.target.value)}
                                     placeholder="e.g. Wembley Stadium"
+                                    autoComplete="off"
                                     required
                                 />
                                 <Input
@@ -165,6 +168,7 @@ export default function IndividualBookingPage() {
                                     value={formData.location_postcode}
                                     onChange={(e) => updateField('location_postcode', e.target.value.toUpperCase())}
                                     placeholder="e.g. SW1A 1AA"
+                                    autoComplete="off"
                                     required
                                 />
                             </div>

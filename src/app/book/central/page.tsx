@@ -87,7 +87,7 @@ export default function CentralBookingPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="space-y-6">
+                    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
                             <Select
                                 label="County"
@@ -122,6 +122,7 @@ export default function CentralBookingPage() {
                                     value={formData.address_text}
                                     onChange={(e) => updateField('address_text', e.target.value)}
                                     placeholder="e.g. Northumberland Park"
+                                    autoComplete="off"
                                     required
                                 />
                                 <Input
@@ -129,6 +130,7 @@ export default function CentralBookingPage() {
                                     value={formData.location_postcode}
                                     onChange={(e) => updateField('location_postcode', e.target.value.toUpperCase())}
                                     placeholder="e.g. NE1 4ST"
+                                    autoComplete="off"
                                     required
                                 />
                             </div>

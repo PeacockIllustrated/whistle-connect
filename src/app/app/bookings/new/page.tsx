@@ -106,7 +106,7 @@ export default function NewBookingPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleCreate} onKeyDown={handleKeyDown} className="space-y-6">
+                    <form onSubmit={handleCreate} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 space-y-6 shadow-sm">
                             {isPreFilled ? (
                                 <div className="space-y-4">

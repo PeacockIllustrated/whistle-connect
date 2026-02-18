@@ -686,7 +686,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
             level,
             verified,
             travel_radius_km,
-            fa_id,
+            fa_verification_status,
             profile:profiles!inner(
                 id,
                 full_name,
@@ -712,7 +712,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 county: r.county,
                 travel_radius_km: r.travel_radius_km,
                 verified: r.verified,
-                fa_verified: !!r.fa_id
+                fa_verification_status: r.fa_verification_status,
             }
         })
 
@@ -820,7 +820,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
             level,
             verified,
             travel_radius_km,
-            fa_id,
+            fa_verification_status,
             central_venue_opt_in,
             profile:profiles!inner(
                 id,
@@ -856,7 +856,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 county: r.county,
                 travel_radius_km: r.travel_radius_km,
                 verified: r.verified,
-                fa_verified: !!r.fa_id
+                fa_verification_status: r.fa_verification_status,
             }
         })
 

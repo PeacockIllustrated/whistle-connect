@@ -4,10 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { StatusChip } from '@/components/ui/StatusChip'
+import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
-import { CheckCircle } from 'lucide-react'
+import { updateFANumber } from './actions'
+import { Pencil } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile } from '@/lib/types'
 
@@ -105,35 +107,103 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
 
             {/* Referee Details (if referee) */}
             {profile?.role === 'referee' && refereeProfile && (
-                <Card variant="default" padding="md" className="mb-4">
-                    <h2 className="text-sm font-semibold text-[var(--foreground-muted)] uppercase tracking-wide mb-4">
-                        Referee Details
-                    </h2>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
-                            <span className="text-sm">FA Number</span>
-                            <span className="text-sm font-medium">{refereeProfile.fa_id || 'Not set'}</span>
-                        </div>
-                        <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
-                            <span className="text-sm">FA Verified</span>
-                            {refereeProfile.verified ? (
-                                <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                                    <CheckCircle className="w-3 h-3" fill="currentColor" stroke="white" strokeWidth={1.5} />
-                                    Verified
-                                </span>
-                            ) : (
-                                <span className="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                    Pending
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex justify-between items-center py-2">
-                            <span className="text-sm">Level</span>
-                            <span className="text-sm font-medium">{refereeProfile.level || 'Not set'}</span>
-                        </div>
-                    </div>
-                </Card>
+                <RefereeDetailsCard refereeProfile={refereeProfile} onUpdate={() => router.refresh()} />
             )}
         </>
+    )
+}
+
+function RefereeDetailsCard({ refereeProfile, onUpdate }: { refereeProfile: RefereeProfile; onUpdate: () => void }) {
+    const [editingFA, setEditingFA] = useState(false)
+    const [faValue, setFaValue] = useState(refereeProfile.fa_id || '')
+    const [faError, setFaError] = useState('')
+    const [faSaving, setFaSaving] = useState(false)
+    const [faSuccess, setFaSuccess] = useState('')
+
+    async function handleSaveFA() {
+        setFaError('')
+        setFaSuccess('')
+        if (faValue && !/^\d{8,10}$/.test(faValue)) {
+            setFaError('Must be 8-10 digits')
+            return
+        }
+        setFaSaving(true)
+        const result = await updateFANumber(faValue)
+        setFaSaving(false)
+        if (result.error) {
+            setFaError(result.error)
+        } else {
+            setEditingFA(false)
+            setFaSuccess(faValue ? 'FA number saved — pending verification by admin.' : 'FA number removed.')
+            setTimeout(() => setFaSuccess(''), 5000)
+            onUpdate()
+        }
+    }
+
+    return (
+        <Card variant="default" padding="md" className="mb-4">
+            <h2 className="text-sm font-semibold text-[var(--foreground-muted)] uppercase tracking-wide mb-4">
+                Referee Details
+            </h2>
+            <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
+                    <span className="text-sm">FA Number</span>
+                    {editingFA ? (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={faValue}
+                                onChange={(e) => setFaValue(e.target.value.replace(/\D/g, ''))}
+                                maxLength={10}
+                                placeholder="12345678"
+                                className="w-28 px-2 py-1 text-sm border border-[var(--border-color)] rounded-md focus:outline-none focus:ring-1 focus:ring-[var(--border-focus)]"
+                                autoFocus
+                            />
+                            <button
+                                onClick={handleSaveFA}
+                                disabled={faSaving}
+                                className="text-xs font-semibold text-green-700 hover:text-green-800 disabled:opacity-50"
+                            >
+                                {faSaving ? '...' : 'Save'}
+                            </button>
+                            <button
+                                onClick={() => { setEditingFA(false); setFaError(''); setFaValue(refereeProfile.fa_id || '') }}
+                                className="text-xs text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">{refereeProfile.fa_id || 'Not set'}</span>
+                            <button
+                                onClick={() => setEditingFA(true)}
+                                className="text-[var(--foreground-muted)] hover:text-[var(--foreground)]"
+                            >
+                                <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    )}
+                </div>
+                {faError && (
+                    <p className="text-xs text-red-600 -mt-1">{faError}</p>
+                )}
+                {faSuccess && (
+                    <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-md px-2 py-1.5 -mt-1">{faSuccess}</p>
+                )}
+                {editingFA && refereeProfile.fa_verification_status === 'verified' && (
+                    <p className="text-xs text-amber-600 -mt-1">Changing your FA number will reset your verification status.</p>
+                )}
+                <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
+                    <span className="text-sm">FA Status</span>
+                    <FAStatusBadge status={refereeProfile.fa_verification_status} />
+                </div>
+                <div className="flex justify-between items-center py-2">
+                    <span className="text-sm">Level</span>
+                    <span className="text-sm font-medium">{refereeProfile.level || 'Not set'}</span>
+                </div>
+            </div>
+        </Card>
     )
 }

@@ -1,6 +1,7 @@
 import Image from 'next/image'
 import { RefereeSearchResult } from '@/lib/types'
 import { StatusChip } from '@/components/ui/StatusChip'
+import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { CheckCircle } from 'lucide-react'
 
 interface RefereeSearchResultCardProps {
@@ -57,15 +58,8 @@ export function RefereeSearchResultCard({
                     </div>
 
                     <div className="flex gap-2">
-                        {referee.fa_verified ? (
-                            <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">
-                                <CheckCircle className="w-3 h-3" fill="currentColor" stroke="white" strokeWidth={1.5} />
-                                FA Verified
-                            </span>
-                        ) : (
-                            <span className="inline-flex items-center text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                                FA Unverified
-                            </span>
+                        {referee.fa_verification_status !== 'not_provided' && (
+                            <FAStatusBadge status={referee.fa_verification_status} />
                         )}
                     </div>
                 </div>
