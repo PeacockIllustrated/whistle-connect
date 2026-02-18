@@ -1,8 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { ActionCard } from '@/components/app/ActionCard'
 
 export default function LandingPage() {
   return (
@@ -66,13 +64,12 @@ export default function LandingPage() {
           </p>
 
           <div className="flex flex-col gap-4 max-w-xs mx-auto">
-            <ActionCard
+            <Link
               href="/book"
-              icon={<Plus className="w-6 h-6" />}
-              title="Book a Referee"
-              subtitle="Find a ref for your next match"
-              variant="success"
-            />
+              className="block w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold rounded-xl text-center transition-all shadow-md"
+            >
+              Book a Referee
+            </Link>
 
             <div className="grid grid-cols-1 gap-3 mt-4">
               <Link href="/auth/register?role=coach" className="w-full">
