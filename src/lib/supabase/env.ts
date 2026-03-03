@@ -1,35 +1,32 @@
 /**
  * Validated Supabase environment variables.
- * Uses lazy getters so validation happens on first use (at runtime),
- * not at module import time (which would break the build without env vars).
+ *
+ * IMPORTANT: Next.js only inlines NEXT_PUBLIC_* env vars when accessed
+ * via the literal expression (e.g. process.env.NEXT_PUBLIC_SUPABASE_URL).
+ * Dynamic access like process.env[name] will be undefined on the client.
+ * That's why we use the literal strings here, not a generic helper.
  */
 
-function requireEnv(name: string): string {
-    const value = process.env[name]
+/** Supabase project URL — validated on first access */
+export function getSupabaseUrl(): string {
+    const value = process.env.NEXT_PUBLIC_SUPABASE_URL
     if (!value) {
         throw new Error(
-            `Missing required environment variable: ${name}. ` +
-            `Add it to your .env.local file or Vercel environment settings.`
+            'Missing required environment variable: NEXT_PUBLIC_SUPABASE_URL. ' +
+            'Add it to your .env.local file or Vercel environment settings.'
         )
     }
     return value
 }
 
-let _supabaseUrl: string | undefined
-let _supabaseAnonKey: string | undefined
-
-/** Supabase project URL — validated on first access */
-export function getSupabaseUrl(): string {
-    if (!_supabaseUrl) {
-        _supabaseUrl = requireEnv('NEXT_PUBLIC_SUPABASE_URL')
-    }
-    return _supabaseUrl
-}
-
 /** Supabase anon key — validated on first access */
 export function getSupabaseAnonKey(): string {
-    if (!_supabaseAnonKey) {
-        _supabaseAnonKey = requireEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY')
+    const value = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!value) {
+        throw new Error(
+            'Missing required environment variable: NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
+            'Add it to your .env.local file or Vercel environment settings.'
+        )
     }
-    return _supabaseAnonKey
+    return value
 }
