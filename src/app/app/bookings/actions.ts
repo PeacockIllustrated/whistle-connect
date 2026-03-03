@@ -379,6 +379,14 @@ export async function cancelBooking(bookingId: string) {
             return { error: error.message }
         }
 
+        // Withdraw all active offers for this booking so they no longer
+        // appear in "Awaiting Action" or any pending offer lists
+        await supabase
+            .from('booking_offers')
+            .update({ status: 'withdrawn' })
+            .eq('booking_id', bookingId)
+            .in('status', ['sent', 'accepted_priced'])
+
         // Notify the coach if the user cancelling is NOT the coach (i.e. it's the referee)
         if (booking && booking.coach_id !== user.id) {
             await createNotification({

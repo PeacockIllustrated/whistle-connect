@@ -159,6 +159,7 @@ export default async function BookingsPage({
             `)
             .eq('status', 'accepted_priced')
             .eq('bookings.coach_id', user.id)
+            .neq('bookings.status', 'cancelled')
             .order('created_at', { ascending: false })
 
         if (awaitingOffers) {
