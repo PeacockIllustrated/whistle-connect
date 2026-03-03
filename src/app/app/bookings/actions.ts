@@ -216,12 +216,33 @@ export async function getBooking(bookingId: string) {
 
     const { data, error } = await supabase
         .from('bookings')
-        .select('*')
+        .select('*, assignments:booking_assignments(referee_id)')
         .eq('id', bookingId)
         .single()
 
     if (error) {
         return { error: error.message, data: null }
+    }
+
+    // Verify the user is the coach who owns this booking, or an assigned/offered referee
+    const isCoach = data.coach_id === user.id
+    const assignments = Array.isArray(data.assignments) ? data.assignments : []
+    const isAssignedReferee = assignments.some(
+        (a: { referee_id: string }) => a.referee_id === user.id
+    )
+
+    if (!isCoach && !isAssignedReferee) {
+        // Also check if this referee has a pending offer for this booking
+        const { data: offer } = await supabase
+            .from('booking_offers')
+            .select('id')
+            .eq('booking_id', bookingId)
+            .eq('referee_id', user.id)
+            .maybeSingle()
+
+        if (!offer) {
+            return { error: 'Unauthorized', data: null }
+        }
     }
 
     return { data, error: null }
