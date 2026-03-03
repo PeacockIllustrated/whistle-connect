@@ -15,7 +15,8 @@ interface RoleAccessDeniedProps {
 export function RoleAccessDenied({
     requiredRole,
     currentRole,
-    featureName,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    featureName: _featureName,
     description
 }: RoleAccessDeniedProps) {
     const isCoachArea = requiredRole === 'coach'

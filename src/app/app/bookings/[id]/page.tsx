@@ -2,7 +2,6 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { StatusChip } from '@/components/ui/StatusChip'
-import { Button } from '@/components/ui/Button'
 import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
 import { BookingOffer, Profile } from '@/lib/types'
@@ -46,8 +45,6 @@ export default async function BookingDetailPage({
 
     const isCoach = profile?.role === 'coach' && booking.coach_id === user.id
     const isReferee = profile?.role === 'referee'
-    const isAdmin = profile?.role === 'admin'
-
     // Get user's offer if referee
     const userOffer = isReferee
         ? booking.offers?.find((o: BookingOffer) => o.referee_id === user.id)

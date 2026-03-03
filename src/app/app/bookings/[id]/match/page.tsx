@@ -1,15 +1,13 @@
 'use client'
 
 import { useState, useEffect, use } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { searchRefereesForBooking, sendBookingRequest } from '../../actions'
 import { RefereeSearchResult } from '@/lib/types'
 import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCard'
-import { StatusChip } from '@/components/ui/StatusChip'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import Image from 'next/image'
-import { ChevronLeft, Check, Search, X, CheckCircle, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, Check, Search, X, ShieldCheck } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -17,7 +15,6 @@ interface Props {
 
 export default function BookingMatchPage({ params }: Props) {
     const { id } = use(params)
-    const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')
@@ -35,7 +32,7 @@ export default function BookingMatchPage({ params }: Props) {
                 } else {
                     setResults(data || [])
                 }
-            } catch (err) {
+            } catch {
                 setError('Failed to load matching referees')
             } finally {
                 setIsLoading(false)
@@ -58,7 +55,7 @@ export default function BookingMatchPage({ params }: Props) {
                 setIsSubmitting(false)
                 // We show a success state on the card rather than redirecting immediately
             }
-        } catch (err) {
+        } catch {
             setError('Failed to send request')
             setIsSubmitting(false)
         }

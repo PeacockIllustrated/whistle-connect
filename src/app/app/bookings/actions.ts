@@ -3,8 +3,21 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, RefereeProfileWithAvailability } from '@/lib/types'
+import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
+
+/** Shape returned by Supabase when querying referee_profiles with a joined profile */
+interface RefereeProfileQueryResult {
+    county: string
+    level: string | null
+    verified: boolean
+    travel_radius_km: number | null
+    fa_verification_status: FAVerificationStatus
+    dbs_status: DBSStatus | null
+    central_venue_opt_in?: boolean
+    profile: { id: string; full_name: string; avatar_url: string | null }
+        | { id: string; full_name: string; avatar_url: string | null }[]
+}
 
 export async function createBooking(data: BookingFormData) {
     const supabase = await createClient()
@@ -89,72 +102,6 @@ export async function createBooking(data: BookingFormData) {
 
     revalidatePath('/app/bookings')
     redirect(`/app/bookings/${booking.id}/match`)
-}
-
-async function matchRefereesToBooking(bookingId: string, data: BookingFormData) {
-    const supabase = await createClient()
-
-    // Get day of week from match date
-    const matchDate = new Date(data.match_date)
-    const dayOfWeek = matchDate.getDay()
-
-    // Find referees with matching availability
-    // In MVP, we use a simple approach: find referees available on that day of week
-    const { data: availabilities } = await supabase
-        .from('referee_availability')
-        .select('referee_id')
-        .eq('day_of_week', dayOfWeek)
-
-    if (!availabilities || availabilities.length === 0) {
-        return
-    }
-
-    // Get unique referee IDs
-    const refereeIds = [...new Set(availabilities.map(a => a.referee_id))]
-
-    // Get verified referees only (or all for MVP)
-    const { data: refereeProfiles } = await supabase
-        .from('referee_profiles')
-        .select('profile_id')
-        .in('profile_id', refereeIds)
-
-    if (!refereeProfiles || refereeProfiles.length === 0) {
-        return
-    }
-
-    // Create offers (limit to 15)
-    const offersToCreate = refereeProfiles.slice(0, 15).map(rp => ({
-        booking_id: bookingId,
-        referee_id: rp.profile_id,
-        status: 'sent',
-    }))
-
-    await supabase.from('booking_offers').insert(offersToCreate)
-
-    // Notify Referees - use Promise.allSettled to ensure all notifications are awaited
-    const notificationPromises = offersToCreate.map((offer) =>
-        createNotification({
-            userId: offer.referee_id,
-            title: 'New Booking Offer',
-            message: `You have received a booking offer for ${data.ground_name || data.location_postcode}.`,
-            type: 'info',
-            link: '/app/bookings' // Referees see offers in their bookings list
-        })
-    )
-
-    const notificationResults = await Promise.allSettled(notificationPromises)
-    const failedNotifications = notificationResults.filter(r => r.status === 'rejected')
-    if (failedNotifications.length > 0) {
-        console.error(`Failed to send ${failedNotifications.length} notifications:`, failedNotifications)
-    }
-
-    // Update booking status to 'offered' if offers were sent
-    if (offersToCreate.length > 0) {
-        await supabase
-            .from('bookings')
-            .update({ status: 'offered' })
-            .eq('id', bookingId)
-    }
 }
 
 export async function updateBookingStatus(bookingId: string, status: BookingStatus) {
@@ -710,7 +657,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
     }
 
     // Format the results
-    const formattedResults: RefereeSearchResult[] = (results || [])
+    const formattedResults: RefereeSearchResult[] = ((results || []) as RefereeProfileQueryResult[])
         .map(r => {
             const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
             return {
@@ -719,10 +666,10 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 avatar_url: profile.avatar_url,
                 level: r.level,
                 county: r.county,
-                travel_radius_km: r.travel_radius_km,
+                travel_radius_km: r.travel_radius_km ?? 0,
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
-                dbs_status: (r as any).dbs_status || 'not_provided',
+                dbs_status: r.dbs_status || 'not_provided',
             }
         })
 
@@ -880,7 +827,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     if (error) return { error: error.message }
 
     // 5. Format
-    const formattedResults: RefereeSearchResult[] = (results || [])
+    const formattedResults: RefereeSearchResult[] = ((results || []) as RefereeProfileQueryResult[])
         .map(r => {
             const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
             return {
@@ -889,10 +836,10 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 avatar_url: profile.avatar_url,
                 level: r.level,
                 county: r.county,
-                travel_radius_km: r.travel_radius_km,
+                travel_radius_km: r.travel_radius_km ?? 0,
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
-                dbs_status: (r as any).dbs_status || 'not_provided',
+                dbs_status: r.dbs_status || 'not_provided',
             }
         })
 

@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { AvailabilitySlot } from '@/lib/types'
 
 export async function getAvailability() {
     const supabase = await createClient()

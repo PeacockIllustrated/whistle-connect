@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -11,7 +10,6 @@ import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib
 import { ChevronLeft } from 'lucide-react'
 
 export default function NewBookingPage() {
-    const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState('')
 
@@ -71,7 +69,7 @@ export default function NewBookingPage() {
                 setError(result.error)
                 setIsSubmitting(false)
             }
-        } catch (err) {
+        } catch {
             setError('Failed to create booking')
             setIsSubmitting(false)
         }

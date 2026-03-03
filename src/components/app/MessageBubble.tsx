@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { MessageWithSender, MessageKind } from '@/lib/types'
+import { MessageWithSender } from '@/lib/types'
 
 export interface MessageBubbleProps {
     message: MessageWithSender

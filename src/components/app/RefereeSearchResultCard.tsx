@@ -1,6 +1,5 @@
 import Image from 'next/image'
 import { RefereeSearchResult } from '@/lib/types'
-import { StatusChip } from '@/components/ui/StatusChip'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { CheckCircle, ShieldCheck } from 'lucide-react'
 

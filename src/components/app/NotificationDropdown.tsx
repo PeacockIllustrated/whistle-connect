@@ -65,8 +65,7 @@ export function NotificationDropdown() {
                     table: 'notifications',
                     filter: `user_id=eq.${userId}`,
                 },
-                (payload) => {
-                    console.log('Notification received:', payload)
+                () => {
                     fetchNotifications(userId)
                 }
             )

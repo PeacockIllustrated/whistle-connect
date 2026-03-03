@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { signIn } from '@/lib/auth/actions'
@@ -16,7 +16,6 @@ const roleOptions = [
 ]
 
 export default function LoginPage() {
-    const router = useRouter()
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo') || '/app'
     const [email, setEmail] = useState('')
@@ -35,7 +34,7 @@ export default function LoginPage() {
             if (result?.error) {
                 setError(result.error)
             }
-        } catch (err) {
+        } catch {
             setError('An unexpected error occurred')
         } finally {
             setLoading(false)

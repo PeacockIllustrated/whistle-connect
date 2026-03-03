@@ -122,11 +122,7 @@ export function UnreadMessagesProvider({
                     }))
                 }
             )
-            .subscribe((status) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log('Global messages subscription active')
-                }
-            })
+            .subscribe()
 
         return () => {
             supabase.removeChannel(channel)

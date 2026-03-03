@@ -17,7 +17,6 @@ interface AdminRefereeActionsProps {
 export function AdminRefereeActions({
     refereeId,
     refereeProfile,
-    refereeName,
     verificationRequests,
 }: AdminRefereeActionsProps) {
     const [verifying, setVerifying] = useState(false)

@@ -7,6 +7,18 @@ import { isValidFANumber } from '@/lib/utils'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
+ * Validates a redirect URL to prevent open redirect attacks.
+ * Only allows relative paths starting with / (no protocol-relative //evil.com).
+ */
+function sanitizeRedirectUrl(url: string): string {
+    // Must start with exactly one slash and not be a protocol-relative URL
+    if (url.startsWith('/') && !url.startsWith('//')) {
+        return url
+    }
+    return '/app'
+}
+
+/**
  * Polls for a profile record to appear after the auth trigger fires.
  * Uses increasing delays (200ms, 400ms, 600ms, 800ms, 1000ms) for a max ~3s wait.
  */
@@ -40,7 +52,7 @@ export async function signIn(email: string, password: string, redirectTo: string
         return { error: error.message }
     }
 
-    redirect(redirectTo)
+    redirect(sanitizeRedirectUrl(redirectTo))
 }
 
 export async function signUp(data: RegisterFormData, redirectTo: string = '/app') {
@@ -173,7 +185,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
         }
     }
 
-    redirect(redirectTo)
+    redirect(sanitizeRedirectUrl(redirectTo))
 }
 
 export async function signOut() {

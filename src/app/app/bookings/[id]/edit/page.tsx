@@ -84,7 +84,7 @@ export default function EditBookingPage({
             } else {
                 router.push(`/app/bookings/${id}`)
             }
-        } catch (err) {
+        } catch {
             setError('Failed to update booking')
             setIsSubmitting(false)
         }

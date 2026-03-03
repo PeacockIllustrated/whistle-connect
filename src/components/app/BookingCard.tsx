@@ -36,7 +36,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
             const result = await deleteBooking(booking.id)
             if (result.error) throw new Error(result.error)
             showToast({ message: 'Booking deleted', type: 'success' })
-        } catch (error) {
+        } catch {
             showToast({ message: 'Failed to delete booking', type: 'error' })
         } finally {
             setIsLoading(false)
@@ -53,7 +53,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
             const result = await cancelBooking(booking.id)
             if (result.error) throw new Error(result.error)
             showToast({ message: 'Booking cancelled', type: 'success' })
-        } catch (error) {
+        } catch {
             showToast({ message: 'Failed to cancel booking', type: 'error' })
         } finally {
             setIsLoading(false)

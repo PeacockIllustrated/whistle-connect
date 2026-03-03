@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
-import { StatusChip } from '@/components/ui/StatusChip'
 import { Card } from '@/components/ui/Card'
 import { signOut } from '@/lib/auth/actions'
 import { ProfileClient } from './ProfileClient'

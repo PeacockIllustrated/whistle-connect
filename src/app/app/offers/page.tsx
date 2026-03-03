@@ -53,7 +53,8 @@ export default async function OffersPage() {
     }
 
     // Fetch sent offers for this referee
-    const { data: offers, error } = await supabase
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { data: offers, error: _error } = await supabase
         .from('booking_offers')
         .select(`
             *,

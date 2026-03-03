@@ -64,7 +64,7 @@ export default function IndividualBookingPage() {
                 setIsSubmitting(false)
             }
             // On success, createBooking redirects to the match page automatically
-        } catch (err) {
+        } catch {
             setError('Failed to create booking')
             setIsSubmitting(false)
         }

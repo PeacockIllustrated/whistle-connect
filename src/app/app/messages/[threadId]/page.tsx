@@ -104,6 +104,7 @@ export default async function ThreadPage({
                 <div className="flex items-center gap-3 flex-1">
                     <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex-shrink-0 relative overflow-hidden flex items-center justify-center text-white font-semibold">
                         {otherParticipant?.avatar_url ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                                 src={otherParticipant.avatar_url}
                                 alt={otherParticipant.full_name}

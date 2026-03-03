@@ -37,7 +37,8 @@ interface ThreadListClientProps {
     currentUserId: string
 }
 
-export function ThreadListClient({ initialThreads, currentUserId }: ThreadListClientProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function ThreadListClient({ initialThreads, currentUserId: _currentUserId }: ThreadListClientProps) {
     const [threads, setThreads] = useState<ThreadListItem[]>(initialThreads)
     const { getThreadUnread, subscribeToNewMessages } = useUnreadMessages()
 
@@ -104,6 +105,7 @@ export function ThreadListClient({ initialThreads, currentUserId }: ThreadListCl
                             {/* Avatar */}
                             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[var(--brand-primary)] relative overflow-hidden flex items-center justify-center text-white font-semibold">
                                 {thread.other_participant?.avatar_url ? (
+                                    /* eslint-disable-next-line @next/next/no-img-element */
                                     <img
                                         src={thread.other_participant.avatar_url}
                                         alt={thread.other_participant.full_name}

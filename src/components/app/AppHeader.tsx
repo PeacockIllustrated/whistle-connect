@@ -11,7 +11,8 @@ interface AppHeaderProps {
     notificationCount?: number // Deprecated, handled internally by NotificationDropdown
 }
 
-export function AppHeader({ userName, userRole }: AppHeaderProps) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export function AppHeader({ userName: _userName, userRole }: AppHeaderProps) {
     return (
         <header className="fixed top-0 left-0 right-0 z-50 h-[var(--header-height)]">
             {/* Gradient background */}

@@ -21,7 +21,8 @@ export default function AvailabilityPage() {
     const [initialOptIn, setInitialOptIn] = useState(false)
     const [county, setCounty] = useState('')
     const [initialCounty, setInitialCounty] = useState('')
-    const [loading, setLoading] = useState(true)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [_loading, setLoading] = useState(true)
     const [saving, setSaving] = useState(false)
     const [hasChanges, setHasChanges] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -32,6 +33,7 @@ export default function AvailabilityPage() {
 
     useEffect(() => {
         loadInitialData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 
     useEffect(() => {
@@ -169,7 +171,7 @@ export default function AvailabilityPage() {
                     await loadAllAvailability()
                 }
             }
-        } catch (error) {
+        } catch {
             setMessage({ type: 'error', text: 'Failed to update availability' })
         } finally {
             setSaving(false)

@@ -9,7 +9,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton'
 import { ActionCard, AccessLane } from '@/components/app/ActionCard'
 import { StepperWizard } from '@/components/app/StepperWizard'
-import { MessageBubble, MessageDateSeparator } from '@/components/app/MessageBubble'
+import { MessageBubble } from '@/components/app/MessageBubble'
 import { useState } from 'react'
 
 export default function ComponentsPage() {

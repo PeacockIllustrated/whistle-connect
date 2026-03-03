@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { useToast } from '@/components/ui/Toast'
 import { acceptOffer, declineOffer, cancelBooking, confirmPrice } from '../actions'
-import { Booking, BookingOffer, BookingWithDetails } from '@/lib/types'
+import { BookingOffer, BookingWithDetails } from '@/lib/types'
 import { Input } from '@/components/ui/Input'
 import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil, Search } from 'lucide-react'
 
