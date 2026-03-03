@@ -9,7 +9,7 @@ import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCar
 import { StatusChip } from '@/components/ui/StatusChip'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import Image from 'next/image'
-import { ChevronLeft, Check, Search, X, CheckCircle } from 'lucide-react'
+import { ChevronLeft, Check, Search, X, CheckCircle, ShieldCheck } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -173,10 +173,28 @@ export default function BookingMatchPage({ params }: Props) {
                                 {selectedReferee.level ? `Level ${selectedReferee.level} Referee` : 'Referee'} - {selectedReferee.county}
                             </p>
 
-                            <div className="mb-6">
+                            <div className="mb-6 space-y-2">
                                 <div className="bg-[var(--neutral-50)] p-3 rounded-xl border border-[var(--border-color)] flex items-center justify-between">
                                     <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)]">FA Status</p>
                                     <FAStatusBadge status={selectedReferee.fa_verification_status} />
+                                </div>
+                                <div className="bg-[var(--neutral-50)] p-3 rounded-xl border border-[var(--border-color)] flex items-center justify-between">
+                                    <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)]">DBS Check</p>
+                                    <span className={`inline-flex items-center gap-1 text-xs font-semibold ${
+                                        selectedReferee.dbs_status === 'verified'
+                                            ? 'text-green-700'
+                                            : selectedReferee.dbs_status === 'expired'
+                                            ? 'text-amber-700'
+                                            : selectedReferee.dbs_status === 'provided'
+                                            ? 'text-blue-700'
+                                            : 'text-[var(--neutral-400)]'
+                                    }`}>
+                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                        {selectedReferee.dbs_status === 'verified' ? 'Verified'
+                                            : selectedReferee.dbs_status === 'expired' ? 'Expired'
+                                            : selectedReferee.dbs_status === 'provided' ? 'Provided'
+                                            : 'Not Provided'}
+                                    </span>
                                 </div>
                             </div>
 

@@ -12,7 +12,7 @@ interface StatsAccordionProps {
 }
 
 export function StatsAccordion({ title = 'Your Stats', stats, children }: StatsAccordionProps) {
-    const [open, setOpen] = useState(false)
+    const [open, setOpen] = useState(true)
 
     return (
         <div className="rounded-2xl overflow-hidden mb-6 border border-[var(--border-color)] shadow-sm">

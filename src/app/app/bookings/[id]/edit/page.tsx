@@ -70,8 +70,7 @@ export default function EditBookingPage({
         setFormData(prev => ({ ...prev, [field]: value }))
     }
 
-    const handleUpdate = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleUpdate = async () => {
         if (isSubmitting) return
 
         setIsSubmitting(true)
@@ -124,7 +123,7 @@ export default function EditBookingPage({
                         </div>
                     )}
 
-                    <form onSubmit={handleUpdate} onKeyDown={handleKeyDown} className="space-y-6">
+                    <form onKeyDown={handleKeyDown} className="space-y-6">
                         <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 space-y-6 shadow-sm">
                             <div>
                                 <h2 className="text-xl font-bold mb-1">Match Details</h2>
@@ -236,7 +235,8 @@ export default function EditBookingPage({
                                 </Button>
                             </Link>
                             <Button
-                                type="submit"
+                                type="button"
+                                onClick={handleUpdate}
                                 fullWidth
                                 loading={isSubmitting}
                                 className="flex-1"

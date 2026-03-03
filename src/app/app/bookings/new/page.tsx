@@ -58,9 +58,7 @@ export default function NewBookingPage() {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
 
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault()
-
+    const handleCreate = async () => {
         // Prevent autofill-triggered submission
         if (isSubmitting) return
 
@@ -106,7 +104,7 @@ export default function NewBookingPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleCreate} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
+                    <form onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 space-y-6 shadow-sm">
                             {isPreFilled ? (
                                 <div className="space-y-4">
@@ -271,7 +269,8 @@ export default function NewBookingPage() {
                         </div>
 
                         <button
-                            type="submit"
+                            type="button"
+                            onClick={handleCreate}
                             disabled={isSubmitting}
                             className="w-full py-4 bg-[var(--wc-red)] text-white rounded-xl font-bold shadow-lg shadow-red-900/10 hover:opacity-90 transition-all disabled:opacity-50"
                         >

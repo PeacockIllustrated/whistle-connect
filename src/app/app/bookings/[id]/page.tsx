@@ -111,6 +111,19 @@ export default async function BookingDetailPage({
                         </div>
                     </div>
 
+                    {/* Map View */}
+                    <div className="rounded-xl overflow-hidden border border-[var(--border-color)]">
+                        <iframe
+                            src={`https://maps.google.com/maps?q=${encodeURIComponent(booking.location_postcode)}&output=embed`}
+                            width="100%"
+                            height="200"
+                            style={{ border: 0 }}
+                            loading="lazy"
+                            referrerPolicy="no-referrer-when-downgrade"
+                            title="Venue location map"
+                        />
+                    </div>
+
                     {/* Match Info */}
                     <div className="flex flex-wrap gap-2 pt-2">
                         {booking.format && (

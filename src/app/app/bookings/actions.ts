@@ -687,6 +687,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
             verified,
             travel_radius_km,
             fa_verification_status,
+            dbs_status,
             profile:profiles!inner(
                 id,
                 full_name,
@@ -713,6 +714,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 travel_radius_km: r.travel_radius_km,
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
+                dbs_status: (r as any).dbs_status || 'not_provided',
             }
         })
 
@@ -810,7 +812,31 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
         return { data: [] }
     }
 
-    const refereeIds = availableReferees.map(a => a.referee_id)
+    let refereeIds = availableReferees.map(a => a.referee_id)
+
+    // 3b. Exclude referees who already have a confirmed booking assignment at the same date/time
+    const { data: bookedReferees } = await supabase
+        .from('booking_assignments')
+        .select('referee_id, booking:bookings!inner(match_date, kickoff_time, status)')
+        .in('referee_id', refereeIds)
+
+    if (bookedReferees && bookedReferees.length > 0) {
+        const bookedIds = new Set(
+            bookedReferees
+                .filter(b => {
+                    const bk = Array.isArray(b.booking) ? b.booking[0] : b.booking
+                    return bk &&
+                        bk.match_date === booking.match_date &&
+                        bk.status !== 'cancelled'
+                })
+                .map(b => b.referee_id)
+        )
+        refereeIds = refereeIds.filter(id => !bookedIds.has(id))
+    }
+
+    if (refereeIds.length === 0) {
+        return { data: [] }
+    }
 
     // 4. Step 2: Get referee profiles for those who have availability
     let query = supabase
@@ -821,6 +847,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
             verified,
             travel_radius_km,
             fa_verification_status,
+            dbs_status,
             central_venue_opt_in,
             profile:profiles!inner(
                 id,
@@ -857,6 +884,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 travel_radius_km: r.travel_radius_km,
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
+                dbs_status: (r as any).dbs_status || 'not_provided',
             }
         })
 

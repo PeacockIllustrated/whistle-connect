@@ -48,6 +48,8 @@ export interface Club {
     updated_at: string
 }
 
+export type DBSStatus = 'not_provided' | 'provided' | 'verified' | 'expired'
+
 export interface RefereeProfile {
     profile_id: string
     fa_id: string | null
@@ -58,6 +60,8 @@ export interface RefereeProfile {
     verified: boolean
     bio: string | null
     central_venue_opt_in: boolean
+    dbs_status: DBSStatus
+    safeguarding_status: DBSStatus
     created_at: string
     updated_at: string
 }
@@ -216,6 +220,7 @@ export interface RefereeSearchResult {
     travel_radius_km: number
     verified: boolean
     fa_verification_status: FAVerificationStatus
+    dbs_status: DBSStatus
 }
 
 export interface AvailabilitySlot {

@@ -2,7 +2,7 @@ import Image from 'next/image'
 import { RefereeSearchResult } from '@/lib/types'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, ShieldCheck } from 'lucide-react'
 
 interface RefereeSearchResultCardProps {
     referee: RefereeSearchResult
@@ -57,9 +57,21 @@ export function RefereeSearchResultCard({
                         )}
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {referee.fa_verification_status !== 'not_provided' && (
                             <FAStatusBadge status={referee.fa_verification_status} />
+                        )}
+                        {referee.dbs_status && referee.dbs_status !== 'not_provided' && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+                                referee.dbs_status === 'verified'
+                                    ? 'bg-green-50 text-green-700 border border-green-200'
+                                    : referee.dbs_status === 'expired'
+                                    ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                                    : 'bg-blue-50 text-blue-700 border border-blue-200'
+                            }`}>
+                                <ShieldCheck className="w-3 h-3" />
+                                {referee.dbs_status === 'verified' ? 'DBS Verified' : referee.dbs_status === 'expired' ? 'DBS Expired' : 'DBS Provided'}
+                            </span>
                         )}
                     </div>
                 </div>

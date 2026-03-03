@@ -37,8 +37,7 @@ export default function IndividualBookingPage() {
         }
     }
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
+    const handleSubmit = async () => {
         if (isSubmitting) return
 
         setIsSubmitting(true)
@@ -97,7 +96,7 @@ export default function IndividualBookingPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
+                    <form onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
                             <Select
                                 label="County"
@@ -194,7 +193,8 @@ export default function IndividualBookingPage() {
                         </div>
 
                         <Button
-                            type="submit"
+                            type="button"
+                            onClick={handleSubmit}
                             size="lg"
                             loading={isSubmitting}
                             disabled={isSubmitting}

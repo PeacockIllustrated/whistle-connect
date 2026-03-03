@@ -9,7 +9,7 @@ import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
 import { updateFANumber } from './actions'
-import { Pencil } from 'lucide-react'
+import { Pencil, ShieldCheck } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile } from '@/lib/types'
 
@@ -199,9 +199,45 @@ function RefereeDetailsCard({ refereeProfile, onUpdate }: { refereeProfile: Refe
                     <span className="text-sm">FA Status</span>
                     <FAStatusBadge status={refereeProfile.fa_verification_status} />
                 </div>
-                <div className="flex justify-between items-center py-2">
+                <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
                     <span className="text-sm">Level</span>
                     <span className="text-sm font-medium">{refereeProfile.level || 'Not set'}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
+                    <span className="text-sm">DBS Check</span>
+                    <span className={`inline-flex items-center gap-1 text-sm font-medium ${
+                        refereeProfile.dbs_status === 'verified'
+                            ? 'text-green-700'
+                            : refereeProfile.dbs_status === 'expired'
+                            ? 'text-amber-700'
+                            : refereeProfile.dbs_status === 'provided'
+                            ? 'text-blue-700'
+                            : 'text-[var(--foreground-muted)]'
+                    }`}>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {refereeProfile.dbs_status === 'verified' ? 'Verified'
+                            : refereeProfile.dbs_status === 'expired' ? 'Expired'
+                            : refereeProfile.dbs_status === 'provided' ? 'Provided'
+                            : 'Not provided'}
+                    </span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                    <span className="text-sm">Safeguarding</span>
+                    <span className={`inline-flex items-center gap-1 text-sm font-medium ${
+                        refereeProfile.safeguarding_status === 'verified'
+                            ? 'text-green-700'
+                            : refereeProfile.safeguarding_status === 'expired'
+                            ? 'text-amber-700'
+                            : refereeProfile.safeguarding_status === 'provided'
+                            ? 'text-blue-700'
+                            : 'text-[var(--foreground-muted)]'
+                    }`}>
+                        <ShieldCheck className="w-3.5 h-3.5" />
+                        {refereeProfile.safeguarding_status === 'verified' ? 'Verified'
+                            : refereeProfile.safeguarding_status === 'expired' ? 'Expired'
+                            : refereeProfile.safeguarding_status === 'provided' ? 'Provided'
+                            : 'Not provided'}
+                    </span>
                 </div>
             </div>
         </Card>
