@@ -18,11 +18,24 @@ export const metadata: Metadata = {
   title: "Whistle Connect | Book Referees Fast",
   description: "The grassroots football operations app. Book referees, manage availability, and communicate seamlessly.",
   keywords: ["football", "referee", "booking", "grassroots", "soccer"],
+  manifest: "/site.webmanifest",
   icons: {
     icon: [
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
       { url: "/assets/icon-lightblue.svg", type: "image/svg+xml" },
     ],
-    apple: "/assets/icon-lightblue.svg",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Whistle Connect",
+  },
+  other: {
+    "msapplication-TileColor": "#0f172a",
   },
 };
 
@@ -30,6 +43,7 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#0ea5e9",
 };
 
 export default function RootLayout({
