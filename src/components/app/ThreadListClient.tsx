@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useUnreadMessages } from '@/components/app/UnreadMessagesProvider'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { formatDate, truncate } from '@/lib/utils'
@@ -105,10 +106,11 @@ export function ThreadListClient({ initialThreads, currentUserId: _currentUserId
                             {/* Avatar */}
                             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[var(--brand-primary)] relative overflow-hidden flex items-center justify-center text-white font-semibold">
                                 {thread.other_participant?.avatar_url ? (
-                                    /* eslint-disable-next-line @next/next/no-img-element */
-                                    <img
+                                    <Image
                                         src={thread.other_participant.avatar_url}
                                         alt={thread.other_participant.full_name}
+                                        width={48}
+                                        height={48}
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (

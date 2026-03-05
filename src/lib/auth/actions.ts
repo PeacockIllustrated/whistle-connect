@@ -4,6 +4,8 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { RegisterFormData } from '@/lib/types'
 import { isValidFANumber } from '@/lib/utils'
+import { checkAuthRateLimit } from '@/lib/rate-limit'
+import { validate, signInSchema, signUpSchema } from '@/lib/validation'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
@@ -41,6 +43,17 @@ async function waitForProfile(
 }
 
 export async function signIn(email: string, password: string, redirectTo: string = '/app') {
+    const validationError = validate(signInSchema, { email, password })
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    // Rate limit by email to prevent brute-force attacks
+    const rateLimitError = checkAuthRateLimit(email.toLowerCase())
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
+
     const supabase = await createClient()
 
     const { error } = await supabase.auth.signInWithPassword({
@@ -56,6 +69,17 @@ export async function signIn(email: string, password: string, redirectTo: string
 }
 
 export async function signUp(data: RegisterFormData, redirectTo: string = '/app') {
+    const validationError = validate(signUpSchema, data)
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    // Rate limit by email to prevent spam registrations
+    const rateLimitError = checkAuthRateLimit(data.email.toLowerCase())
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
+
     const supabase = await createClient()
 
     // Validate FA number format if provided

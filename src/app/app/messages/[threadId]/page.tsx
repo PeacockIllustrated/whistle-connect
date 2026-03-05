@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ThreadView } from './ThreadView'
 import { markThreadAsRead } from '../actions'
 import { ChevronLeft, AlertTriangle, Info } from 'lucide-react'
@@ -104,10 +105,11 @@ export default async function ThreadPage({
                 <div className="flex items-center gap-3 flex-1">
                     <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex-shrink-0 relative overflow-hidden flex items-center justify-center text-white font-semibold">
                         {otherParticipant?.avatar_url ? (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img
+                            <Image
                                 src={otherParticipant.avatar_url}
                                 alt={otherParticipant.full_name}
+                                width={40}
+                                height={40}
                                 className="w-full h-full object-cover"
                             />
                         ) : (

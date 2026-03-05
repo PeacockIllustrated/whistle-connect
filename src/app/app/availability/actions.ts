@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { validate, updateAvailabilitySchema } from '@/lib/validation'
 
 export async function getAvailability() {
     const supabase = await createClient()
@@ -45,6 +46,11 @@ export async function getDateAvailability(date: string) {
 }
 
 export async function updateDateAvailability(date: string, slots: { start_time: string, end_time: string }[]) {
+    const validationError = validate(updateAvailabilitySchema, { date, slots })
+    if (validationError) {
+        return { error: validationError }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 

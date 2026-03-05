@@ -7,6 +7,9 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/AwaitingAction'
 import { BookingStatus, BookingWithDetails } from '@/lib/types'
 import { CalendarDays } from 'lucide-react'
+import { Pagination } from '@/components/app/Pagination'
+
+const PAGE_SIZE = 20
 
 // Supabase join result types for offer queries
 interface OfferBookingJoin {
@@ -69,7 +72,7 @@ const statusFilters: { value: BookingStatus | 'all'; label: string }[] = [
 export default async function BookingsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ status?: string }>
+    searchParams: Promise<{ status?: string; page?: string }>
 }) {
     const params = await searchParams
     const supabase = await createClient()
@@ -86,10 +89,26 @@ export default async function BookingsPage({
     const isCoach = profile?.role === 'coach'
     const isReferee = profile?.role === 'referee'
     const statusFilter = params.status as BookingStatus | 'all' | undefined
+    const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1)
+    const offset = (currentPage - 1) * PAGE_SIZE
 
     let bookings: BookingWithDetails[] = []
+    let totalBookings = 0
 
     if (isCoach) {
+        // First get total count for pagination
+        let countQuery = supabase
+            .from('bookings')
+            .select('id', { count: 'exact', head: true })
+            .eq('coach_id', user.id)
+
+        if (statusFilter && statusFilter !== 'all') {
+            countQuery = countQuery.eq('status', statusFilter)
+        }
+
+        const { count } = await countQuery
+        totalBookings = count || 0
+
         let query = supabase
             .from('bookings')
             .select(`
@@ -100,6 +119,7 @@ export default async function BookingsPage({
       `)
             .eq('coach_id', user.id)
             .order('match_date', { ascending: true })
+            .range(offset, offset + PAGE_SIZE - 1)
 
         if (statusFilter && statusFilter !== 'all') {
             query = query.eq('status', statusFilter)
@@ -260,6 +280,16 @@ export default async function BookingsPage({
                             showReferee={isCoach && !!booking.assignment?.referee}
                         />
                     ))}
+
+                    {isCoach && (
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalBookings}
+                            pageSize={PAGE_SIZE}
+                            basePath="/app/bookings"
+                            params={statusFilter && statusFilter !== 'all' ? { status: statusFilter } : {}}
+                        />
+                    )}
                 </div>
             ) : (
                 <EmptyState

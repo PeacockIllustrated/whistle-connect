@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -48,16 +48,17 @@ export default function NewBookingPage() {
         }
     })
 
-    // Determine if page was loaded WITH URL params (one-time check, not reactive)
-    // This prevents browser autofill after a reload from falsely triggering review mode
-    const isPreFilled = useRef(() => {
+    // Determine if page was loaded WITH URL params (one-time check, not reactive).
+    // Uses useState lazy initializer so the value is computed once on mount and
+    // never re-evaluated — prevents browser autofill from falsely triggering review mode.
+    const [isPreFilled] = useState(() => {
         if (typeof window === 'undefined') return false
         const params = new URLSearchParams(window.location.search)
         return !!(params.get('match_date') || params.get('date')) &&
             !!params.get('kickoff_time') &&
             !!params.get('location_postcode') &&
             !!params.get('county')
-    }).current()
+    })
 
     // Debounced postcode for map preview
     const debouncedPostcode = useDebouncedValue(formData.location_postcode, 500)

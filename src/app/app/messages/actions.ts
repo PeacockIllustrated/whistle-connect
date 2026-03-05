@@ -3,8 +3,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
+import { validate, sendMessageSchema } from '@/lib/validation'
 
 export async function sendMessage(threadId: string, body: string) {
+    const validationError = validate(sendMessageSchema, { threadId, body })
+    if (validationError) {
+        return { error: validationError }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -96,7 +102,7 @@ export async function markThreadAsRead(threadId: string) {
         .eq('profile_id', user.id)
 }
 
-export async function getThreads() {
+export async function getThreads(limit = 30, offset = 0) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -124,6 +130,7 @@ export async function getThreads() {
     `)
         .in('id', threadIds)
         .order('updated_at', { ascending: false })
+        .range(offset, offset + limit - 1)
 
     // Single batch fetch of all messages for all threads (avoids duplicate query)
     const { data: allMessages } = await supabase

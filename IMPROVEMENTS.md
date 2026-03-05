@@ -197,3 +197,17 @@ const bookingSchema = z.object({
 - [x] Add custom 404 page
 - [x] Add `getBooking` ownership check
 - [x] Add env var validation
+- [x] Mapbox GL JS integration (branded maps, custom markers, all forms + detail pages)
+- [x] Fix auto-submit recurrence (useRef → useState lazy init, onSubmit handlers)
+- [x] Mapbox style generator script (`scripts/generate-mapbox-styles.mjs`)
+- [x] Rate limiting for critical operations (`src/lib/rate-limit.ts`)
+- [x] Input validation with Zod schemas (`src/lib/validation.ts`)
+- [x] Transaction safety — `confirm_booking` RPC function (`0113_confirm_booking_rpc.sql`)
+- [x] Soft deletes for bookings (`0114_soft_deletes.sql`)
+- [x] Pagination for booking list queries
+- [x] `next/image` for avatar images + remotePatterns config
+- [x] Route-specific loading skeletons (bookings, messages, profile)
+- [x] Fix overly permissive RLS policies (done in `0111_fix_rls_policies.sql`)
+- [x] Fix N+1 query in `getThreads` (batch fetch)
+- [x] Fix fire-and-forget error handling (`Promise.allSettled`)
+- [x] Authorization checks on cancelBooking, deleteBooking, confirmPrice

@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
+import { checkBookingRateLimit, checkConfirmRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
+import { validate, bookingSchema, confirmPriceSchema, acceptOfferSchema } from '@/lib/validation'
 
 /** Shape returned by Supabase when querying referee_profiles with a joined profile */
 interface RefereeProfileQueryResult {
@@ -25,6 +27,16 @@ export async function createBooking(data: BookingFormData) {
 
     if (!user) {
         return { error: 'Unauthorized' }
+    }
+
+    const rateLimitError = checkBookingRateLimit(user.id)
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
+
+    const validationError = validate(bookingSchema, data)
+    if (validationError) {
+        return { error: validationError }
     }
 
     // Build the booking data object
@@ -256,9 +268,10 @@ export async function deleteBooking(bookingId: string) {
         return { error: 'Unauthorized' }
     }
 
+    // Soft delete — set deleted_at instead of removing the row
     const { error } = await supabase
         .from('bookings')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', bookingId)
         .eq('coach_id', user.id) // Ensure ownership
 
@@ -380,6 +393,11 @@ export async function acceptOffer(offerId: string, pricePounds: number) {
         return { error: 'Unauthorized' }
     }
 
+    const validationError = validate(acceptOfferSchema, { offerId, pricePounds })
+    if (validationError) {
+        return { error: validationError }
+    }
+
     // Get the offer
     const { data: offer, error: offerError } = await supabase
         .from('booking_offers')
@@ -431,6 +449,16 @@ export async function confirmPrice(offerId: string) {
         return { error: 'Unauthorized' }
     }
 
+    const rateLimitError = checkConfirmRateLimit(user.id)
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
+
+    const validationError = validate(confirmPriceSchema, { offerId })
+    if (validationError) {
+        return { error: validationError }
+    }
+
     // Get the offer with booking detail
     const { data: offer, error: offerError } = await supabase
         .from('booking_offers')
@@ -447,47 +475,21 @@ export async function confirmPrice(offerId: string) {
         return { error: 'Unauthorized' }
     }
 
-    // TODO: Move steps 1-7 to a Supabase RPC function for true transaction safety.
-    // Currently uses error checking with partial rollback as a pragmatic solution.
+    // Steps 1-3 (accept offer → create assignment → confirm booking) are wrapped
+    // in an atomic PostgreSQL transaction via RPC. If any step fails, all roll back.
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
+        p_offer_id: offerId,
+    })
 
-    // 1. Update offer status to accepted
-    const { error: step1Error } = await supabase
-        .from('booking_offers')
-        .update({ status: 'accepted' })
-        .eq('id', offerId)
-
-    if (step1Error) {
-        return { error: 'Failed to accept offer: ' + step1Error.message }
+    if (rpcError) {
+        return { error: 'Failed to confirm booking: ' + rpcError.message }
     }
 
-    // 2. Create assignment
-    const { error: step2Error } = await supabase
-        .from('booking_assignments')
-        .insert({
-            booking_id: offer.booking_id,
-            referee_id: offer.referee_id,
-        })
-
-    if (step2Error) {
-        // Rollback step 1
-        await supabase.from('booking_offers').update({ status: 'accepted_priced' }).eq('id', offerId)
-        return { error: 'Failed to create assignment: ' + step2Error.message }
+    if (rpcResult?.error) {
+        return { error: rpcResult.error }
     }
 
-    // 3. Update booking status
-    const { error: step3Error } = await supabase
-        .from('bookings')
-        .update({ status: 'confirmed' })
-        .eq('id', offer.booking_id)
-
-    if (step3Error) {
-        // Rollback steps 1-2
-        await supabase.from('booking_assignments').delete().eq('booking_id', offer.booking_id).eq('referee_id', offer.referee_id)
-        await supabase.from('booking_offers').update({ status: 'accepted_priced' }).eq('id', offerId)
-        return { error: 'Failed to confirm booking: ' + step3Error.message }
-    }
-
-    // --- Core booking is now committed. Steps 4-7 are secondary ---
+    // --- Core booking is now atomically committed. Steps 4-7 are secondary ---
     // Failures in these steps are logged but don't fail the overall operation.
 
     // 4. Withdraw other offers for this booking
@@ -755,6 +757,11 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
 
     if (!user) return { error: 'Unauthorized' }
 
+    const rateLimitError = checkSearchRateLimit(user.id)
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
+
     // 1. Get Booking Details
     const { data: booking, error: bookingError } = await supabase
         .from('bookings')
@@ -872,6 +879,11 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { error: 'Unauthorized' }
+
+    const rateLimitError = checkOfferRateLimit(user.id)
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
 
     // Verify user owns this booking
     const { data: bookingCheck, error: bookingCheckError } = await supabase
