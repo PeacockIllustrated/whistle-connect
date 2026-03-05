@@ -101,7 +101,7 @@ export default function IndividualBookingPage() {
                         </div>
                     )}
 
-                    <form onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
+                    <form onSubmit={(e) => e.preventDefault()} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="grid grid-cols-1 gap-6">
                             <Select
                                 label="County"

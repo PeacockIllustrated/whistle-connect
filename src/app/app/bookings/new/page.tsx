@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
@@ -48,8 +48,16 @@ export default function NewBookingPage() {
         }
     })
 
-    // Determine if we should show the "Review" mode vs "Edit" mode
-    const isPreFilled = formData.match_date && formData.kickoff_time && formData.location_postcode && formData.county
+    // Determine if page was loaded WITH URL params (one-time check, not reactive)
+    // This prevents browser autofill after a reload from falsely triggering review mode
+    const isPreFilled = useRef(() => {
+        if (typeof window === 'undefined') return false
+        const params = new URLSearchParams(window.location.search)
+        return !!(params.get('match_date') || params.get('date')) &&
+            !!params.get('kickoff_time') &&
+            !!params.get('location_postcode') &&
+            !!params.get('county')
+    }).current()
 
     // Debounced postcode for map preview
     const debouncedPostcode = useDebouncedValue(formData.location_postcode, 500)
@@ -107,7 +115,7 @@ export default function NewBookingPage() {
                         </div>
                     )}
 
-                    <form onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
+                    <form onSubmit={(e) => e.preventDefault()} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 space-y-6 shadow-sm">
                             {isPreFilled ? (
                                 <div className="space-y-4">

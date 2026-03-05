@@ -128,7 +128,7 @@ export default function EditBookingPage({
                         </div>
                     )}
 
-                    <form onKeyDown={handleKeyDown} className="space-y-6">
+                    <form onSubmit={(e) => e.preventDefault()} onKeyDown={handleKeyDown} autoComplete="off" className="space-y-6">
                         <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 space-y-6 shadow-sm">
                             <div>
                                 <h2 className="text-xl font-bold mb-1">Match Details</h2>
