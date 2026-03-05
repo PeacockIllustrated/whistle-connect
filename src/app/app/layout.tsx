@@ -6,6 +6,7 @@ import { ToastProvider } from '@/components/ui/Toast'
 import { PushNotificationManager } from '@/components/app/PushNotificationManager'
 import { UnreadMessagesProvider } from '@/components/app/UnreadMessagesProvider'
 import { BookingUpdatesProvider } from '@/components/app/BookingUpdatesProvider'
+import SplashScreen from '@/components/ui/SplashScreen'
 
 export default async function AppLayout({
     children,
@@ -72,6 +73,7 @@ export default async function AppLayout({
 
     return (
         <ToastProvider>
+            <SplashScreen />
             <UnreadMessagesProvider
                 userId={user.id}
                 initialThreadData={threadData}

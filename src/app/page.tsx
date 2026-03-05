@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
+import SplashScreen from '@/components/ui/SplashScreen'
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-[var(--background)]">
+      <SplashScreen always />
       {/* Header */}
       <header className="relative z-10">
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--neutral-900)] via-[var(--neutral-800)] to-[var(--neutral-900)]" />

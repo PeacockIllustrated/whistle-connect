@@ -2,19 +2,26 @@
 
 import { useState, useEffect } from 'react'
 
-export default function SplashScreen() {
+interface SplashScreenProps {
+    /** When true, plays every time the page loads. When false, plays once per session. */
+    always?: boolean
+}
+
+export default function SplashScreen({ always = false }: SplashScreenProps) {
     const [visible, setVisible] = useState(false)
 
     useEffect(() => {
-        // Only show once per browser session
-        if (sessionStorage.getItem('splash-shown')) return
-        sessionStorage.setItem('splash-shown', '1')
+        if (!always) {
+            // Session-gated: only show once per browser session
+            if (sessionStorage.getItem('splash-shown')) return
+            sessionStorage.setItem('splash-shown', '1')
+        }
         setVisible(true)
 
         // Remove overlay after animation completes (~3.5s)
         const timer = setTimeout(() => setVisible(false), 3500)
         return () => clearTimeout(timer)
-    }, [])
+    }, [always])
 
     if (!visible) return null
 
