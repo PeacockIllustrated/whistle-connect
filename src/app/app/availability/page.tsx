@@ -10,6 +10,7 @@ import { RefereeDateAvailability, UserRole } from '@/lib/types'
 import { Select } from '@/components/ui/Select'
 import { UK_COUNTIES } from '@/lib/constants'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
+import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { ChevronLeft, Check, AlertCircle, CalendarDays, ChevronDown } from 'lucide-react'
 
 export default function AvailabilityPage() {
@@ -30,6 +31,7 @@ export default function AvailabilityPage() {
     const [accessDenied, setAccessDenied] = useState(false)
     const [allAvailability, setAllAvailability] = useState<RefereeDateAvailability[]>([])
     const [accordionOpen, setAccordionOpen] = useState(false)
+    const [celebration, setCelebration] = useState<{ title: string; subtitle: string } | null>(null)
 
     useEffect(() => {
         loadInitialData()
@@ -139,12 +141,15 @@ export default function AvailabilityPage() {
                 if (errorObj && 'error' in errorObj) {
                     setMessage({ type: 'error', text: errorObj.error as string })
                 } else {
-                    setMessage({ type: 'success', text: `Availability updated for ${selectedDates.length} date${selectedDates.length > 1 ? 's' : ''}!` })
                     setHasChanges(false)
                     setInitialOptIn(centralVenueOptIn)
                     setInitialCounty(county)
                     setSelectedDates([])
                     await loadAllAvailability()
+                    setCelebration({
+                        title: 'Availability Updated!',
+                        subtitle: `${selectedDates.length} date${selectedDates.length > 1 ? 's' : ''} saved`,
+                    })
                 }
             } else {
                 // Single date mode
@@ -164,11 +169,14 @@ export default function AvailabilityPage() {
                 if (errorObj && 'error' in errorObj) {
                     setMessage({ type: 'error', text: errorObj.error as string })
                 } else {
-                    setMessage({ type: 'success', text: 'Availability updated!' })
                     setHasChanges(false)
                     setInitialOptIn(centralVenueOptIn)
                     setInitialCounty(county)
                     await loadAllAvailability()
+                    setCelebration({
+                        title: 'Availability Updated!',
+                        subtitle: 'Your schedule is saved',
+                    })
                 }
             }
         } catch {
@@ -207,6 +215,16 @@ export default function AvailabilityPage() {
 
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
+            {/* Celebration Overlay */}
+            {celebration && (
+                <CelebrationOverlay
+                    icon="calendar-check"
+                    title={celebration.title}
+                    subtitle={celebration.subtitle}
+                    onComplete={() => setCelebration(null)}
+                />
+            )}
+
             {/* Header */}
             <div className="flex items-center gap-3 mb-6">
                 <Link href="/app" className="p-2 -ml-2 hover:bg-[var(--neutral-100)] rounded-lg">

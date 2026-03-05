@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CheckCircle, PartyPopper, Send, UserCheck } from 'lucide-react'
+import { CheckCircle, PartyPopper, Send, UserCheck, CalendarCheck } from 'lucide-react'
 
 const iconMap = {
     'check-circle': CheckCircle,
     'party-popper': PartyPopper,
     'send': Send,
     'user-check': UserCheck,
+    'calendar-check': CalendarCheck,
 }
 
 const iconColorMap = {
@@ -15,6 +16,7 @@ const iconColorMap = {
     'party-popper': '#10b981',   // emerald-500
     'send': '#3b82f6',           // blue-500
     'user-check': '#10b981',     // emerald-500
+    'calendar-check': '#10b981', // emerald-500
 }
 
 interface CelebrationOverlayProps {
