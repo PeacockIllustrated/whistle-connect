@@ -8,8 +8,8 @@ const UK_POSTCODE = /^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i
 /** UUID v4 */
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-/** HH:MM time format */
-const TIME_FORMAT = /^\d{2}:\d{2}$/
+/** HH:MM or HH:MM:SS time format (Postgres time type returns seconds) */
+const TIME_FORMAT = /^\d{2}:\d{2}(:\d{2})?$/
 
 /** Ensures a date string is in the future (today or later) */
 function isFutureDate(dateStr: string): boolean {
