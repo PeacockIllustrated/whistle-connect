@@ -8,6 +8,8 @@ import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { UK_COUNTIES } from '@/lib/constants'
 import { createBooking } from '@/app/app/bookings/actions'
+import { VenueMap } from '@/components/ui/VenueMap'
+import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
 export default function CentralBookingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -24,6 +26,9 @@ export default function CentralBookingPage() {
     const updateField = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
+
+    // Debounced postcode for map preview
+    const debouncedPostcode = useDebouncedValue(formData.location_postcode, 500)
 
     // Prevent Enter key from submitting form (stops autofill auto-submit)
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -134,6 +139,10 @@ export default function CentralBookingPage() {
                                     required
                                 />
                             </div>
+
+                            {debouncedPostcode.length >= 5 && (
+                                <VenueMap postcode={debouncedPostcode} height={160} />
+                            )}
 
                             <Input
                                 label="Notes (Optional)"

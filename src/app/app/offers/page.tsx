@@ -6,6 +6,7 @@ import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
 import { UserRole } from '@/lib/types'
 import { Users, CalendarDays, Clock, ChevronRight, Inbox } from 'lucide-react'
+import { VenueMap } from '@/components/ui/VenueMap'
 
 interface OfferWithBooking {
     id: string
@@ -122,6 +123,11 @@ export default async function OffersPage() {
                                     </div>
                                 </div>
                             )}
+
+                            {/* Venue Map */}
+                            <div className="mb-4">
+                                <VenueMap postcode={offer.booking.location_postcode} height={120} />
+                            </div>
 
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="flex items-center gap-2 text-sm">

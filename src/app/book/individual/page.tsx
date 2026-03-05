@@ -9,6 +9,8 @@ import { Button } from '@/components/ui/Button'
 import { UK_COUNTIES, AGE_GROUPS, MATCH_FORMATS, COMPETITION_TYPES } from '@/lib/constants'
 import { createBooking } from '@/app/app/bookings/actions'
 import { MatchFormat, CompetitionType } from '@/lib/types'
+import { VenueMap } from '@/components/ui/VenueMap'
+import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
 export default function IndividualBookingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -29,6 +31,9 @@ export default function IndividualBookingPage() {
     const updateField = (field: string, value: string) => {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
+
+    // Debounced postcode for map preview
+    const debouncedPostcode = useDebouncedValue(formData.location_postcode, 500)
 
     // Prevent Enter key from submitting form (stops autofill auto-submit)
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -171,6 +176,10 @@ export default function IndividualBookingPage() {
                                     required
                                 />
                             </div>
+
+                            {debouncedPostcode.length >= 5 && (
+                                <VenueMap postcode={debouncedPostcode} height={160} />
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Select

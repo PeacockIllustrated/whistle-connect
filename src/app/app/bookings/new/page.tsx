@@ -8,6 +8,8 @@ import { createBooking } from '../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
 import { ChevronLeft } from 'lucide-react'
+import { VenueMap } from '@/components/ui/VenueMap'
+import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
 export default function NewBookingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -48,6 +50,9 @@ export default function NewBookingPage() {
 
     // Determine if we should show the "Review" mode vs "Edit" mode
     const isPreFilled = formData.match_date && formData.kickoff_time && formData.location_postcode && formData.county
+
+    // Debounced postcode for map preview
+    const debouncedPostcode = useDebouncedValue(formData.location_postcode, 500)
 
     const updateField = <K extends keyof BookingFormData>(
         field: K,
@@ -226,6 +231,10 @@ export default function NewBookingPage() {
                                             placeholder="SW1A 1AA"
                                             required
                                         />
+
+                                        {debouncedPostcode.length >= 5 && (
+                                            <VenueMap postcode={debouncedPostcode} height={160} />
+                                        )}
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <Select

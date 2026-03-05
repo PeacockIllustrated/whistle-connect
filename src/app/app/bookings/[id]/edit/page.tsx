@@ -11,6 +11,8 @@ import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
 import { use } from 'react'
 import { ChevronLeft } from 'lucide-react'
+import { VenueMap } from '@/components/ui/VenueMap'
+import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
 export default function EditBookingPage({
     params,
@@ -69,6 +71,9 @@ export default function EditBookingPage({
     ) => {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
+
+    // Debounced postcode for map preview
+    const debouncedPostcode = useDebouncedValue(formData.location_postcode, 500)
 
     const handleUpdate = async () => {
         if (isSubmitting) return
@@ -190,6 +195,10 @@ export default function EditBookingPage({
                                     placeholder="SW1A 1AA"
                                     required
                                 />
+
+                                {debouncedPostcode.length >= 5 && (
+                                    <VenueMap postcode={debouncedPostcode} height={160} />
+                                )}
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <Select
