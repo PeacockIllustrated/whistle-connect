@@ -41,3 +41,6 @@ yarn-error.log*
 next-env.d.ts
 *.log
 vapid_keys.txt
+
+# generated mapbox style files (contain API token references)
+scripts/mapbox-style-*.json

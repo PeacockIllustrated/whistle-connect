@@ -22,6 +22,13 @@ interface VenueMapProps {
 
 type MapState = 'loading' | 'ready' | 'error'
 
+// Custom style URLs — set these after uploading branded styles to Mapbox Studio
+// Falls back to default Mapbox styles if not set
+const MAPBOX_STYLE_LIGHT =
+    process.env.NEXT_PUBLIC_MAPBOX_STYLE_LIGHT || 'mapbox://styles/mapbox/light-v11'
+const MAPBOX_STYLE_DARK =
+    process.env.NEXT_PUBLIC_MAPBOX_STYLE_DARK || 'mapbox://styles/mapbox/dark-v11'
+
 const MARKER_SVG = `
 <svg width="28" height="36" viewBox="0 0 28 36" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 22 14 22s14-11.5 14-22C28 6.268 21.732 0 14 0z" fill="#cd1719"/>
@@ -87,9 +94,7 @@ export function VenueMap({
                 const dark = isDarkTheme()
                 const map = new mbgl.Map({
                     container: containerRef.current,
-                    style: dark
-                        ? 'mapbox://styles/mapbox/dark-v11'
-                        : 'mapbox://styles/mapbox/light-v11',
+                    style: dark ? MAPBOX_STYLE_DARK : MAPBOX_STYLE_LIGHT,
                     center: [coords.lng, coords.lat],
                     zoom: 14,
                     interactive,
