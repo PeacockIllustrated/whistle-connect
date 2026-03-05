@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
 import { checkBookingRateLimit, checkConfirmRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
@@ -113,7 +112,7 @@ export async function createBooking(data: BookingFormData) {
     }
 
     revalidatePath('/app/bookings')
-    redirect(`/app/bookings/${booking.id}/match`)
+    return { success: true, bookingId: booking.id }
 }
 
 export async function updateBookingStatus(bookingId: string, status: BookingStatus) {

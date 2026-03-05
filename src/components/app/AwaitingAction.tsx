@@ -10,6 +10,7 @@ import { cn, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { confirmPrice, cancelBooking } from '@/app/app/bookings/actions'
+import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { Check, X } from 'lucide-react'
 
 /* ──────────────────────────────────────────────
@@ -68,6 +69,12 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
     const [items, setItems] = useState<ActionItem[]>(initialItems)
     const [loadingId, setLoadingId] = useState<string | null>(null)
     const [cancelId, setCancelId] = useState<string | null>(null) // which item shows cancel dialog
+    const [celebration, setCelebration] = useState<{
+        icon: 'check-circle' | 'party-popper' | 'send' | 'user-check'
+        title: string
+        subtitle?: string
+        onComplete?: () => void
+    } | null>(null)
     const { subscribe } = useBookingUpdates()
     const { showToast } = useToast()
     const router = useRouter()
@@ -159,16 +166,22 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
         try {
             const result = await confirmPrice(item.id)
             if (result.success) {
-                showToast({ message: 'Booking confirmed!', type: 'success' })
                 // Optimistically remove
                 setItems(prev => prev.filter(i => i.id !== item.id))
-                if (result.threadId) {
-                    router.push(`/app/messages/${result.threadId}`)
-                } else {
-                    // Refetch from DB to confirm removal, then refresh server component
-                    await refetch()
-                    router.refresh()
-                }
+                const threadId = result.threadId
+                setCelebration({
+                    icon: 'party-popper',
+                    title: 'Booking Confirmed!',
+                    subtitle: 'Your referee is locked in',
+                    onComplete: () => {
+                        if (threadId) {
+                            router.push(`/app/messages/${threadId}`)
+                        } else {
+                            refetch()
+                            router.refresh()
+                        }
+                    },
+                })
             } else {
                 showToast({ message: result.error || 'Failed to confirm booking', type: 'error' })
             }
@@ -201,13 +214,21 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
         }
     }
 
-    if (items.length === 0) return null
+    if (items.length === 0 && !celebration) return null
 
     // Item currently being cancelled (for dialog)
     const cancelItem = cancelId ? items.find(i => i.id === cancelId) : null
 
     return (
         <section className="mb-6">
+            {celebration && (
+                <CelebrationOverlay
+                    icon={celebration.icon}
+                    title={celebration.title}
+                    subtitle={celebration.subtitle}
+                    onComplete={celebration.onComplete}
+                />
+            )}
             <div className="flex items-center gap-2 mb-3">
                 <span className="relative flex h-2.5 w-2.5">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />

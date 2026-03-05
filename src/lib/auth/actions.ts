@@ -209,7 +209,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
         }
     }
 
-    redirect(sanitizeRedirectUrl(redirectTo))
+    return { success: true, redirectTo: sanitizeRedirectUrl(redirectTo) }
 }
 
 export async function signOut() {

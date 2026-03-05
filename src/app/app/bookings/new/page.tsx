@@ -2,18 +2,22 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { createBooking } from '../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
+import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { ChevronLeft } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
 export default function NewBookingPage() {
+    const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState('')
+    const [celebration, setCelebration] = useState<{ bookingId: string } | null>(null)
 
     const [formData, setFormData] = useState<BookingFormData>(() => {
         if (typeof window === 'undefined') return {
@@ -82,6 +86,8 @@ export default function NewBookingPage() {
             if (result?.error) {
                 setError(result.error)
                 setIsSubmitting(false)
+            } else if (result?.success && result?.bookingId) {
+                setCelebration({ bookingId: result.bookingId })
             }
         } catch {
             setError('Failed to create booking')
@@ -94,6 +100,17 @@ export default function NewBookingPage() {
         if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
             e.preventDefault()
         }
+    }
+
+    if (celebration) {
+        return (
+            <CelebrationOverlay
+                icon="check-circle"
+                title="Booking Created!"
+                subtitle="Let's find a referee"
+                onComplete={() => router.push(`/app/bookings/${celebration.bookingId}/match`)}
+            />
+        )
     }
 
     return (

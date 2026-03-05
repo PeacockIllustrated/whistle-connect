@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/Toast'
 import { acceptOffer, declineOffer, cancelBooking, confirmPrice } from '../actions'
 import { BookingOffer, BookingWithDetails } from '@/lib/types'
 import { Input } from '@/components/ui/Input'
+import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil, Search } from 'lucide-react'
 
 interface BookingActionsProps {
@@ -34,6 +35,12 @@ export function BookingActions({
     const [showCancelDialog, setShowCancelDialog] = useState(false)
     const [price, setPrice] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
+    const [celebration, setCelebration] = useState<{
+        icon: 'check-circle' | 'party-popper' | 'send' | 'user-check'
+        title: string
+        subtitle?: string
+        onComplete?: () => void
+    } | null>(null)
 
     // ─── Referee: Accept offer with price ───
     const handleAcceptWithPrice = async () => {
@@ -50,11 +57,12 @@ export function BookingActions({
         try {
             const result = await acceptOffer(userOffer.id, priceNum)
             if (result.success) {
-                showToast({
-                    message: `Price of \u00A3${priceNum.toFixed(2)} sent to coach!`,
-                    type: 'success',
+                setCelebration({
+                    icon: 'send',
+                    title: 'Price Sent!',
+                    subtitle: `£${priceNum.toFixed(2)} sent to the coach`,
+                    onComplete: () => router.refresh(),
                 })
-                router.refresh()
             } else {
                 setErrorMessage(result.error || 'Failed to accept offer')
                 setAccepting(false)
@@ -92,8 +100,13 @@ export function BookingActions({
         try {
             const result = await confirmPrice(offerId)
             if (result.success && result.threadId) {
-                showToast({ message: 'Booking confirmed!', type: 'success' })
-                router.push(`/app/messages/${result.threadId}`)
+                const threadId = result.threadId
+                setCelebration({
+                    icon: 'party-popper',
+                    title: 'Booking Confirmed!',
+                    subtitle: 'Your referee is locked in',
+                    onComplete: () => router.push(`/app/messages/${threadId}`),
+                })
             } else {
                 setErrorMessage(result.error || 'Failed to confirm booking. Please try again.')
                 showToast({ message: result.error || 'Failed to confirm booking', type: 'error' })
@@ -128,6 +141,18 @@ export function BookingActions({
             showToast({ message: 'Failed to cancel booking', type: 'error' })
             setCancelling(false)
         }
+    }
+
+    // ─── Celebration overlay (shown after successful actions) ───
+    if (celebration) {
+        return (
+            <CelebrationOverlay
+                icon={celebration.icon}
+                title={celebration.title}
+                subtitle={celebration.subtitle}
+                onComplete={celebration.onComplete}
+            />
+        )
     }
 
     // ═══════════════════════════════════════════════

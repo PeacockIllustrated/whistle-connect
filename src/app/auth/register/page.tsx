@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { signUp } from '@/lib/auth/actions'
 import { UserRole } from '@/lib/types'
+import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { cn } from '@/lib/utils'
 
 const roleOptions = [
@@ -16,6 +17,7 @@ const roleOptions = [
 ]
 
 export default function RegisterPage() {
+    const router = useRouter()
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo') || '/app'
     const [fullName, setFullName] = useState('')
@@ -27,6 +29,7 @@ export default function RegisterPage() {
     const [faNumber, setFaNumber] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [celebration, setCelebration] = useState<{ redirectTo: string } | null>(null)
 
     useEffect(() => {
         const roleParam = searchParams.get('role')
@@ -68,6 +71,8 @@ export default function RegisterPage() {
             } else if (result?.message) {
                 // Email confirmation required
                 setError(result.message)
+            } else if (result?.success && result?.redirectTo) {
+                setCelebration({ redirectTo: result.redirectTo })
             }
         } catch (err: unknown) {
             console.error('Registration error:', err)
@@ -75,6 +80,17 @@ export default function RegisterPage() {
         } finally {
             setLoading(false)
         }
+    }
+
+    if (celebration) {
+        return (
+            <CelebrationOverlay
+                icon="user-check"
+                title="Welcome to Whistle Connect!"
+                subtitle="Let's get started"
+                onComplete={() => router.push(celebration.redirectTo)}
+            />
+        )
     }
 
     return (
