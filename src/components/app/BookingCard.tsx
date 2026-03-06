@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { cn, formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { BookingWithDetails, BookingStatus } from '@/lib/types'
-import { deleteBooking, cancelBooking } from '@/app/app/bookings/actions'
+import { deleteBooking, cancelBooking, dismissBooking } from '@/app/app/bookings/actions'
 import { useToast } from '@/components/ui/Toast'
 import { MessageCircle, CalendarDays, Clock } from 'lucide-react'
 
@@ -38,6 +38,23 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
             showToast({ message: 'Booking deleted', type: 'success' })
         } catch {
             showToast({ message: 'Failed to delete booking', type: 'error' })
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleDismiss = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!confirm('Remove this cancelled booking from your list?')) return
+
+        setIsLoading(true)
+        try {
+            const result = await dismissBooking(booking.id)
+            if (result.error) throw new Error(result.error)
+            showToast({ message: 'Booking removed', type: 'success' })
+        } catch {
+            showToast({ message: 'Failed to remove booking', type: 'error' })
         } finally {
             setIsLoading(false)
         }
@@ -151,6 +168,17 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                         className="text-xs text-red-600 font-medium hover:underline disabled:opacity-50"
                     >
                         {isLoading ? 'Deleting...' : 'Delete Booking'}
+                    </button>
+                )}
+
+                {/* Referee Actions: Dismiss if cancelled */}
+                {showCoach && booking.status === 'cancelled' && (
+                    <button
+                        onClick={handleDismiss}
+                        disabled={isLoading}
+                        className="text-xs text-red-600 font-medium hover:underline disabled:opacity-50"
+                    >
+                        {isLoading ? 'Removing...' : 'Remove'}
                     </button>
                 )}
 

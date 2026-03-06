@@ -283,6 +283,51 @@ export async function deleteBooking(bookingId: string) {
     return { success: true }
 }
 
+export async function dismissBooking(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Verify the booking is cancelled
+    const { data: booking } = await supabase
+        .from('bookings')
+        .select('status')
+        .eq('id', bookingId)
+        .single()
+
+    if (!booking) {
+        return { error: 'Booking not found' }
+    }
+
+    if (booking.status !== 'cancelled') {
+        return { error: 'Only cancelled bookings can be dismissed' }
+    }
+
+    // Remove the referee's offers for this booking (removes it from their view)
+    const { error } = await supabase
+        .from('booking_offers')
+        .delete()
+        .eq('booking_id', bookingId)
+        .eq('referee_id', user.id)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    // Also remove any assignment
+    await supabase
+        .from('booking_assignments')
+        .delete()
+        .eq('booking_id', bookingId)
+        .eq('referee_id', user.id)
+
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
 export async function cancelBooking(bookingId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
