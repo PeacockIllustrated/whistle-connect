@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { useToast } from '@/components/ui/Toast'
-import { acceptOffer, declineOffer, cancelBooking, confirmPrice } from '../actions'
+import { acceptOffer, declineOffer, cancelBooking, confirmPrice, completeBooking } from '../actions'
 import { BookingOffer, BookingWithDetails } from '@/lib/types'
 import { Input } from '@/components/ui/Input'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
@@ -32,11 +32,13 @@ export function BookingActions({
     const [accepting, setAccepting] = useState(false)
     const [declining, setDeclining] = useState(false)
     const [cancelling, setCancelling] = useState(false)
+    const [completing, setCompleting] = useState(false)
     const [showCancelDialog, setShowCancelDialog] = useState(false)
+    const [showCompleteDialog, setShowCompleteDialog] = useState(false)
     const [price, setPrice] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
     const [celebration, setCelebration] = useState<{
-        icon: 'check-circle' | 'party-popper' | 'send' | 'user-check'
+        icon: 'check-circle' | 'party-popper' | 'send' | 'user-check' | 'calendar-check'
         title: string
         subtitle?: string
         onComplete?: () => void
@@ -141,6 +143,35 @@ export function BookingActions({
             showToast({ message: 'Failed to cancel booking', type: 'error' })
             setCancelling(false)
         }
+    }
+
+    // ─── Mark booking as completed (coach or referee) ───
+    const handleComplete = async () => {
+        setCompleting(true)
+        try {
+            const result = await completeBooking(booking.id)
+            if (result.error) {
+                showToast({ message: result.error, type: 'error' })
+                setCompleting(false)
+            } else {
+                setCelebration({
+                    icon: 'calendar-check',
+                    title: 'Match Completed!',
+                    subtitle: 'Well done',
+                    onComplete: () => router.refresh(),
+                })
+            }
+        } catch (error) {
+            console.error('Failed to complete booking:', error)
+            showToast({ message: 'Failed to mark as completed', type: 'error' })
+            setCompleting(false)
+        }
+    }
+
+    // Helper: has kickoff time passed?
+    const hasKickoffPassed = () => {
+        const kickoff = new Date(`${booking.match_date}T${booking.kickoff_time}`)
+        return new Date() > kickoff
     }
 
     // ─── Celebration overlay (shown after successful actions) ───
@@ -312,6 +343,30 @@ export function BookingActions({
                             Add to Calendar
                         </Button>
                     </a>
+                )}
+
+                {/* Mark as Completed — available after kickoff time */}
+                {booking.status === 'confirmed' && hasKickoffPassed() && (
+                    <>
+                        <Button
+                            fullWidth
+                            variant="success"
+                            onClick={() => setShowCompleteDialog(true)}
+                            loading={completing}
+                        >
+                            <CheckCircle className="w-5 h-5 mr-2" />
+                            Mark as Completed
+                        </Button>
+                        <ConfirmDialog
+                            isOpen={showCompleteDialog}
+                            onClose={() => setShowCompleteDialog(false)}
+                            onConfirm={handleComplete}
+                            title="Mark as Completed"
+                            message="Confirm that this match has been completed?"
+                            confirmLabel="Yes, Complete"
+                            variant="primary"
+                        />
+                    </>
                 )}
 
                 {/* Cancel button — BOTH coach and referee can cancel confirmed bookings */}

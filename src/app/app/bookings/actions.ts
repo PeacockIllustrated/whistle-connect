@@ -385,6 +385,80 @@ export async function cancelBooking(bookingId: string) {
     return { success: true }
 }
 
+export async function completeBooking(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // Get booking with assignment
+    const { data: booking } = await supabase
+        .from('bookings')
+        .select('*, assignments:booking_assignments(referee_id)')
+        .eq('id', bookingId)
+        .is('deleted_at', null)
+        .single()
+
+    if (!booking) {
+        return { error: 'Booking not found' }
+    }
+
+    // Check authorization: user must be the coach OR the assigned referee
+    const isCoach = booking.coach_id === user.id
+    const assignments = Array.isArray(booking.assignments)
+        ? booking.assignments
+        : booking.assignments ? [booking.assignments] : []
+    const isAssignedReferee = assignments.some(
+        (a: { referee_id: string }) => a.referee_id === user.id
+    )
+
+    if (!isCoach && !isAssignedReferee) {
+        return { error: 'Unauthorized' }
+    }
+
+    if (booking.status !== 'confirmed') {
+        return { error: 'Only confirmed bookings can be marked as completed' }
+    }
+
+    // Time check: kickoff must have passed
+    const kickoff = new Date(`${booking.match_date}T${booking.kickoff_time}`)
+    if (new Date() <= kickoff) {
+        return { error: 'The match has not started yet' }
+    }
+
+    // Update status to completed
+    const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'completed' })
+        .eq('id', bookingId)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    // Notify the other party
+    const notifyUserId = isCoach
+        ? assignments[0]?.referee_id
+        : booking.coach_id
+    const notifyLabel = isCoach ? 'The coach' : 'The referee'
+
+    if (notifyUserId) {
+        await createNotification({
+            userId: notifyUserId,
+            title: 'Match Completed',
+            message: `${notifyLabel} has marked the booking for ${booking.ground_name || booking.location_postcode} as completed.`,
+            type: 'success',
+            link: `/app/bookings/${bookingId}`
+        })
+    }
+
+    revalidatePath(`/app/bookings/${bookingId}`)
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
 export async function acceptOffer(offerId: string, pricePounds: number) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
