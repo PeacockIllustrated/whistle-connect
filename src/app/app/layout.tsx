@@ -79,7 +79,7 @@ export default async function AppLayout({
                 initialThreadData={threadData}
                 initialUnreadCounts={initialUnreadCounts}
             >
-                <BookingUpdatesProvider userId={user.id}>
+                <BookingUpdatesProvider userId={user.id} initialOfferCount={offerCount}>
                     <div className="min-h-screen bg-[var(--background)]">
                         <AppHeader
                             userName={profile?.full_name}
@@ -95,7 +95,6 @@ export default async function AppLayout({
 
                         <BottomNav
                             userRole={profile?.role}
-                            offerCount={offerCount}
                         />
                     </div>
                 </BookingUpdatesProvider>

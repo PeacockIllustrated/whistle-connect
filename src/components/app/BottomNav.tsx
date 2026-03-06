@@ -5,11 +5,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useUnreadMessages } from '@/components/app/UnreadMessagesProvider'
+import { useBookingUpdates } from '@/components/app/BookingUpdatesProvider'
 import { Home, CalendarDays, Inbox, MessageCircle, User } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface BottomNavProps {
-    offerCount?: number
     userRole?: string
 }
 
@@ -18,10 +18,9 @@ interface NavItem {
     href: string
     icon: LucideIcon
     animation: string
-    badgeCount?: number
 }
 
-const getNavItems = (userRole?: string, offerCount: number = 0): NavItem[] => {
+const getNavItems = (userRole?: string): NavItem[] => {
     const items: NavItem[] = [
         { label: 'Home', href: '/app', icon: Home, animation: 'icon-animate-bounce' },
         { label: 'Bookings', href: '/app/bookings', icon: CalendarDays, animation: 'icon-animate-pop' },
@@ -33,7 +32,6 @@ const getNavItems = (userRole?: string, offerCount: number = 0): NavItem[] => {
             href: '/app/offers',
             icon: Inbox,
             animation: 'icon-animate-wiggle',
-            badgeCount: offerCount,
         })
     }
 
@@ -45,10 +43,11 @@ const getNavItems = (userRole?: string, offerCount: number = 0): NavItem[] => {
     return items
 }
 
-export function BottomNav({ offerCount = 0, userRole }: BottomNavProps) {
+export function BottomNav({ userRole }: BottomNavProps) {
     const pathname = usePathname()
     const { totalUnread } = useUnreadMessages()
-    const navItems = getNavItems(userRole, offerCount)
+    const { offerCount } = useBookingUpdates()
+    const navItems = getNavItems(userRole)
     const [animatingHref, setAnimatingHref] = useState<string | null>(null)
 
     const isActive = (href: string) => {
@@ -102,9 +101,9 @@ export function BottomNav({ offerCount = 0, userRole }: BottomNavProps) {
                                     fill={active ? 'currentColor' : 'none'}
                                     strokeWidth={active ? 0 : 2}
                                 />
-                                {item.badgeCount !== undefined && item.badgeCount > 0 && (
-                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--wc-red)] text-white text-[10px] font-bold shadow-md">
-                                        {item.badgeCount > 9 ? '9+' : item.badgeCount}
+                                {item.href === '/app/offers' && offerCount > 0 && (
+                                    <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--wc-red)] text-white text-[10px] font-bold shadow-md animate-pulse">
+                                        {offerCount > 9 ? '9+' : offerCount}
                                     </span>
                                 )}
                                 {item.href === '/app/messages' && totalUnread > 0 && (

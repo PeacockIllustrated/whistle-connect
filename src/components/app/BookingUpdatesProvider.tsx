@@ -15,11 +15,14 @@ interface BookingUpdatesContextValue {
     revision: number
     /** Subscribe to raw realtime events */
     subscribe: (callback: (update: BookingUpdate) => void) => () => void
+    /** Real-time count of pending offers for the current user (referees only) */
+    offerCount: number
 }
 
 const BookingUpdatesContext = createContext<BookingUpdatesContextValue>({
     revision: 0,
     subscribe: () => () => {},
+    offerCount: 0,
 })
 
 export function useBookingUpdates() {
@@ -28,12 +31,14 @@ export function useBookingUpdates() {
 
 interface BookingUpdatesProviderProps {
     userId: string
+    initialOfferCount?: number
     children: React.ReactNode
 }
 
-export function BookingUpdatesProvider({ userId, children }: BookingUpdatesProviderProps) {
+export function BookingUpdatesProvider({ userId, initialOfferCount = 0, children }: BookingUpdatesProviderProps) {
     const supabase = createClient()
     const [revision, setRevision] = useState(0)
+    const [offerCount, setOfferCount] = useState(initialOfferCount)
     const subscribersRef = useRef<Set<(update: BookingUpdate) => void>>(new Set())
 
     const subscribe = useCallback((callback: (update: BookingUpdate) => void) => {
@@ -61,6 +66,32 @@ export function BookingUpdatesProvider({ userId, children }: BookingUpdatesProvi
                     }
                     subscribersRef.current.forEach(cb => cb(update))
                     setRevision(r => r + 1)
+
+                    // Update offer count for the current user
+                    const newRecord = update.new
+                    const oldRecord = update.old
+
+                    if (update.eventType === 'INSERT') {
+                        // New offer sent to this user
+                        if (newRecord.referee_id === userId && newRecord.status === 'sent') {
+                            setOfferCount(c => c + 1)
+                        }
+                    } else if (update.eventType === 'UPDATE') {
+                        const wasRelevant = oldRecord.referee_id === userId && oldRecord.status === 'sent'
+                        const isRelevant = newRecord.referee_id === userId && newRecord.status === 'sent'
+
+                        if (wasRelevant && !isRelevant) {
+                            // Offer was 'sent' to us but is no longer (accepted, declined, etc.)
+                            setOfferCount(c => Math.max(0, c - 1))
+                        } else if (!wasRelevant && isRelevant) {
+                            // Offer became 'sent' to us (unlikely but handle it)
+                            setOfferCount(c => c + 1)
+                        }
+                    } else if (update.eventType === 'DELETE') {
+                        if (oldRecord.referee_id === userId && oldRecord.status === 'sent') {
+                            setOfferCount(c => Math.max(0, c - 1))
+                        }
+                    }
                 }
             )
             .subscribe()
@@ -95,7 +126,7 @@ export function BookingUpdatesProvider({ userId, children }: BookingUpdatesProvi
     }, [userId, supabase])
 
     return (
-        <BookingUpdatesContext.Provider value={{ revision, subscribe }}>
+        <BookingUpdatesContext.Provider value={{ revision, subscribe, offerCount }}>
             {children}
         </BookingUpdatesContext.Provider>
     )

@@ -523,7 +523,7 @@ export default function AvailabilityPage() {
                     </div>
 
                     {/* Action Button */}
-                    <div className="sticky top-6 lg:static">
+                    <div className="sticky bottom-6 lg:static z-10">
                         <Button
                             fullWidth
                             size="lg"

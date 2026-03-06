@@ -229,6 +229,7 @@ export async function getBooking(bookingId: string) {
         .from('bookings')
         .select('*, assignments:booking_assignments(referee_id)')
         .eq('id', bookingId)
+        .is('deleted_at', null)
         .single()
 
     if (error) {
@@ -407,6 +408,10 @@ export async function acceptOffer(offerId: string, pricePounds: number) {
 
     if (offerError || !offer) {
         return { error: 'Offer not found' }
+    }
+
+    if (offer.status !== 'sent') {
+        return { error: 'This offer is no longer available' }
     }
 
     const pricePence = Math.round(pricePounds * 100)
@@ -766,6 +771,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
         .from('bookings')
         .select('*')
         .eq('id', bookingId)
+        .is('deleted_at', null)
         .single()
 
     if (bookingError || !booking) return { error: 'Booking not found' }
@@ -773,6 +779,10 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     // Verify the requesting user owns this booking
     if (booking.coach_id !== user.id) {
         return { error: 'Unauthorized' }
+    }
+
+    if (['cancelled', 'completed'].includes(booking.status)) {
+        return { error: 'Cannot search referees for this booking' }
     }
 
     // 2. Prepare Match Criteria
@@ -884,15 +894,19 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
         return { error: rateLimitError }
     }
 
-    // Verify user owns this booking
+    // Verify user owns this booking and it's in a valid state
     const { data: bookingCheck, error: bookingCheckError } = await supabase
         .from('bookings')
-        .select('coach_id')
+        .select('coach_id, status, deleted_at')
         .eq('id', bookingId)
+        .is('deleted_at', null)
         .single()
 
     if (bookingCheckError || !bookingCheck) return { error: 'Booking not found' }
     if (bookingCheck.coach_id !== user.id) return { error: 'Unauthorized' }
+    if (!['pending', 'offered'].includes(bookingCheck.status)) {
+        return { error: 'Cannot send offers for this booking' }
+    }
 
     // 1. Create Offer
     const { error: offerError } = await supabase

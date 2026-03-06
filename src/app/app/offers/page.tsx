@@ -11,6 +11,7 @@ import { VenueMap } from '@/components/ui/VenueMap'
 interface OfferWithBooking {
     id: string
     status: string
+    price_pence: number | null
     created_at: string
     booking: {
         id: string
@@ -24,6 +25,7 @@ interface OfferWithBooking {
         notes: string | null
         home_team: string | null
         away_team: string | null
+        deleted_at: string | null
         coach: { full_name: string }
     }
 }
@@ -53,9 +55,9 @@ export default async function OffersPage() {
         )
     }
 
-    // Fetch sent offers for this referee
+    // Fetch active offers for this referee (sent + accepted_priced)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { data: offers, error: _error } = await supabase
+    const { data: rawOffers, error: _error } = await supabase
         .from('booking_offers')
         .select(`
             *,
@@ -71,12 +73,18 @@ export default async function OffersPage() {
                 notes,
                 home_team,
                 away_team,
+                deleted_at,
                 coach:profiles(full_name)
             )
         `)
         .eq('referee_id', user.id)
-        .eq('status', 'sent')
+        .in('status', ['sent', 'accepted_priced'])
         .order('created_at', { ascending: false })
+
+    // Filter out offers for soft-deleted bookings
+    const offers = (rawOffers as OfferWithBooking[] | null)?.filter(
+        o => o.booking && !o.booking.deleted_at
+    ) ?? []
 
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
@@ -89,7 +97,9 @@ export default async function OffersPage() {
 
             {offers && offers.length > 0 ? (
                 <div className="space-y-4">
-                    {(offers as OfferWithBooking[]).map((offer) => (
+                    {(offers as OfferWithBooking[]).map((offer) => {
+                        const isSent = offer.status === 'sent'
+                        return (
                         <Link
                             key={offer.id}
                             href={`/app/bookings/${offer.booking.id}`}
@@ -98,8 +108,8 @@ export default async function OffersPage() {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[10px] uppercase font-bold tracking-wider text-[var(--color-primary)] bg-blue-50 px-2 py-0.5 rounded">
-                                            New Request
+                                        <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded ${isSent ? 'text-[var(--color-primary)] bg-blue-50' : 'text-emerald-700 bg-emerald-50'}`}>
+                                            {isSent ? 'New Request' : 'Price Sent'}
                                         </span>
                                         <span className="text-xs text-[var(--foreground-muted)]">
                                             Received {formatDate(offer.created_at)}
@@ -108,8 +118,13 @@ export default async function OffersPage() {
                                     <h2 className="text-lg font-bold group-hover:text-[var(--color-primary)] transition-colors">
                                         {offer.booking.ground_name || offer.booking.location_postcode}
                                     </h2>
+                                    {!isSent && offer.price_pence && (
+                                        <p className="text-sm text-emerald-600 font-medium mt-0.5">
+                                            Your quote: &pound;{(offer.price_pence / 100).toFixed(2)}
+                                        </p>
+                                    )}
                                 </div>
-                                <StatusChip status="pending" size="sm" />
+                                <StatusChip status={isSent ? 'pending' : 'accepted_priced'} size="sm" />
                             </div>
 
                             {/* Teams Display */}
@@ -168,7 +183,7 @@ export default async function OffersPage() {
                                 </span>
                             </div>
                         </Link>
-                    ))}
+                    )})}
                 </div>
             ) : (
                 <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-[var(--border-color)]">

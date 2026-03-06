@@ -59,11 +59,15 @@ export async function updateDateAvailability(date: string, slots: { start_time: 
     }
 
     // Delete existing availability for this date
-    await supabase
+    const { error: deleteError } = await supabase
         .from('referee_date_availability')
         .delete()
         .eq('referee_id', user.id)
         .eq('date', date)
+
+    if (deleteError) {
+        return { error: deleteError.message }
+    }
 
     // Insert new availability
     if (slots.length > 0) {

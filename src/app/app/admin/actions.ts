@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { FAVerificationStatus } from '@/lib/types'
+import { createNotification } from '@/lib/notifications'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     const { data: { user } } = await supabase.auth.getUser()
@@ -68,8 +69,8 @@ export async function updateFAVerificationStatus(
             .eq('status', 'awaiting_fa_response')
 
         // Notify the referee
-        await supabase.from('notifications').insert({
-            user_id: refereeId,
+        await createNotification({
+            userId: refereeId,
             title: status === 'verified' ? 'FA Number Verified' : 'FA Number Rejected',
             message: status === 'verified'
                 ? 'Your FA number has been verified by an administrator.'
@@ -189,8 +190,8 @@ export async function resolveVerificationRequest(
         .eq('profile_id', request.referee_id)
 
     // Notify the referee
-    await supabase.from('notifications').insert({
-        user_id: request.referee_id,
+    await createNotification({
+        userId: request.referee_id,
         title: resolution === 'confirmed' ? 'FA Number Verified' : 'FA Number Rejected',
         message: resolution === 'confirmed'
             ? 'Your FA number has been confirmed by your County FA.'

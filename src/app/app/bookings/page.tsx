@@ -101,6 +101,7 @@ export default async function BookingsPage({
             .from('bookings')
             .select('id', { count: 'exact', head: true })
             .eq('coach_id', user.id)
+            .is('deleted_at', null)
 
         if (statusFilter && statusFilter !== 'all') {
             countQuery = countQuery.eq('status', statusFilter)
@@ -118,6 +119,7 @@ export default async function BookingsPage({
         thread:threads(*)
       `)
             .eq('coach_id', user.id)
+            .is('deleted_at', null)
             .order('match_date', { ascending: true })
             .range(offset, offset + PAGE_SIZE - 1)
 

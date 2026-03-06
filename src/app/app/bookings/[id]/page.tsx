@@ -38,6 +38,7 @@ export default async function BookingDetailPage({
       thread:threads(id)
     `)
         .eq('id', id)
+        .is('deleted_at', null)
         .single()
 
     if (error || !booking) {
