@@ -2,18 +2,22 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { UK_COUNTIES } from '@/lib/constants'
 import { createBooking } from '@/app/app/bookings/actions'
+import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { VenueMap } from '@/components/ui/VenueMap'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
 export default function CentralBookingPage() {
+    const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState('')
+    const [celebration, setCelebration] = useState<{ bookingId: string } | null>(null)
     const [formData, setFormData] = useState({
         county: '',
         match_date: '',
@@ -58,12 +62,24 @@ export default function CentralBookingPage() {
             if (result?.error) {
                 setError(result.error)
                 setIsSubmitting(false)
+            } else if (result?.success && result?.bookingId) {
+                setCelebration({ bookingId: result.bookingId })
             }
-            // On success, createBooking redirects to the match page automatically
         } catch {
             setError('Failed to create booking')
             setIsSubmitting(false)
         }
+    }
+
+    if (celebration) {
+        return (
+            <CelebrationOverlay
+                icon="check-circle"
+                title="Booking Created!"
+                subtitle="Let's find a referee"
+                onComplete={() => router.push(`/app/bookings/${celebration.bookingId}/match`)}
+            />
+        )
     }
 
     return (
