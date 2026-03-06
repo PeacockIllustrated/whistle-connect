@@ -351,17 +351,26 @@ export function BookingActions({
         return (
             <div className="space-y-3">
                 <div className="p-4 bg-[var(--neutral-50)] rounded-xl text-center">
-                    <div className="flex justify-center mb-2">
-                        <span className="relative flex h-3 w-3">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-primary)] opacity-75" />
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--brand-primary)]" />
-                        </span>
-                    </div>
-                    <p className="text-sm text-[var(--foreground-muted)]">
-                        {booking.status === 'pending'
-                            ? 'Searching for available referees...'
-                            : 'Waiting for referees to respond...'}
-                    </p>
+                    {booking.status === 'offered' ? (
+                        <>
+                            <div className="flex justify-center mb-2">
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--brand-primary)] opacity-75" />
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[var(--brand-primary)]" />
+                                </span>
+                            </div>
+                            <p className="text-sm text-[var(--foreground-muted)]">
+                                Waiting for referees to respond...
+                            </p>
+                        </>
+                    ) : (
+                        <>
+                            <Search className="w-5 h-5 mx-auto mb-2 text-[var(--foreground-muted)] opacity-60" />
+                            <p className="text-sm text-[var(--foreground-muted)]">
+                                No offers sent yet — find referees below
+                            </p>
+                        </>
+                    )}
                 </div>
                 <Link href={`/app/bookings/${booking.id}/match`} className="block">
                     <Button fullWidth variant="primary">
