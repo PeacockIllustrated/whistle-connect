@@ -144,7 +144,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
             {/* Actions */}
             <div className="mt-3 flex justify-end">
                 {/* Coach Actions: Delete if pending/offered */}
-                {!showCoach && (booking.status === 'pending' || booking.status === 'offered') && (
+                {!showCoach && (booking.status === 'pending' || booking.status === 'offered' || booking.status === 'cancelled') && (
                     <button
                         onClick={handleDelete}
                         disabled={isLoading}
