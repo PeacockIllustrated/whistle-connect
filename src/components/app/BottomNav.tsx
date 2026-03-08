@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useUnreadMessages } from '@/components/app/UnreadMessagesProvider'
 import { useBookingUpdates } from '@/components/app/BookingUpdatesProvider'
-import { Home, CalendarDays, Inbox, MessageCircle, User } from 'lucide-react'
+import { Home, CalendarDays, MessageCircle, User, Radar, Map } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface BottomNavProps {
@@ -26,12 +26,21 @@ const getNavItems = (userRole?: string): NavItem[] => {
         { label: 'Bookings', href: '/app/bookings', icon: CalendarDays, animation: 'icon-animate-pop' },
     ]
 
+    if (userRole === 'coach') {
+        items.push({
+            label: 'Map',
+            href: '/app/map',
+            icon: Map,
+            animation: 'icon-animate-pop',
+        })
+    }
+
     if (userRole === 'referee') {
         items.push({
-            label: 'Offers',
-            href: '/app/offers',
-            icon: Inbox,
-            animation: 'icon-animate-wiggle',
+            label: 'Feed',
+            href: '/app/feed',
+            icon: Radar,
+            animation: 'icon-animate-pop',
         })
     }
 
@@ -98,10 +107,9 @@ export function BottomNav({ userRole }: BottomNavProps) {
                             >
                                 <Icon
                                     className="w-6 h-6"
-                                    fill={active ? 'currentColor' : 'none'}
-                                    strokeWidth={active ? 0 : 2}
+                                    strokeWidth={active ? 2.5 : 2}
                                 />
-                                {item.href === '/app/offers' && offerCount > 0 && (
+                                {item.href === '/app/feed' && offerCount > 0 && (
                                     <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-[var(--wc-red)] text-white text-[10px] font-bold shadow-md animate-pulse">
                                         {offerCount > 9 ? '9+' : offerCount}
                                     </span>
