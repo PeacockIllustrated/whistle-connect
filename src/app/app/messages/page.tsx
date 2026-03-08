@@ -67,9 +67,11 @@ export default async function MessagesPage() {
                 })
             )
 
-            // Filter to only show threads for confirmed bookings
-            // We allow system messages to exist, but the thread only appears in the list when confirmed
-            threads = allThreads.filter(t => t.booking?.status === 'confirmed')
+            // Show threads for any active booking (not just confirmed)
+            threads = allThreads.filter(t => {
+                const status = t.booking?.status
+                return status && !['draft'].includes(status)
+            })
         }
     }
 
