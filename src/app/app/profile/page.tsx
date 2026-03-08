@@ -2,8 +2,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/ui/Card'
-import { signOut } from '@/lib/auth/actions'
 import { ProfileClient } from './ProfileClient'
+import { SignOutButton } from '@/components/app/SignOutButton'
 import { Clock, ChevronRight, ShieldCheck } from 'lucide-react'
 
 export default async function ProfilePage() {
@@ -75,14 +75,7 @@ export default async function ProfilePage() {
             </Card>
 
             {/* Sign Out */}
-            <form action={signOut}>
-                <button
-                    type="submit"
-                    className="w-full p-4 rounded-2xl border-2 border-red-200 text-red-600 font-semibold text-center hover:bg-red-50 transition-colors"
-                >
-                    Sign Out
-                </button>
-            </form>
+            <SignOutButton />
         </div>
     )
 }

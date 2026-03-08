@@ -44,3 +44,11 @@ vapid_keys.txt
 
 # generated mapbox style files (contain API token references)
 scripts/mapbox-style-*.json
+
+# Capacitor native projects (generated, contain signing keys)
+/android/
+/ios/
+
+# Firebase config files (contain API keys)
+google-services.json
+GoogleService-Info.plist

@@ -102,6 +102,7 @@ export async function createSOSBooking(data: SOSBookingData) {
                         message: `Urgent: A match needs a referee today at ${data.kickoff_time}! ${Math.round(r.distance_km)} km from you. First to accept gets it.`,
                         type: 'warning',
                         link: `/app/bookings/${booking.id}`,
+                        urgency: 'sos',
                     })
                 )
 
@@ -151,6 +152,7 @@ export async function claimSOSBooking(bookingId: string) {
             message: `${referee?.full_name || 'A referee'} has claimed your SOS match at ${booking.ground_name || booking.location_postcode}.`,
             type: 'success',
             link: `/app/bookings/${bookingId}`,
+            urgency: 'sos',
         })
     }
 

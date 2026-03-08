@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { isNative } from '@/lib/platform'
+import { initNativePush } from '@/lib/notifications-native'
 
 // Helper to convert VAPID key
 function urlBase64ToUint8Array(base64String: string) {
@@ -39,6 +41,13 @@ export function PushNotificationManager() {
     }
 
     useEffect(() => {
+        // Native path: delegate to Capacitor push (FCM/APNs)
+        if (isNative()) {
+            initNativePush()
+            return // Skip all web push logic — native handles its own permissions UI
+        }
+
+        // Web path: existing web push flow (unchanged)
         if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
             setIsSupported(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: standard feature-detection pattern
             registerServiceWorker()
