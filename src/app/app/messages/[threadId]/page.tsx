@@ -74,15 +74,21 @@ export default async function ThreadPage({
         .select('profile:profiles(*)')
         .eq('thread_id', threadId)
 
-    type ParticipantRow = { profile: { id: string; full_name: string; avatar_url: string | null }[] }
+    type ProfileData = { id: string; full_name: string; avatar_url: string | null }
+    type ParticipantRow = { profile: ProfileData | ProfileData[] }
+    const getProfile = (p: ParticipantRow): ProfileData | undefined =>
+        Array.isArray(p.profile) ? p.profile[0] : p.profile
+
     const otherParticipant = (participants as ParticipantRow[] | null)?.find(
-        (p) => p.profile?.[0]?.id !== user.id
-    )?.profile?.[0]
+        (p) => getProfile(p)?.id !== user.id
+    )
+    const otherProfile = otherParticipant ? getProfile(otherParticipant) : undefined
 
     // Get current user's profile for optimistic sending
-    const currentUserProfile = (participants as ParticipantRow[] | null)?.find(
-        (p) => p.profile?.[0]?.id === user.id
-    )?.profile?.[0]
+    const currentParticipant = (participants as ParticipantRow[] | null)?.find(
+        (p) => getProfile(p)?.id === user.id
+    )
+    const currentUserProfile = currentParticipant ? getProfile(currentParticipant) : undefined
 
     // Get messages
     const { data: messages } = await supabase
@@ -104,21 +110,21 @@ export default async function ThreadPage({
 
                 <div className="flex items-center gap-3 flex-1">
                     <div className="w-10 h-10 rounded-full bg-[var(--color-primary)] flex-shrink-0 relative overflow-hidden flex items-center justify-center text-white font-semibold">
-                        {otherParticipant?.avatar_url ? (
+                        {otherProfile?.avatar_url ? (
                             <Image
-                                src={otherParticipant.avatar_url}
-                                alt={otherParticipant.full_name}
+                                src={otherProfile!.avatar_url!}
+                                alt={otherProfile!.full_name}
                                 width={40}
                                 height={40}
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            otherParticipant?.full_name?.charAt(0) || '?'
+                            otherProfile?.full_name?.charAt(0) || '?'
                         )}
                     </div>
                     <div className="flex-1 min-w-0">
                         <h1 className="font-semibold truncate">
-                            {otherParticipant?.full_name || 'Unknown'}
+                            {otherProfile?.full_name || 'Unknown'}
                         </h1>
                         {thread.booking && (
                             <p className="text-xs text-[var(--foreground-muted)] truncate">
