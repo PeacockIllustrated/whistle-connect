@@ -44,8 +44,10 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
                         initialData={{
                             full_name: profile.full_name,
                             postcode: profile.postcode || '',
-                            phone: profile.phone || ''
+                            phone: profile.phone || '',
+                            club_name: profile.club_name || '',
                         }}
+                        role={profile.role}
                         onCancel={() => setIsEditing(false)}
                         onSuccess={() => {
                             setIsEditing(false)

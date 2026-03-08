@@ -51,6 +51,7 @@ export function MessageInput({
                     phone: null,
                     postcode: null,
                     avatar_url: null,
+                    club_name: null,
                     latitude: null,
                     longitude: null,
                     created_at: '',

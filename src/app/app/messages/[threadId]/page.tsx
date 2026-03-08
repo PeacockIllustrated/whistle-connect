@@ -74,7 +74,7 @@ export default async function ThreadPage({
         .select('profile:profiles(*)')
         .eq('thread_id', threadId)
 
-    type ProfileData = { id: string; full_name: string; avatar_url: string | null }
+    type ProfileData = { id: string; full_name: string; avatar_url: string | null; club_name: string | null; role: string }
     type ParticipantRow = { profile: ProfileData | ProfileData[] }
     const getProfile = (p: ParticipantRow): ProfileData | undefined =>
         Array.isArray(p.profile) ? p.profile[0] : p.profile
@@ -126,6 +126,11 @@ export default async function ThreadPage({
                         <h1 className="font-semibold truncate">
                             {otherProfile?.full_name || 'Unknown'}
                         </h1>
+                        {otherProfile?.club_name && (
+                            <p className="text-xs text-[var(--brand-primary)] font-medium truncate">
+                                {otherProfile.club_name}
+                            </p>
+                        )}
                         {thread.booking && (
                             <p className="text-xs text-[var(--foreground-muted)] truncate">
                                 {thread.booking.ground_name || thread.booking.location_postcode}

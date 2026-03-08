@@ -9,6 +9,7 @@ export async function updateProfile(formData: {
     full_name: string
     postcode: string
     phone: string
+    club_name?: string
 }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -24,6 +25,10 @@ export async function updateProfile(formData: {
         postcode: formData.postcode,
         phone: formData.phone,
         updated_at: new Date().toISOString()
+    }
+
+    if (formData.club_name !== undefined) {
+        updateData.club_name = formData.club_name || null
     }
 
     if (formData.postcode) {

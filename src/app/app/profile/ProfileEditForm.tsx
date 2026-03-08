@@ -10,15 +10,18 @@ interface ProfileEditFormProps {
         full_name: string
         postcode: string
         phone: string
+        club_name?: string
     }
+    role?: string
     onCancel: () => void
     onSuccess: () => void
 }
 
-export function ProfileEditForm({ initialData, onCancel, onSuccess }: ProfileEditFormProps) {
+export function ProfileEditForm({ initialData, role, onCancel, onSuccess }: ProfileEditFormProps) {
     const [fullName, setFullName] = useState(initialData.full_name)
     const [postcode, setPostcode] = useState(initialData.postcode)
     const [phone, setPhone] = useState(initialData.phone)
+    const [clubName, setClubName] = useState(initialData.club_name || '')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -37,7 +40,8 @@ export function ProfileEditForm({ initialData, onCancel, onSuccess }: ProfileEdi
             const result = await updateProfile({
                 full_name: fullName,
                 postcode,
-                phone
+                phone,
+                club_name: role === 'coach' ? clubName : undefined,
             })
 
             if (result.error) {
@@ -78,6 +82,15 @@ export function ProfileEditForm({ initialData, onCancel, onSuccess }: ProfileEdi
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value)}
             />
+
+            {role === 'coach' && (
+                <Input
+                    label="Club Name"
+                    value={clubName}
+                    onChange={(e) => setClubName(e.target.value)}
+                    placeholder="e.g. Newcastle United FC"
+                />
+            )}
 
             <div className="flex gap-3 pt-2">
                 <Button

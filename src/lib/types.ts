@@ -34,6 +34,7 @@ export interface Profile {
     phone: string | null
     postcode: string | null
     avatar_url: string | null
+    club_name: string | null
     latitude: number | null
     longitude: number | null
     created_at: string
