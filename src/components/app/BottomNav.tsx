@@ -27,12 +27,20 @@ const getNavItems = (userRole?: string): NavItem[] => {
     ]
 
     if (userRole === 'admin') {
-        items.push({
-            label: 'Referees',
-            href: '/app/admin/referees',
-            icon: ShieldCheck,
-            animation: 'icon-animate-pop',
-        })
+        items.push(
+            {
+                label: 'Map',
+                href: '/app/admin/map',
+                icon: Map,
+                animation: 'icon-animate-pop',
+            },
+            {
+                label: 'Referees',
+                href: '/app/admin/referees',
+                icon: ShieldCheck,
+                animation: 'icon-animate-pop',
+            },
+        )
     }
 
     if (userRole === 'coach') {

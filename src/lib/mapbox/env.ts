@@ -14,3 +14,18 @@ export function getMapboxAccessToken(): string {
     }
     return value
 }
+
+const DEFAULT_LIGHT_STYLE = 'mapbox://styles/mapbox/light-v11'
+const DEFAULT_DARK_STYLE = 'mapbox://styles/mapbox/dark-v11'
+
+/**
+ * Returns the Mapbox style URL for the given theme.
+ * Uses custom branded styles if NEXT_PUBLIC_MAPBOX_STYLE_LIGHT / _DARK
+ * are set, otherwise falls back to Mapbox defaults.
+ */
+export function getMapboxStyle(theme: 'light' | 'dark'): string {
+    if (theme === 'dark') {
+        return process.env.NEXT_PUBLIC_MAPBOX_STYLE_DARK || DEFAULT_DARK_STYLE
+    }
+    return process.env.NEXT_PUBLIC_MAPBOX_STYLE_LIGHT || DEFAULT_LIGHT_STYLE
+}

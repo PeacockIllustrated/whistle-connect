@@ -1,4 +1,5 @@
 import { Resend } from 'resend'
+import { escapeHtml } from '@/lib/utils'
 
 // Override recipient for testing — swap to countyEmail for production
 const TEST_RECIPIENT = 'tom@onesignanddigital.com'
@@ -9,18 +10,78 @@ function getResend() {
     return new Resend(apiKey)
 }
 
+function getBaseUrl(): string {
+    // Vercel deployment URL
+    if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+    return 'http://localhost:3000'
+}
+
 function buildVerificationEmail({
     refereeName,
     faId,
     county,
+    responseToken,
 }: {
     refereeName: string
     faId: string
     county?: string | null
+    responseToken?: string | null
 }): string {
     const year = new Date().getFullYear()
-    const countyDisplay = county || 'County'
-    const greeting = county ? `Dear ${county} Football Association,` : 'Dear Football Association,'
+    // Escape all user-supplied values before inserting into HTML
+    const safeRefereeName = escapeHtml(refereeName)
+    const safeFaId = escapeHtml(faId)
+    const safeCounty = escapeHtml(county || 'County')
+    const greeting = county ? `Dear ${safeCounty} Football Association,` : 'Dear Football Association,'
+    const baseUrl = getBaseUrl()
+
+    // Build one-click response buttons if we have a token
+    const hasButtons = !!responseToken
+    const confirmUrl = hasButtons ? `${baseUrl}/api/fa-verify?token=${responseToken}&action=confirmed` : ''
+    const rejectUrl = hasButtons ? `${baseUrl}/api/fa-verify?token=${responseToken}&action=rejected` : ''
+
+    const buttonsHtml = hasButtons ? `
+              <!-- Response Buttons -->
+              <p style="margin-bottom: 16px; color: #475569; font-size: 15px;">
+                Please use one of the buttons below to confirm or deny this registration:
+              </p>
+
+              <table border="0" cellpadding="0" cellspacing="0" width="100%" style="margin: 28px 0;">
+                <tr>
+                  <td align="center" style="padding-right: 8px;" width="50%">
+                    <a href="${confirmUrl}" style="background-color: #16a34a; color: #ffffff; padding: 14px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; text-decoration: none; display: block; text-align: center; mso-padding-alt: 0;">
+                      <!--[if mso]>
+                      <i style="letter-spacing: 15px; mso-font-width: -100%; mso-text-raise: 30pt;">&nbsp;</i>
+                      <![endif]-->
+                      <span style="mso-text-raise: 15pt;">&#10003; Confirm Registration</span>
+                      <!--[if mso]>
+                      <i style="letter-spacing: 15px; mso-font-width: -100%;">&nbsp;</i>
+                      <![endif]-->
+                    </a>
+                  </td>
+                  <td align="center" style="padding-left: 8px;" width="50%">
+                    <a href="${rejectUrl}" style="background-color: #dc2626; color: #ffffff; padding: 14px 24px; border-radius: 8px; font-weight: 600; font-size: 15px; text-decoration: none; display: block; text-align: center; mso-padding-alt: 0;">
+                      <!--[if mso]>
+                      <i style="letter-spacing: 15px; mso-font-width: -100%; mso-text-raise: 30pt;">&nbsp;</i>
+                      <![endif]-->
+                      <span style="mso-text-raise: 15pt;">&#10007; Not Found</span>
+                      <!--[if mso]>
+                      <i style="letter-spacing: 15px; mso-font-width: -100%;">&nbsp;</i>
+                      <![endif]-->
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin-bottom: 24px; color: #94a3b8; font-size: 13px; text-align: center;">
+                Just one click &mdash; no login or account required.
+              </p>
+    ` : `
+              <p style="margin-bottom: 24px; color: #475569; font-size: 15px;">
+                Please reply to this email to confirm or deny the validity of this registration. A simple confirmation is sufficient &mdash; we understand your time is valuable.
+              </p>
+    `
 
     return `<!DOCTYPE html>
 <html>
@@ -35,6 +96,7 @@ function buildVerificationEmail({
     @media only screen and (max-width: 600px) {
       .container { width: 100% !important; padding: 20px !important; }
       .detail-table { width: 100% !important; }
+      .btn-cell { display: block !important; width: 100% !important; padding: 4px 0 !important; }
     }
   </style>
 </head>
@@ -75,7 +137,7 @@ function buildVerificationEmail({
                     <span style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Referee Name</span>
                   </td>
                   <td style="background-color: #ffffff; padding: 14px 20px; border-bottom: 1px solid #e2e8f0;">
-                    <span style="font-size: 15px; font-weight: 600; color: #1e293b;">${refereeName}</span>
+                    <span style="font-size: 15px; font-weight: 600; color: #1e293b;">${safeRefereeName}</span>
                   </td>
                 </tr>
                 <tr>
@@ -83,7 +145,7 @@ function buildVerificationEmail({
                     <span style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">FA Number</span>
                   </td>
                   <td style="background-color: #ffffff; padding: 14px 20px; border-bottom: 1px solid #e2e8f0;">
-                    <span style="font-size: 15px; font-weight: 600; color: #1d2557; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px;">${faId}</span>
+                    <span style="font-size: 15px; font-weight: 600; color: #1d2557; font-family: 'Courier New', Courier, monospace; letter-spacing: 1px;">${safeFaId}</span>
                   </td>
                 </tr>
                 <tr>
@@ -91,14 +153,12 @@ function buildVerificationEmail({
                     <span style="font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">County FA</span>
                   </td>
                   <td style="background-color: #ffffff; padding: 14px 20px;">
-                    <span style="font-size: 15px; font-weight: 600; color: #1e293b;">${countyDisplay}</span>
+                    <span style="font-size: 15px; font-weight: 600; color: #1e293b;">${safeCounty}</span>
                   </td>
                 </tr>
               </table>
 
-              <p style="margin-bottom: 24px; color: #475569; font-size: 15px;">
-                Please reply to this email to confirm or deny the validity of this registration. A simple confirmation is sufficient &mdash; we understand your time is valuable.
-              </p>
+              ${buttonsHtml}
 
               <p style="margin-bottom: 0; color: #475569; font-size: 15px;">
                 Many thanks for your assistance,
@@ -147,20 +207,23 @@ function buildVerificationEmail({
 /**
  * Send an FA verification email.
  * Used both at signup (no county yet) and by admin (with county).
+ * When responseToken is provided, the email includes one-click Confirm/Reject buttons.
  * All emails go to TEST_RECIPIENT for now.
  */
 export async function sendFAVerificationEmail({
     refereeName,
     faId,
     county,
+    responseToken,
 }: {
     refereeName: string
     faId: string
     county?: string | null
+    responseToken?: string | null
 }): Promise<{ success: boolean; error?: string }> {
     try {
         const resend = getResend()
-        const html = buildVerificationEmail({ refereeName, faId, county })
+        const html = buildVerificationEmail({ refereeName, faId, county, responseToken })
 
         const { error } = await resend.emails.send({
             from: 'Whistle Connect <onboarding@resend.dev>',

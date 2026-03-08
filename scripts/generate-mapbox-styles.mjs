@@ -15,11 +15,28 @@
  *   NEXT_PUBLIC_MAPBOX_STYLE_DARK=mapbox://styles/yourname/def456
  */
 
-import { writeFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const rootDir = resolve(__dirname, '..')
+
+// Load .env / .env.local so the script can read NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN
+for (const envFile of ['.env', '.env.local']) {
+    try {
+        const content = readFileSync(resolve(rootDir, envFile), 'utf8')
+        for (const line of content.split('\n')) {
+            const trimmed = line.trim()
+            if (!trimmed || trimmed.startsWith('#')) continue
+            const idx = trimmed.indexOf('=')
+            if (idx === -1) continue
+            const key = trimmed.slice(0, idx).trim()
+            const val = trimmed.slice(idx + 1).trim()
+            if (!process.env[key]) process.env[key] = val
+        }
+    } catch { /* file doesn't exist, skip */ }
+}
 
 // ── Valid paint properties per layer type (Mapbox Style Spec) ───────────
 const VALID_PAINT = {
@@ -37,7 +54,15 @@ const VALID_PAINT = {
 // ── Brand palette ───────────────────────────────────────────────────────
 const BRAND = {
     navy: '#1b2537',
+    navyLight: '#253550',
     red: '#cd1719',
+    redLight: '#e84244',
+    redSoft: '#f2d4d4',     // Soft red tint for light backgrounds
+    redMuted: '#3d1a1a',    // Muted red for dark backgrounds
+    green: '#22c55e',       // Pitch green — vivid
+    greenLight: '#bbf7d0',  // Pitch fill — light mode
+    greenMid: '#4ade80',    // Pitch accent
+    greenDark: '#15532e',   // Pitch fill — dark mode
     slate50: '#f8fafc',
     slate100: '#f1f5f9',
     slate200: '#e2e8f0',
@@ -53,14 +78,20 @@ const BRAND = {
 // ── Light theme colour overrides ────────────────────────────────────────
 const LIGHT_OVERRIDES = {
     background: BRAND.slate50,
-    landuse_park: '#d6e5d0',
+    // Land use — parks vs pitches are handled separately in applyBranding
+    landuse_park: '#d1e3cb',
+    landuse_pitch: BRAND.greenLight,       // Vivid green for football grounds
+    landuse_pitch_outline: BRAND.red,      // Brand red outline
     landuse_hospital: '#f3e8e8',
     landuse_school: '#eee8f0',
     landuse_commercial: BRAND.slate100,
-    water_fill: '#c1d4e6',
-    waterway_line: '#aac4db',
-    building_fill: '#dfe4ea',
-    building_outline: '#cdd3db',
+    // Water — navy-tinted to feel more on-brand
+    water_fill: '#b4c8e0',
+    waterway_line: '#9ab6d4',
+    // Buildings
+    building_fill: '#dce2ea',
+    building_outline: '#c5cdd8',
+    // Roads
     road_motorway: '#ffffff',
     road_motorway_casing: BRAND.slate300,
     road_trunk: '#ffffff',
@@ -74,6 +105,7 @@ const LIGHT_OVERRIDES = {
     road_minor: '#ffffff',
     road_minor_casing: BRAND.slate100,
     road_path: BRAND.slate200,
+    // Labels
     label_primary: BRAND.navy,
     label_secondary: BRAND.slate600,
     label_tertiary: BRAND.slate400,
@@ -84,14 +116,16 @@ const LIGHT_OVERRIDES = {
 // ── Dark theme colour overrides ─────────────────────────────────────────
 const DARK_OVERRIDES = {
     background: BRAND.navy,
-    landuse_park: '#1a2e1f',
+    landuse_park: '#162419',
+    landuse_pitch: BRAND.greenDark,        // Rich green for pitches in dark mode
+    landuse_pitch_outline: BRAND.redLight,  // Brighter red for dark mode visibility
     landuse_hospital: '#2a1f2a',
     landuse_school: '#251f2e',
     landuse_commercial: '#1f2d3f',
-    water_fill: '#0f1a2a',
-    waterway_line: '#0c1624',
-    building_fill: '#243044',
-    building_outline: '#1b2537',
+    water_fill: '#0c1525',
+    waterway_line: '#091220',
+    building_fill: '#213044',
+    building_outline: BRAND.navy,
     road_motorway: '#3a4f68',
     road_motorway_casing: BRAND.navy,
     road_trunk: '#354a62',
@@ -146,8 +180,10 @@ function applyBranding(style, o, themeName) {
     style.name = `Whistle Connect ${themeName}`
 
     let modified = 0
+    let landuseInsertIndex = -1
 
-    for (const layer of style.layers) {
+    for (let i = 0; i < style.layers.length; i++) {
+        const layer = style.layers[i]
         const id = layer.id || ''
         const type = layer.type || ''
 
@@ -176,16 +212,45 @@ function applyBranding(style, o, themeName) {
             continue
         }
 
-        // ── Land use (fill layers only) ──
+        // ── Land use — special handling for pitch vs everything else ──
         if (type === 'fill' && (id.includes('landuse') || id.includes('land-use') ||
             id.includes('park') || id.includes('pitch') || id.includes('national-park'))) {
             const filterStr = JSON.stringify(layer.filter || [])
+
             if (filterStr.includes('hospital') || filterStr.includes('medical')) {
                 safeSet(layer, 'fill-color', o.landuse_hospital)
             } else if (filterStr.includes('school') || filterStr.includes('university') || filterStr.includes('education')) {
                 safeSet(layer, 'fill-color', o.landuse_school)
             } else if (filterStr.includes('commercial') || filterStr.includes('retail') || filterStr.includes('industrial')) {
                 safeSet(layer, 'fill-color', o.landuse_commercial)
+            } else if (filterStr.includes('pitch')) {
+                // This is the main landuse layer which contains "pitch" as a class.
+                // Use a match expression so pitches get a vivid brand green
+                // while parks/grass/etc keep the muted green.
+                layer.paint['fill-color'] = [
+                    'match', ['get', 'class'],
+                    'pitch', o.landuse_pitch,
+                    o.landuse_park,
+                ]
+
+                // Boost pitch opacity so they really stand out
+                layer.paint['fill-opacity'] = [
+                    'interpolate', ['linear'], ['zoom'],
+                    8, ['match', ['get', 'class'],
+                        ['residential', 'airport'], 0.8,
+                        'pitch', 0.6,
+                        0.2],
+                    12, ['match', ['get', 'class'],
+                        'residential', 0,
+                        'pitch', 0.85,
+                        1],
+                    15, ['match', ['get', 'class'],
+                        'residential', 0,
+                        'pitch', 0.9,
+                        1],
+                ]
+
+                landuseInsertIndex = i + 1  // insert outline layer after this
             } else {
                 safeSet(layer, 'fill-color', o.landuse_park)
             }
@@ -252,6 +317,47 @@ function applyBranding(style, o, themeName) {
             modified++
             continue
         }
+    }
+
+    // ── Inject pitch outline + glow layers to make football grounds pop ──
+    if (landuseInsertIndex >= 0) {
+        // Find the source name used by the landuse layer
+        const landuseLayer = style.layers[landuseInsertIndex - 1]
+        const source = landuseLayer.source || 'composite'
+        const sourceLayer = landuseLayer['source-layer'] || 'landuse'
+
+        // Subtle glow behind the pitch
+        const pitchGlow = {
+            id: 'wc-pitch-glow',
+            type: 'fill',
+            source,
+            'source-layer': sourceLayer,
+            filter: ['==', ['get', 'class'], 'pitch'],
+            minzoom: 13,
+            paint: {
+                'fill-color': o.landuse_pitch_outline,
+                'fill-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0, 14, 0.08, 16, 0.12],
+            },
+        }
+
+        // Crisp outline in brand red
+        const pitchOutline = {
+            id: 'wc-pitch-outline',
+            type: 'line',
+            source,
+            'source-layer': sourceLayer,
+            filter: ['==', ['get', 'class'], 'pitch'],
+            minzoom: 13,
+            paint: {
+                'line-color': o.landuse_pitch_outline,
+                'line-width': ['interpolate', ['linear'], ['zoom'], 13, 0.5, 15, 1.5, 18, 2.5],
+                'line-opacity': ['interpolate', ['linear'], ['zoom'], 13, 0.4, 15, 0.7, 18, 0.85],
+            },
+        }
+
+        style.layers.splice(landuseInsertIndex, 0, pitchGlow, pitchOutline)
+        modified += 2
+        console.log(`  ⚽ Injected pitch highlight layers (glow + outline)`)
     }
 
     return { style, modified }

@@ -6,7 +6,8 @@ import { getMapReferees, MapReferee } from './actions'
 import { getMyPostcode, saveMyGeolocation } from '@/app/app/profile/actions'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { loadMapboxGL } from '@/lib/mapbox/loader'
-import { getMapboxAccessToken } from '@/lib/mapbox/env'
+import { getMapboxAccessToken, getMapboxStyle } from '@/lib/mapbox/env'
+import { escapeHtml } from '@/lib/utils'
 import { ChevronLeft, MapPin, Loader2 } from 'lucide-react'
 
 export default function MapPage() {
@@ -29,7 +30,7 @@ export default function MapPage() {
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
             const map = new mapboxgl.Map({
                 container: mapContainer.current,
-                style: isDark ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
+                style: getMapboxStyle(isDark ? 'dark' : 'light'),
                 center: [center.lng, center.lat],
                 zoom: 11,
             })
@@ -217,14 +218,14 @@ export default function MapPage() {
                         .setLngLat([e.lngLat.lng, e.lngLat.lat])
                         .setHTML(`
                             <div style="font-family:system-ui;min-width:160px">
-                                <strong>${props.name}</strong>
+                                <strong>${escapeHtml(props.name)}</strong>
                                 <div style="font-size:12px;color:#666;margin-top:4px">
                                     ${props.is_available ? '🟢 Available' : '⚪ Unavailable'}
                                 </div>
                                 <div style="font-size:11px;color:#888;margin-top:2px">
-                                    Level ${props.level} · ${props.distance_km} km · ${Math.round(props.reliability_score)}% reliable
+                                    Level ${escapeHtml(props.level)} · ${escapeHtml(props.distance_km)} km · ${Math.round(props.reliability_score)}% reliable
                                 </div>
-                                ${props.average_rating > 0 ? `<div style="font-size:11px;color:#888">⭐ ${props.average_rating.toFixed(1)} · ${props.total_matches} matches</div>` : ''}
+                                ${props.average_rating > 0 ? `<div style="font-size:11px;color:#888">⭐ ${props.average_rating.toFixed(1)} · ${escapeHtml(props.total_matches)} matches</div>` : ''}
                             </div>
                         `)
                         .addTo(map)

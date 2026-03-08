@@ -137,13 +137,14 @@ export async function createFAVerificationRequest(refereeId: string) {
     const profile = Array.isArray(referee.profile) ? referee.profile[0] : referee.profile
     const refereeName = (profile as { full_name: string })?.full_name || 'Unknown'
 
-    // Send automated verification email
+    // Send automated verification email with one-click response buttons
     let emailSent = false
     try {
         const emailResult = await sendFAVerificationEmail({
             refereeName,
             faId: referee.fa_id,
             county: referee.county,
+            responseToken: request.response_token,
         })
         emailSent = emailResult.success
         if (!emailResult.success) {

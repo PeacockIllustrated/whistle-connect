@@ -78,3 +78,14 @@ export function getStatusCardStyle(status: string): string {
 export function isValidFANumber(fan: string): boolean {
     return /^\d{8,10}$/.test(fan)
 }
+
+/** Escape HTML special characters to prevent XSS in dynamic HTML (e.g. map popups) */
+export function escapeHtml(str: string | number | boolean | null | undefined): string {
+    const s = String(str ?? '')
+    return s
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+}

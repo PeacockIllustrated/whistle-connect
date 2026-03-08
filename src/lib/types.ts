@@ -303,6 +303,7 @@ export interface FAVerificationRequest {
     fa_id: string
     county: string
     status: FAVerificationRequestStatus
+    response_token: string
     requested_by: string
     requested_at: string
     resolved_at: string | null

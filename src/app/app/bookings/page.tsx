@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { BookingCard } from '@/components/app/BookingCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/AwaitingAction'
+import { AdminBookingsView } from '@/components/app/AdminBookingsView'
+import type { AdminBooking } from '@/components/app/AdminBookingsView'
 import { BookingStatus, BookingWithDetails } from '@/lib/types'
 import { CalendarDays } from 'lucide-react'
 import { Pagination } from '@/components/app/Pagination'
@@ -82,18 +84,146 @@ export default async function BookingsPage({
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('*')
+        .select('role')
         .eq('id', user.id)
         .single()
 
     const isCoach = profile?.role === 'coach'
     const isReferee = profile?.role === 'referee'
+    const isAdmin = profile?.role === 'admin'
     const statusFilter = params.status as BookingStatus | 'all' | undefined
     const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1)
     const offset = (currentPage - 1) * PAGE_SIZE
 
     let bookings: BookingWithDetails[] = []
     let totalBookings = 0
+
+    // ── Admin bookings data ───────────────────────────────
+    let adminUpcoming: AdminBooking[] = []
+    let adminCompleted: AdminBooking[] = []
+
+    if (isAdmin) {
+        const today = new Date().toISOString().split('T')[0]
+
+        // Supabase join result types for admin booking queries
+        interface AdminBookingRow {
+            id: string
+            status: string
+            match_date: string
+            kickoff_time: string
+            home_team: string | null
+            away_team: string | null
+            ground_name: string | null
+            location_postcode: string
+            address_text: string | null
+            format: string | null
+            age_group: string | null
+            is_sos: boolean
+            coach: { full_name: string } | { full_name: string }[] | null
+            assignment: Array<{
+                referee: { full_name: string } | { full_name: string }[] | null
+            }> | null
+        }
+
+        interface CompletedBookingRow extends AdminBookingRow {
+            ratings: Array<{
+                rating: number
+                punctuality: number | null
+                communication: number | null
+                professionalism: number | null
+                comment: string | null
+            }> | null
+        }
+
+        const [
+            { data: upcomingData },
+            { data: completedData },
+        ] = await Promise.all([
+            // Upcoming/active bookings: pending, offered, confirmed — future dates
+            supabase
+                .from('bookings')
+                .select(`
+                    id, status, match_date, kickoff_time, home_team, away_team,
+                    ground_name, location_postcode, address_text, format, age_group, is_sos,
+                    coach:profiles!bookings_coach_id_fkey(full_name),
+                    assignment:booking_assignments(referee:profiles(full_name))
+                `)
+                .is('deleted_at', null)
+                .in('status', ['pending', 'offered', 'confirmed'])
+                .gte('match_date', today)
+                .order('match_date', { ascending: true })
+                .limit(50),
+
+            // Completed bookings with ratings
+            supabase
+                .from('bookings')
+                .select(`
+                    id, status, match_date, kickoff_time, home_team, away_team,
+                    ground_name, location_postcode, address_text, format, age_group, is_sos,
+                    coach:profiles!bookings_coach_id_fkey(full_name),
+                    assignment:booking_assignments(referee:profiles(full_name)),
+                    ratings:match_ratings(rating, punctuality, communication, professionalism, comment)
+                `)
+                .is('deleted_at', null)
+                .eq('status', 'completed')
+                .order('match_date', { ascending: false })
+                .limit(50),
+        ])
+
+        // Helper to extract name from Supabase join result
+        const getName = (v: { full_name: string } | { full_name: string }[] | null | undefined): string | null => {
+            if (!v) return null
+            if (Array.isArray(v)) return v[0]?.full_name || null
+            return v.full_name || null
+        }
+
+        adminUpcoming = ((upcomingData || []) as AdminBookingRow[]).map((b) => ({
+            id: b.id,
+            status: b.status as BookingStatus,
+            match_date: b.match_date,
+            kickoff_time: b.kickoff_time,
+            home_team: b.home_team,
+            away_team: b.away_team,
+            ground_name: b.ground_name,
+            location_postcode: b.location_postcode,
+            address_text: b.address_text,
+            format: b.format,
+            age_group: b.age_group,
+            is_sos: b.is_sos,
+            coach_name: getName(b.coach),
+            referee_name: b.assignment?.[0] ? getName(b.assignment[0].referee) : null,
+            rating: null,
+            punctuality: null,
+            communication: null,
+            professionalism: null,
+            comment: null,
+        }))
+
+        adminCompleted = ((completedData || []) as CompletedBookingRow[]).map((b) => {
+            const r = b.ratings?.[0] || null
+            return {
+                id: b.id,
+                status: b.status as BookingStatus,
+                match_date: b.match_date,
+                kickoff_time: b.kickoff_time,
+                home_team: b.home_team,
+                away_team: b.away_team,
+                ground_name: b.ground_name,
+                location_postcode: b.location_postcode,
+                address_text: b.address_text,
+                format: b.format,
+                age_group: b.age_group,
+                is_sos: b.is_sos,
+                coach_name: getName(b.coach),
+                referee_name: b.assignment?.[0] ? getName(b.assignment[0].referee) : null,
+                rating: r?.rating ?? null,
+                punctuality: r?.punctuality ?? null,
+                communication: r?.communication ?? null,
+                professionalism: r?.professionalism ?? null,
+                comment: r?.comment ?? null,
+            }
+        })
+    }
 
     if (isCoach) {
         // First get total count for pagination
@@ -237,7 +367,7 @@ export default async function BookingsPage({
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-[var(--foreground)]">
-                    {isCoach ? 'My Bookings' : 'Offers & Fixtures'}
+                    {isAdmin ? 'All Bookings' : isCoach ? 'My Bookings' : 'Offers & Fixtures'}
                 </h1>
                 {isCoach && (
                     <Link
@@ -248,6 +378,14 @@ export default async function BookingsPage({
                     </Link>
                 )}
             </div>
+
+            {/* Admin View */}
+            {isAdmin && (
+                <AdminBookingsView
+                    upcomingBookings={adminUpcoming}
+                    completedBookings={adminCompleted}
+                />
+            )}
 
             {/* Awaiting Action — real-time updates */}
             {isCoach && <CoachAwaitingAction initialItems={coachActionItems} />}
@@ -271,56 +409,60 @@ export default async function BookingsPage({
                 </div>
             )}
 
-            {/* Bookings List */}
-            {bookings.length > 0 ? (
-                <div className="space-y-3">
-                    {bookings.map((booking) => (
-                        <BookingCard
-                            key={booking.id}
-                            booking={booking}
-                            showCoach={isReferee}
-                            showReferee={isCoach && !!booking.assignment?.referee}
-                        />
-                    ))}
+            {/* Coach/Referee Bookings List */}
+            {!isAdmin && (
+                <>
+                    {bookings.length > 0 ? (
+                        <div className="space-y-3">
+                            {bookings.map((booking) => (
+                                <BookingCard
+                                    key={booking.id}
+                                    booking={booking}
+                                    showCoach={isReferee}
+                                    showReferee={isCoach && !!booking.assignment?.referee}
+                                />
+                            ))}
 
-                    {isCoach && (
-                        <Pagination
-                            currentPage={currentPage}
-                            totalItems={totalBookings}
-                            pageSize={PAGE_SIZE}
-                            basePath="/app/bookings"
-                            params={statusFilter && statusFilter !== 'all' ? { status: statusFilter } : {}}
+                            {isCoach && (
+                                <Pagination
+                                    currentPage={currentPage}
+                                    totalItems={totalBookings}
+                                    pageSize={PAGE_SIZE}
+                                    basePath="/app/bookings"
+                                    params={statusFilter && statusFilter !== 'all' ? { status: statusFilter } : {}}
+                                />
+                            )}
+                        </div>
+                    ) : (
+                        <EmptyState
+                            icon={
+                                <CalendarDays className="w-12 h-12" strokeWidth={1.5} />
+                            }
+                            title={isCoach ? 'No bookings yet' : 'No offers yet'}
+                            description={isCoach
+                                ? 'Create your first booking to find a referee for your match'
+                                : 'Set your availability to start receiving match offers'
+                            }
+                            action={
+                                isCoach ? (
+                                    <Link
+                                        href="/app/bookings/new"
+                                        className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm transition-colors"
+                                    >
+                                        Create Booking
+                                    </Link>
+                                ) : (
+                                    <Link
+                                        href="/app/availability"
+                                        className="inline-flex items-center px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium text-sm"
+                                    >
+                                        Set Availability
+                                    </Link>
+                                )
+                            }
                         />
                     )}
-                </div>
-            ) : (
-                <EmptyState
-                    icon={
-                        <CalendarDays className="w-12 h-12" strokeWidth={1.5} />
-                    }
-                    title={isCoach ? 'No bookings yet' : 'No offers yet'}
-                    description={isCoach
-                        ? 'Create your first booking to find a referee for your match'
-                        : 'Set your availability to start receiving match offers'
-                    }
-                    action={
-                        isCoach ? (
-                            <Link
-                                href="/app/bookings/new"
-                                className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm transition-colors"
-                            >
-                                Create Booking
-                            </Link>
-                        ) : (
-                            <Link
-                                href="/app/availability"
-                                className="inline-flex items-center px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium text-sm"
-                            >
-                                Set Availability
-                            </Link>
-                        )
-                    }
-                />
+                </>
             )}
         </div>
     )
