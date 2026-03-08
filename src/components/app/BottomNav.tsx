@@ -61,8 +61,13 @@ const getNavItems = (userRole?: string): NavItem[] => {
         })
     }
 
+    if (userRole !== 'admin') {
+        items.push(
+            { label: 'Messages', href: '/app/messages', icon: MessageCircle, animation: 'icon-animate-pop' },
+        )
+    }
+
     items.push(
-        { label: 'Messages', href: '/app/messages', icon: MessageCircle, animation: 'icon-animate-pop' },
         { label: 'Profile', href: '/app/profile', icon: User, animation: 'icon-animate-bounce' },
     )
 
