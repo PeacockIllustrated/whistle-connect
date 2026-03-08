@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
+import { geocodePostcode } from '@/lib/mapbox/geocode'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     const { data: { user } } = await supabase.auth.getUser()
@@ -222,4 +223,61 @@ export async function getVerificationRequests() {
 
     if (error) return { error: error.message }
     return { data }
+}
+
+// ── Geolocation Backfill ────────────────────────────────────────────────
+
+export async function backfillGeolocations() {
+    const supabase = await createClient()
+    const user = await requireAdmin(supabase)
+    if (!user) return { error: 'Admin access required' }
+
+    let profilesUpdated = 0
+    let bookingsUpdated = 0
+
+    // Backfill profiles with postcodes but no coordinates
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, postcode')
+        .not('postcode', 'is', null)
+        .is('latitude', null)
+        .limit(100)
+
+    if (profiles) {
+        for (const profile of profiles) {
+            if (!profile.postcode) continue
+            const geo = await geocodePostcode(profile.postcode)
+            if (geo) {
+                await supabase
+                    .from('profiles')
+                    .update({ latitude: geo.lat, longitude: geo.lng })
+                    .eq('id', profile.id)
+                profilesUpdated++
+            }
+        }
+    }
+
+    // Backfill bookings with postcodes but no coordinates
+    const { data: bookings } = await supabase
+        .from('bookings')
+        .select('id, location_postcode')
+        .not('location_postcode', 'is', null)
+        .is('latitude', null)
+        .limit(100)
+
+    if (bookings) {
+        for (const booking of bookings) {
+            if (!booking.location_postcode) continue
+            const geo = await geocodePostcode(booking.location_postcode)
+            if (geo) {
+                await supabase
+                    .from('bookings')
+                    .update({ latitude: geo.lat, longitude: geo.lng })
+                    .eq('id', booking.id)
+                bookingsUpdated++
+            }
+        }
+    }
+
+    return { success: true, profilesUpdated, bookingsUpdated }
 }

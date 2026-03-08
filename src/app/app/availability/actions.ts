@@ -133,6 +133,45 @@ export async function updateRefereeProfile(updates: { central_venue_opt_in?: boo
     return { success: true }
 }
 
+export async function toggleAvailability(isAvailable: boolean) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Unauthorized' }
+
+    const { error } = await supabase
+        .from('referee_profiles')
+        .update({ is_available: isAvailable })
+        .eq('profile_id', user.id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath('/app/availability')
+    revalidatePath('/app')
+    return { success: true }
+}
+
+export async function updateTravelRadius(radiusKm: number) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Unauthorized' }
+
+    if (radiusKm < 1 || radiusKm > 50) {
+        return { error: 'Travel radius must be between 1 and 50 km' }
+    }
+
+    const { error } = await supabase
+        .from('referee_profiles')
+        .update({ travel_radius_km: radiusKm })
+        .eq('profile_id', user.id)
+
+    if (error) return { error: error.message }
+
+    revalidatePath('/app/availability')
+    return { success: true }
+}
+
 export async function getUserProfile() {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

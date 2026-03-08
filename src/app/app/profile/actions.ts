@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { isValidFANumber } from '@/lib/utils'
+import { geocodePostcode } from '@/lib/mapbox/geocode'
 
 export async function updateProfile(formData: {
     full_name: string
@@ -16,14 +17,30 @@ export async function updateProfile(formData: {
         return { error: 'Not authenticated' }
     }
 
+    // Geocode postcode to lat/lon for distance-based features
+    // Geocode may fail server-side (e.g. token URL restrictions), so only update coords if successful
+    const updateData: Record<string, unknown> = {
+        full_name: formData.full_name,
+        postcode: formData.postcode,
+        phone: formData.phone,
+        updated_at: new Date().toISOString()
+    }
+
+    if (formData.postcode) {
+        const geo = await geocodePostcode(formData.postcode)
+        if (geo) {
+            updateData.latitude = geo.lat
+            updateData.longitude = geo.lng
+        }
+    } else {
+        // Postcode cleared — clear coords too
+        updateData.latitude = null
+        updateData.longitude = null
+    }
+
     const { error } = await supabase
         .from('profiles')
-        .update({
-            full_name: formData.full_name,
-            postcode: formData.postcode,
-            phone: formData.phone,
-            updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', user.id)
 
     if (error) {
@@ -55,6 +72,48 @@ export async function updateAvatarUrl(url: string) {
         console.error('Error updating avatar URL:', error)
         return { error: error.message }
     }
+
+    revalidatePath('/app/profile')
+    return { success: true }
+}
+
+/**
+ * Get the current user's postcode (for client-side geocoding).
+ */
+export async function getMyPostcode(): Promise<{ postcode?: string; hasCoords?: boolean; error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Not authenticated' }
+
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('postcode, latitude, longitude')
+        .eq('id', user.id)
+        .single()
+
+    if (!profile) return { error: 'Profile not found' }
+    if (profile.latitude && profile.longitude) return { hasCoords: true }
+    if (!profile.postcode) return { error: 'No postcode set' }
+
+    return { postcode: profile.postcode }
+}
+
+/**
+ * Save lat/lon to the current user's profile (called after client-side geocoding).
+ */
+export async function saveMyGeolocation(lat: number, lng: number): Promise<{ success?: boolean; error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Not authenticated' }
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ latitude: lat, longitude: lng })
+        .eq('id', user.id)
+
+    if (error) return { error: error.message }
 
     revalidatePath('/app/profile')
     return { success: true }

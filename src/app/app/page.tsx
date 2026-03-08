@@ -6,7 +6,7 @@ import { DashboardStats } from '@/components/app/DashboardStats'
 import { StatsAccordion } from '@/components/app/StatsAccordion'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Plus, Clock, ClipboardList, ShieldCheck, CalendarDays, FileCheck } from 'lucide-react'
+import { Plus, Clock, ClipboardList, ShieldCheck, CalendarDays, FileCheck, Siren, Banknote } from 'lucide-react'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import type { StatItem } from '@/components/app/DashboardStats'
 
@@ -240,15 +240,21 @@ export default async function AppHomePage() {
             {isCoach && (
                 <>
                     {/* Quick Actions */}
-                    <div className="mb-4">
+                    <div className="space-y-3 mb-4">
                         <ActionCard
                             href="/app/bookings/new"
-                            icon={
-                                <Plus className="w-6 h-6" />
-                            }
+                            icon={<Plus className="w-6 h-6" />}
                             title="Book a Referee"
                             subtitle="Create a new booking request"
                             variant="primary"
+                        />
+                        <ActionCard
+                            href="/app/bookings/sos"
+                            icon={<Siren className="w-6 h-6" />}
+                            title="Referee SOS"
+                            subtitle="Emergency broadcast to nearby refs"
+                            variant="secondary"
+                            badge="URGENT"
                         />
                     </div>
 
@@ -304,11 +310,16 @@ export default async function AppHomePage() {
 
                         <ActionCard
                             href="/app/bookings"
-                            icon={
-                                <ClipboardList className="w-6 h-6" />
-                            }
+                            icon={<ClipboardList className="w-6 h-6" />}
                             title="View Offers"
                             subtitle="View and respond to match requests"
+                        />
+
+                        <ActionCard
+                            href="/app/earnings"
+                            icon={<Banknote className="w-6 h-6" />}
+                            title="Earnings"
+                            subtitle="Track your season earnings and stats"
                         />
                     </div>
 

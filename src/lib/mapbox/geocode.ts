@@ -1,5 +1,3 @@
-import { getMapboxAccessToken } from './env'
-
 export interface GeocodingResult {
     lat: number
     lng: number
@@ -10,7 +8,8 @@ export interface GeocodingResult {
 const geocodeCache = new Map<string, GeocodingResult>()
 
 /**
- * Forward-geocode a UK postcode to lat/lng via Mapbox Geocoding API.
+ * Forward-geocode a UK postcode to lat/lng via postcodes.io (free, no API key).
+ * Falls back to Mapbox Geocoding API if postcodes.io fails.
  * Results are cached in-memory to avoid re-fetching the same postcode.
  */
 export async function geocodePostcode(postcode: string): Promise<GeocodingResult | null> {
@@ -20,10 +19,31 @@ export async function geocodePostcode(postcode: string): Promise<GeocodingResult
     const cached = geocodeCache.get(normalized)
     if (cached) return cached
 
-    const token = getMapboxAccessToken()
-    const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(normalized)}.json?access_token=${token}&country=gb&types=postcode&limit=1`
-
+    // Try postcodes.io first (free, no API key, works everywhere)
     try {
+        const res = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(normalized)}`)
+        if (res.ok) {
+            const data = await res.json()
+            if (data.status === 200 && data.result) {
+                const result: GeocodingResult = {
+                    lat: data.result.latitude,
+                    lng: data.result.longitude,
+                    placeName: `${data.result.admin_district || ''}, ${data.result.country || 'UK'}`.replace(/^, /, ''),
+                }
+                geocodeCache.set(normalized, result)
+                return result
+            }
+        }
+    } catch {
+        // Fall through to Mapbox
+    }
+
+    // Fallback: Mapbox Geocoding API
+    try {
+        const { getMapboxAccessToken } = await import('./env')
+        const token = getMapboxAccessToken()
+        const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(normalized)}.json?access_token=${token}&country=gb&types=postcode&limit=1`
+
         const res = await fetch(url)
         if (!res.ok) return null
 
@@ -31,7 +51,7 @@ export async function geocodePostcode(postcode: string): Promise<GeocodingResult
         if (!data.features || data.features.length === 0) return null
 
         const feature = data.features[0]
-        const [lng, lat] = feature.center // Mapbox returns [lng, lat]
+        const [lng, lat] = feature.center
         const result: GeocodingResult = { lat, lng, placeName: feature.place_name || normalized }
 
         geocodeCache.set(normalized, result)

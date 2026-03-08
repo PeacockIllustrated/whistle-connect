@@ -285,7 +285,7 @@ export default function ComponentsPage() {
                                     kind: 'user',
                                     body: 'Hi, looking forward to the match!',
                                     created_at: new Date().toISOString(),
-                                    sender: { id: 'other', full_name: 'John Smith', role: 'coach', phone: null, postcode: null, avatar_url: null, created_at: '', updated_at: '' }
+                                    sender: { id: 'other', full_name: 'John Smith', role: 'coach', phone: null, postcode: null, avatar_url: null, latitude: null, longitude: null, created_at: '', updated_at: '' }
                                 }}
                                 isOwn={false}
                                 showSender

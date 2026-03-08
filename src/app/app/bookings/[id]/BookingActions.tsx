@@ -10,7 +10,8 @@ import { acceptOffer, declineOffer, cancelBooking, confirmPrice, completeBooking
 import { BookingOffer, BookingWithDetails } from '@/lib/types'
 import { Input } from '@/components/ui/Input'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
-import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil, Search } from 'lucide-react'
+import { RatingModal } from '@/components/app/RatingModal'
+import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil, Search, Star } from 'lucide-react'
 
 interface BookingActionsProps {
     booking: BookingWithDetails
@@ -43,6 +44,8 @@ export function BookingActions({
         subtitle?: string
         onComplete?: () => void
     } | null>(null)
+    const [showRatingModal, setShowRatingModal] = useState(false)
+    const [hasRated, setHasRated] = useState(false)
 
     // ─── Referee: Accept offer with price ───
     const handleAcceptWithPrice = async () => {
@@ -393,6 +396,37 @@ export function BookingActions({
                             confirmLabel={isReferee ? 'Yes, Pull Out' : 'Yes, Cancel'}
                             variant="danger"
                         />
+                    </>
+                )}
+
+                {/* Rate Referee — coach only, completed bookings */}
+                {isCoach && booking.status === 'completed' && booking.assignment?.referee && !hasRated && (
+                    <>
+                        <Button
+                            fullWidth
+                            variant="accent"
+                            onClick={() => setShowRatingModal(true)}
+                        >
+                            <Star className="w-5 h-5 mr-2" />
+                            Rate Referee
+                        </Button>
+                        {showRatingModal && (
+                            <RatingModal
+                                bookingId={booking.id}
+                                refereeId={booking.assignment.referee.id}
+                                refereeName={booking.assignment.referee.full_name}
+                                onClose={() => setShowRatingModal(false)}
+                                onRated={() => {
+                                    setShowRatingModal(false)
+                                    setHasRated(true)
+                                    setCelebration({
+                                        icon: 'check-circle',
+                                        title: 'Rating Submitted!',
+                                        subtitle: 'Thank you for your feedback',
+                                    })
+                                }}
+                            />
+                        )}
                     </>
                 )}
             </div>

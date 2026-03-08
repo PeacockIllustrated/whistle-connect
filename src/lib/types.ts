@@ -34,6 +34,8 @@ export interface Profile {
     phone: string | null
     postcode: string | null
     avatar_url: string | null
+    latitude: number | null
+    longitude: number | null
     created_at: string
     updated_at: string
 }
@@ -60,6 +62,7 @@ export interface RefereeProfile {
     verified: boolean
     bio: string | null
     central_venue_opt_in: boolean
+    is_available: boolean
     dbs_status: DBSStatus
     safeguarding_status: DBSStatus
     created_at: string
@@ -104,6 +107,9 @@ export interface Booking {
     notes: string | null
     budget_pounds: number | null
     booking_type: 'individual' | 'central'
+    latitude: number | null
+    longitude: number | null
+    is_sos: boolean
     created_at: string
     updated_at: string
 }
@@ -221,6 +227,11 @@ export interface RefereeSearchResult {
     verified: boolean
     fa_verification_status: FAVerificationStatus
     dbs_status: DBSStatus
+    distance_km: number | null
+    reliability_score: number | null
+    total_matches_completed: number | null
+    average_rating: number | null
+    match_score: number | null
 }
 
 export interface AvailabilitySlot {

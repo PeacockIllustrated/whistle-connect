@@ -1,7 +1,8 @@
 import Image from 'next/image'
 import { RefereeSearchResult } from '@/lib/types'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
-import { CheckCircle, ShieldCheck } from 'lucide-react'
+import { ReliabilityBadge } from '@/components/app/ReliabilityBadge'
+import { CheckCircle, ShieldCheck, MapPin } from 'lucide-react'
 
 interface RefereeSearchResultCardProps {
     referee: RefereeSearchResult
@@ -34,12 +35,19 @@ export function RefereeSearchResultCard({
                         <h3 className="font-semibold text-[var(--foreground)] truncate">
                             {referee.full_name}
                         </h3>
-                        {referee.verified && (
-                            <span className="flex items-center text-[var(--color-primary)]">
-                                <CheckCircle className="w-4 h-4 mr-0.5" fill="currentColor" stroke="white" strokeWidth={1.5} />
-                                <span className="text-[10px] uppercase font-bold tracking-tight">Verified</span>
-                            </span>
-                        )}
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            {referee.match_score != null && referee.match_score > 0 && (
+                                <span className="text-[10px] font-bold text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-1.5 py-0.5 rounded">
+                                    {referee.match_score}% match
+                                </span>
+                            )}
+                            {referee.verified && (
+                                <span className="flex items-center text-[var(--color-primary)]">
+                                    <CheckCircle className="w-4 h-4 mr-0.5" fill="currentColor" stroke="white" strokeWidth={1.5} />
+                                    <span className="text-[10px] uppercase font-bold tracking-tight">Verified</span>
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 items-center text-sm text-[var(--foreground-muted)] mb-3">
@@ -56,7 +64,21 @@ export function RefereeSearchResultCard({
                         )}
                     </div>
 
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 items-center">
+                        {referee.reliability_score != null && referee.total_matches_completed != null && (
+                            <ReliabilityBadge
+                                score={referee.reliability_score}
+                                matchCount={referee.total_matches_completed}
+                                averageRating={referee.average_rating ?? 0}
+                                compact
+                            />
+                        )}
+                        {referee.distance_km != null && (
+                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
+                                <MapPin className="w-3 h-3" />
+                                {Math.round(referee.distance_km * 10) / 10} km
+                            </span>
+                        )}
                         {referee.fa_verification_status !== 'not_provided' && (
                             <FAStatusBadge status={referee.fa_verification_status} />
                         )}

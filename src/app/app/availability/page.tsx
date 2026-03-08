@@ -11,6 +11,7 @@ import { Select } from '@/components/ui/Select'
 import { UK_COUNTIES } from '@/lib/constants'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
+import { AvailabilityToggle } from '@/components/app/AvailabilityToggle'
 import { ChevronLeft, Check, AlertCircle, CalendarDays, ChevronDown } from 'lucide-react'
 
 export default function AvailabilityPage() {
@@ -32,6 +33,8 @@ export default function AvailabilityPage() {
     const [allAvailability, setAllAvailability] = useState<RefereeDateAvailability[]>([])
     const [accordionOpen, setAccordionOpen] = useState(false)
     const [celebration, setCelebration] = useState<{ title: string; subtitle: string } | null>(null)
+    const [isAvailable, setIsAvailable] = useState(false)
+    const [travelRadius, setTravelRadius] = useState(15)
 
     useEffect(() => {
         loadInitialData()
@@ -64,6 +67,8 @@ export default function AvailabilityPage() {
             setInitialOptIn(profileResult.data.central_venue_opt_in)
             setCounty(profileResult.data.county || '')
             setInitialCounty(profileResult.data.county || '')
+            setIsAvailable(profileResult.data.is_available ?? false)
+            setTravelRadius(profileResult.data.travel_radius_km ?? 15)
         }
 
         // Load all availability for the accordion
@@ -299,6 +304,14 @@ export default function AvailabilityPage() {
                         </label>
                     </div>
                 </div>
+            </div>
+
+            {/* Availability Toggle + Travel Radius */}
+            <div className="mb-8">
+                <AvailabilityToggle
+                    initialAvailable={isAvailable}
+                    initialRadius={travelRadius}
+                />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-8">

@@ -6,6 +6,7 @@ import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DB
 import { createNotification } from '@/lib/notifications'
 import { checkBookingRateLimit, checkConfirmRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, acceptOfferSchema } from '@/lib/validation'
+import { geocodePostcode } from '@/lib/mapbox/geocode'
 
 /** Shape returned by Supabase when querying referee_profiles with a joined profile */
 interface RefereeProfileQueryResult {
@@ -109,6 +110,17 @@ export async function createBooking(data: BookingFormData) {
 
     if (bookingError) {
         return { error: bookingError.message }
+    }
+
+    // Geocode booking location for distance-based features
+    if (booking?.id && data.location_postcode) {
+        const geo = await geocodePostcode(data.location_postcode)
+        if (geo) {
+            await supabase
+                .from('bookings')
+                .update({ latitude: geo.lat, longitude: geo.lng })
+                .eq('id', booking.id)
+        }
     }
 
     revalidatePath('/app/bookings')
@@ -816,6 +828,11 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
                 dbs_status: r.dbs_status || 'not_provided',
+                distance_km: null,
+                reliability_score: null,
+                total_matches_completed: null,
+                average_rating: null,
+                match_score: null,
             }
         })
 
@@ -950,6 +967,27 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     }
 
     // 4. Step 2: Get referee profiles for those who have availability
+    // If booking has coordinates, use spatial RPC for distance-sorted results
+    let spatialMap: Map<string, number> | null = null
+    if (booking.latitude && booking.longitude) {
+        const { data: spatialResults } = await supabase.rpc('find_referees_within_radius', {
+            p_latitude: booking.latitude,
+            p_longitude: booking.longitude,
+            p_radius_km: 50,
+        })
+        if (spatialResults) {
+            spatialMap = new Map(
+                (spatialResults as { id: string; distance_km: number }[]).map(r => [r.id, r.distance_km])
+            )
+            // Only show referees who are both available AND within distance
+            refereeIds = refereeIds.filter(id => spatialMap!.has(id))
+        }
+    }
+
+    if (refereeIds.length === 0) {
+        return { data: [] }
+    }
+
     let query = supabase
         .from('referee_profiles')
         .select(`
@@ -960,6 +998,9 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
             fa_verification_status,
             dbs_status,
             central_venue_opt_in,
+            reliability_score,
+            total_matches_completed,
+            average_rating,
             profile:profiles!inner(
                 id,
                 full_name,
@@ -968,8 +1009,8 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
         `)
         .in('profile_id', refereeIds)
 
-    // Apply location match (county for MVP)
-    if (booking.county) {
+    // Fall back to county match if no spatial data
+    if (!spatialMap && booking.county) {
         query = query.eq('county', booking.county)
     }
 
@@ -982,10 +1023,24 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
 
     if (error) return { error: error.message }
 
-    // 5. Format
-    const formattedResults: RefereeSearchResult[] = ((results || []) as RefereeProfileQueryResult[])
+    // 5. Format and sort by distance if available
+    const formattedResults: RefereeSearchResult[] = ((results || []) as (RefereeProfileQueryResult & {
+        reliability_score?: number
+        total_matches_completed?: number
+        average_rating?: number
+    })[])
         .map(r => {
             const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
+            const distKm = spatialMap?.get(profile.id) ?? null
+            // Smart match scoring: distance (30%) + reliability (30%) + rating (20%) + experience (20%)
+            const distScore = distKm != null ? Math.max(0, 100 - (distKm * 2)) : 50 // 0km=100, 50km=0
+            const reliabilityVal = r.reliability_score ?? 0
+            const ratingVal = (r.average_rating ?? 0) * 20 // normalize 5-star to 0-100
+            const experienceVal = Math.min((r.total_matches_completed ?? 0) * 5, 100) // cap at 20 matches
+            const score = Math.round(
+                (distScore * 0.3) + (reliabilityVal * 0.3) + (ratingVal * 0.2) + (experienceVal * 0.2)
+            )
+
             return {
                 id: profile.id,
                 full_name: profile.full_name,
@@ -996,8 +1051,14 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
                 dbs_status: r.dbs_status || 'not_provided',
+                distance_km: distKm != null ? Math.round(distKm * 10) / 10 : null,
+                reliability_score: r.reliability_score ?? null,
+                total_matches_completed: r.total_matches_completed ?? null,
+                average_rating: r.average_rating ?? null,
+                match_score: score,
             }
         })
+        .sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0))
 
     return { data: formattedResults }
 }
@@ -1066,4 +1127,89 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
     revalidatePath('/app/bookings')
 
     return { success: true }
+}
+
+// ── Ratings ────────────────────────────────────────────────────────────────
+
+interface RatingInput {
+    rating: number
+    punctuality?: number
+    communication?: number
+    professionalism?: number
+    comment?: string
+}
+
+export async function rateReferee(bookingId: string, refereeId: string, input: RatingInput) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Unauthorized' }
+
+    // Validate rating values
+    if (input.rating < 1 || input.rating > 5) return { error: 'Rating must be between 1 and 5' }
+
+    // Verify the booking is completed and belongs to this coach
+    const { data: booking } = await supabase
+        .from('bookings')
+        .select('id, coach_id, status')
+        .eq('id', bookingId)
+        .single()
+
+    if (!booking) return { error: 'Booking not found' }
+    if (booking.coach_id !== user.id) return { error: 'Only the booking coach can rate' }
+    if (booking.status !== 'completed') return { error: 'Can only rate completed matches' }
+
+    // Check no existing rating
+    const { data: existing } = await supabase
+        .from('match_ratings')
+        .select('id')
+        .eq('booking_id', bookingId)
+        .eq('reviewer_id', user.id)
+        .maybeSingle()
+
+    if (existing) return { error: 'You have already rated this match' }
+
+    const { error } = await supabase
+        .from('match_ratings')
+        .insert({
+            booking_id: bookingId,
+            reviewer_id: user.id,
+            referee_id: refereeId,
+            rating: input.rating,
+            punctuality: input.punctuality || null,
+            communication: input.communication || null,
+            professionalism: input.professionalism || null,
+            comment: input.comment || null,
+        })
+
+    if (error) return { error: error.message }
+
+    // Notify the referee
+    await createNotification({
+        userId: refereeId,
+        title: 'New Rating Received',
+        message: `You received a ${input.rating}-star rating for your recent match.`,
+        type: 'success',
+        link: '/app/profile',
+    })
+
+    revalidatePath(`/app/bookings/${bookingId}`)
+    return { success: true }
+}
+
+export async function getRating(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Unauthorized', data: null }
+
+    const { data, error } = await supabase
+        .from('match_ratings')
+        .select('*')
+        .eq('booking_id', bookingId)
+        .eq('reviewer_id', user.id)
+        .maybeSingle()
+
+    if (error) return { error: error.message, data: null }
+    return { data, error: null }
 }
