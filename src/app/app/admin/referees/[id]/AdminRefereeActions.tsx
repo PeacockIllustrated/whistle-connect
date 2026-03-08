@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/Button'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { verifyReferee, updateFAVerificationStatus, createFAVerificationRequest, resolveVerificationRequest } from '../../actions'
 import type { RefereeProfile, FAVerificationRequest, FAVerificationStatus } from '@/lib/types'
-import { Mail, CheckCircle, XCircle, Clock } from 'lucide-react'
+import { Mail, CheckCircle, XCircle, Clock, Send } from 'lucide-react'
 
 interface AdminRefereeActionsProps {
     refereeId: string
@@ -22,6 +22,7 @@ export function AdminRefereeActions({
     const [verifying, setVerifying] = useState(false)
     const [faLoading, setFaLoading] = useState(false)
     const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
     const [resolveNotes, setResolveNotes] = useState('')
     const [resolvingId, setResolvingId] = useState<string | null>(null)
 
@@ -47,6 +48,7 @@ export function AdminRefereeActions({
     async function handleVerifyWithFA() {
         setFaLoading(true)
         setError('')
+        setSuccess('')
         const result = await createFAVerificationRequest(refereeId)
         setFaLoading(false)
 
@@ -55,19 +57,10 @@ export function AdminRefereeActions({
             return
         }
 
-        if (result.mailto) {
-            const { email, refereeName: name, faId, county } = result.mailto
-            const subject = encodeURIComponent('FA Number Verification Request')
-            const body = encodeURIComponent(
-                `Dear ${county} FA,\n\n` +
-                `We would like to verify the following referee registration:\n\n` +
-                `Referee Name: ${name}\n` +
-                `FA Number: ${faId}\n` +
-                `County: ${county}\n\n` +
-                `Could you please confirm whether this FA number is valid and currently registered?\n\n` +
-                `Thank you,\nWhistle Connect`
-            )
-            window.open(`mailto:${email}?subject=${subject}&body=${body}`, '_blank')
+        if (result.emailSent) {
+            setSuccess('Verification email sent to County FA successfully')
+        } else {
+            setSuccess('Verification request created, but the email could not be sent automatically. You may need to contact the County FA manually.')
         }
     }
 
@@ -89,6 +82,13 @@ export function AdminRefereeActions({
             {error && (
                 <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
                     {error}
+                </div>
+            )}
+
+            {success && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 flex items-center gap-2">
+                    <Send className="w-4 h-4 flex-shrink-0" />
+                    {success}
                 </div>
             )}
 

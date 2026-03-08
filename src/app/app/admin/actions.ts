@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import type { FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
+import { sendFAVerificationEmail } from '@/lib/email/fa-verification'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     const { data: { user } } = await supabase.auth.getUser()
@@ -136,6 +137,22 @@ export async function createFAVerificationRequest(refereeId: string) {
     const profile = Array.isArray(referee.profile) ? referee.profile[0] : referee.profile
     const refereeName = (profile as { full_name: string })?.full_name || 'Unknown'
 
+    // Send automated verification email
+    let emailSent = false
+    try {
+        const emailResult = await sendFAVerificationEmail({
+            refereeName,
+            faId: referee.fa_id,
+            county: referee.county,
+        })
+        emailSent = emailResult.success
+        if (!emailResult.success) {
+            console.error('FA verification email failed:', emailResult.error)
+        }
+    } catch (emailErr) {
+        console.error('Failed to send FA verification email:', emailErr)
+    }
+
     revalidatePath('/app/admin/referees')
     revalidatePath(`/app/admin/referees/${refereeId}`)
     revalidatePath('/app/admin/verification')
@@ -143,12 +160,7 @@ export async function createFAVerificationRequest(refereeId: string) {
     return {
         success: true,
         request,
-        mailto: {
-            email: contact.email,
-            refereeName,
-            faId: referee.fa_id,
-            county: referee.county,
-        },
+        emailSent,
     }
 }
 

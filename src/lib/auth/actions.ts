@@ -7,6 +7,7 @@ import { isValidFANumber } from '@/lib/utils'
 import { checkAuthRateLimit } from '@/lib/rate-limit'
 import { validate, signInSchema, signUpSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
+import { sendFAVerificationEmail } from '@/lib/email/fa-verification'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
@@ -221,6 +222,15 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                     .eq('id', authData.user!.id)
             }
         }).catch(() => { /* geocoding is best-effort at signup */ })
+    }
+
+    // Send FA verification email if referee provided an FA number (fire-and-forget)
+    if (data.role === 'referee' && data.fa_number) {
+        sendFAVerificationEmail({
+            refereeName: data.full_name,
+            faId: data.fa_number,
+            county: null, // County not known at signup, will be set later
+        }).catch(() => { /* email is best-effort at signup */ })
     }
 
     return { success: true, redirectTo: sanitizeRedirectUrl(redirectTo) }

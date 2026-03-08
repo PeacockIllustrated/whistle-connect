@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { useUnreadMessages } from '@/components/app/UnreadMessagesProvider'
 import { useBookingUpdates } from '@/components/app/BookingUpdatesProvider'
-import { Home, CalendarDays, MessageCircle, User, Radar, Map } from 'lucide-react'
+import { Home, CalendarDays, MessageCircle, User, Radar, Map, ShieldCheck } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
 interface BottomNavProps {
@@ -25,6 +25,15 @@ const getNavItems = (userRole?: string): NavItem[] => {
         { label: 'Home', href: '/app', icon: Home, animation: 'icon-animate-bounce' },
         { label: 'Bookings', href: '/app/bookings', icon: CalendarDays, animation: 'icon-animate-pop' },
     ]
+
+    if (userRole === 'admin') {
+        items.push({
+            label: 'Referees',
+            href: '/app/admin/referees',
+            icon: ShieldCheck,
+            animation: 'icon-animate-pop',
+        })
+    }
 
     if (userRole === 'coach') {
         items.push({
