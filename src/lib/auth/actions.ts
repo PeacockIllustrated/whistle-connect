@@ -6,6 +6,7 @@ import { RegisterFormData } from '@/lib/types'
 import { isValidFANumber } from '@/lib/utils'
 import { checkAuthRateLimit } from '@/lib/rate-limit'
 import { validate, signInSchema, signUpSchema } from '@/lib/validation'
+import { geocodePostcode } from '@/lib/mapbox/geocode'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
@@ -207,6 +208,19 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                     })
             }
         }
+    }
+
+    // Geocode postcode and store lat/lon (fire-and-forget, don't block signup)
+    if (data.postcode) {
+        geocodePostcode(data.postcode).then(async (geo) => {
+            if (geo) {
+                const client = createAdminClient() || supabase
+                await client
+                    .from('profiles')
+                    .update({ latitude: geo.lat, longitude: geo.lng })
+                    .eq('id', authData.user!.id)
+            }
+        }).catch(() => { /* geocoding is best-effort at signup */ })
     }
 
     return { success: true, redirectTo: sanitizeRedirectUrl(redirectTo) }
