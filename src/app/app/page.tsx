@@ -2,11 +2,11 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ActionCard } from '@/components/app/ActionCard'
 import { BookingCardCompact } from '@/components/app/BookingCard'
-import { DashboardStats } from '@/components/app/DashboardStats'
 import { StatsAccordion } from '@/components/app/StatsAccordion'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { Plus, Clock, ClipboardList, ShieldCheck, CalendarDays, FileCheck, Siren, Banknote } from 'lucide-react'
+import { AdminDashboard } from '@/components/app/AdminDashboard'
+import { Plus, Clock, ClipboardList, CalendarDays, Siren, Banknote } from 'lucide-react'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import type { StatItem } from '@/components/app/DashboardStats'
 
@@ -176,6 +176,10 @@ export default async function AppHomePage() {
 
     // ── Admin stats ─────────────────────────────────────
     let adminStats: StatItem[] = []
+    let adminCoachStats: StatItem[] = []
+    let adminRefereeStats: StatItem[] = []
+    let adminRecentBookings: BookingWithDetails[] = []
+    let adminRefereeProfile: { verified: boolean; fa_verification_status: FAVerificationStatus; county: string | null } | null = null
 
     if (isAdmin) {
         const [
@@ -185,40 +189,91 @@ export default async function AppHomePage() {
             { count: unverifiedReferees },
             { count: bookingsThisMonth },
             { count: pendingFAQueue },
+            { count: totalUsers },
+            { count: totalBookings },
+            { count: activeBookings },
+            { count: completedBookingsAll },
+            { count: totalMessages },
+            { count: sosBookings },
+            // Coach preview data
+            { data: adminBookings },
+            { count: adminRefereesAvailable },
+            { count: adminVerifiedRefs },
+            { count: adminUpcoming },
+            { count: adminPendingOffers },
+            { count: adminUnassigned },
+            { count: adminCompleted },
+            // Referee preview data
+            { data: adminRefProfile },
+            { count: adminUpcomingAssignments },
+            { count: adminRefPendingOffers },
+            { count: adminRefCompletedMatches },
+            { count: adminActiveCoaches },
         ] = await Promise.all([
-            supabase
-                .from('profiles')
-                .select('*', { count: 'exact', head: true })
-                .eq('role', 'referee'),
-            supabase
-                .from('profiles')
-                .select('*', { count: 'exact', head: true })
-                .eq('role', 'coach'),
-            supabase
-                .from('referee_profiles')
-                .select('*', { count: 'exact', head: true })
-                .eq('fa_verification_status', 'pending'),
-            supabase
-                .from('referee_profiles')
-                .select('*', { count: 'exact', head: true })
-                .eq('verified', false),
-            supabase
-                .from('bookings')
-                .select('*', { count: 'exact', head: true })
-                .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-            supabase
-                .from('fa_verification_requests')
-                .select('*', { count: 'exact', head: true })
-                .eq('status', 'awaiting_fa_response'),
+            // Existing admin stats
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'referee'),
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'coach'),
+            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }).eq('fa_verification_status', 'pending'),
+            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }).eq('verified', false),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
+            supabase.from('fa_verification_requests').select('*', { count: 'exact', head: true }).eq('status', 'awaiting_fa_response'),
+            // New admin stats
+            supabase.from('profiles').select('*', { count: 'exact', head: true }),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).is('deleted_at', null),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'confirmed').gte('match_date', today),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+            supabase.from('messages').select('*', { count: 'exact', head: true }),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('is_sos', true),
+            // Coach preview: recent bookings
+            supabase.from('bookings').select('*, coach:profiles!bookings_coach_id_fkey(*)').is('deleted_at', null).order('match_date', { ascending: true }).limit(3),
+            // Coach preview stats
+            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }),
+            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }).eq('fa_verification_status', 'verified'),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).gte('match_date', today).in('status', ['pending', 'offered', 'confirmed']),
+            supabase.from('booking_offers').select('*', { count: 'exact', head: true }).eq('status', 'sent'),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).in('status', ['pending', 'offered']).gte('match_date', today),
+            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+            // Referee preview data
+            supabase.from('referee_profiles').select('verified, fa_verification_status, county').limit(1).maybeSingle(),
+            supabase.from('booking_assignments').select('*, booking:bookings!inner(match_date, status)', { count: 'exact', head: true }).gte('booking.match_date', today).in('booking.status', ['confirmed']),
+            supabase.from('booking_offers').select('*', { count: 'exact', head: true }).eq('status', 'sent'),
+            supabase.from('booking_assignments').select('*, booking:bookings!inner(status)', { count: 'exact', head: true }).eq('booking.status', 'completed'),
+            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'coach'),
         ])
 
         adminStats = [
+            { label: 'Total Users', value: totalUsers || 0, color: 'blue' },
             { label: 'Total Referees', value: totalReferees || 0, color: 'blue' },
             { label: 'Total Coaches', value: totalCoaches || 0, color: 'blue' },
-            { label: 'FA Pending Verification', value: pendingVerifications || 0, color: pendingVerifications ? 'amber' : 'default' },
+            { label: 'FA Pending', value: pendingVerifications || 0, color: pendingVerifications ? 'amber' : 'default' },
             { label: 'Unverified Referees', value: unverifiedReferees || 0, color: unverifiedReferees ? 'red' : 'default' },
+            { label: 'FA Queue', value: pendingFAQueue || 0, color: pendingFAQueue ? 'amber' : 'default' },
+            { label: 'Total Bookings', value: totalBookings || 0 },
+            { label: 'Active Bookings', value: activeBookings || 0, color: 'green' },
+            { label: 'Completed', value: completedBookingsAll || 0, color: 'green' },
             { label: 'Bookings This Month', value: bookingsThisMonth || 0, color: 'green' },
-            { label: 'FA Queue Awaiting', value: pendingFAQueue || 0, color: pendingFAQueue ? 'amber' : 'default' },
+            { label: 'Total Messages', value: totalMessages || 0 },
+            { label: 'SOS Bookings', value: sosBookings || 0, color: sosBookings ? 'red' : 'default' },
+        ]
+
+        adminRecentBookings = adminBookings || []
+
+        adminCoachStats = [
+            { label: 'Referees Available', value: adminRefereesAvailable || 0, color: 'blue' },
+            { label: 'FA Verified Refs', value: adminVerifiedRefs || 0, color: 'green' },
+            { label: 'Upcoming Matches', value: adminUpcoming || 0 },
+            { label: 'Offers Pending', value: adminPendingOffers || 0, color: adminPendingOffers ? 'amber' : 'default' },
+            { label: 'Needing a Referee', value: adminUnassigned || 0, color: adminUnassigned ? 'red' : 'default' },
+            { label: 'Completed Bookings', value: adminCompleted || 0, color: 'green' },
+        ]
+
+        adminRefereeProfile = adminRefProfile
+
+        adminRefereeStats = [
+            { label: 'Upcoming Assignments', value: adminUpcomingAssignments || 0, color: 'blue' },
+            { label: 'Offers to Review', value: adminRefPendingOffers || 0, color: adminRefPendingOffers ? 'amber' : 'default' },
+            { label: 'Matches Completed', value: adminRefCompletedMatches || 0, color: 'green' },
+            { label: 'Active Coaches', value: adminActiveCoaches || 0 },
         ]
     }
 
@@ -335,42 +390,14 @@ export default async function AppHomePage() {
 
             {/* Admin View */}
             {isAdmin && (
-                <>
-                    {/* Stats */}
-                    <div className="mb-6">
-                        <DashboardStats stats={adminStats} />
-                    </div>
-
-                    <div className="space-y-3">
-                        <ActionCard
-                            href="/app/admin/referees"
-                            icon={
-                                <ShieldCheck className="w-6 h-6" />
-                            }
-                            title="Manage Referees"
-                            subtitle="Verify FA registration and credentials"
-                            variant="primary"
-                        />
-
-                        <ActionCard
-                            href="/app/admin/verification"
-                            icon={
-                                <FileCheck className="w-6 h-6" />
-                            }
-                            title="FA Verification Queue"
-                            subtitle="Review pending County FA responses"
-                        />
-
-                        <ActionCard
-                            href="/app/bookings"
-                            icon={
-                                <CalendarDays className="w-6 h-6" />
-                            }
-                            title="All Bookings"
-                            subtitle="View and manage all bookings"
-                        />
-                    </div>
-                </>
+                <AdminDashboard
+                    profileName={profile.full_name || ''}
+                    adminStats={adminStats}
+                    coachStats={adminCoachStats}
+                    refereeStats={adminRefereeStats}
+                    recentBookings={adminRecentBookings}
+                    refereeProfile={adminRefereeProfile}
+                />
             )}
         </div>
     )
