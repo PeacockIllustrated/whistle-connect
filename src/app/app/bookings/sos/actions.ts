@@ -80,9 +80,9 @@ export async function createSOSBooking(data: SOSBookingData) {
 
             // Create offers for all matched referees
             if (availableRefs.length > 0) {
-                const offers = availableRefs.map((r: { id: string }) => ({
+                const offers = availableRefs.map((r: { profile_id: string }) => ({
                     booking_id: booking.id,
-                    referee_id: r.id,
+                    referee_id: r.profile_id,
                     status: 'sent',
                 }))
 
@@ -95,9 +95,9 @@ export async function createSOSBooking(data: SOSBookingData) {
                     .eq('id', booking.id)
 
                 // Notify all matched referees
-                const notificationPromises = availableRefs.map((r: { id: string; distance_km: number }) =>
+                const notificationPromises = availableRefs.map((r: { profile_id: string; distance_km: number }) =>
                     createNotification({
-                        userId: r.id,
+                        userId: r.profile_id,
                         title: 'SOS - Referee Needed!',
                         message: `Urgent: A match needs a referee today at ${data.kickoff_time}! ${Math.round(r.distance_km)} km from you. First to accept gets it.`,
                         type: 'warning',

@@ -43,12 +43,23 @@ export async function createBooking(data: BookingFormData) {
     // Use ground_name as fallback for address_text if the column doesn't exist
     const groundNameValue = data.address_text || data.ground_name || null
 
+    // Geocode postcode to lat/lon for distance-based features
+    let latitude: number | null = null
+    let longitude: number | null = null
+    if (data.location_postcode) {
+        const geo = await geocodePostcode(data.location_postcode)
+        if (geo) {
+            latitude = geo.lat
+            longitude = geo.lng
+        }
+    }
+
     // Create the booking - try with all fields first
     let booking
     let bookingError
 
     // First attempt: try with all fields including address_text
-    const fullInsertData = {
+    const fullInsertData: Record<string, unknown> = {
         coach_id: user.id,
         status: 'pending',
         match_date: data.match_date,
@@ -66,6 +77,11 @@ export async function createBooking(data: BookingFormData) {
         notes: data.notes || null,
         budget_pounds: data.budget_pounds || null,
         booking_type: data.booking_type || 'individual',
+    }
+
+    if (latitude !== null && longitude !== null) {
+        fullInsertData.latitude = latitude
+        fullInsertData.longitude = longitude
     }
 
     const result = await supabase
@@ -977,7 +993,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
         })
         if (spatialResults) {
             spatialMap = new Map(
-                (spatialResults as { id: string; distance_km: number }[]).map(r => [r.id, r.distance_km])
+                (spatialResults as { profile_id: string; distance_km: number }[]).map(r => [r.profile_id, r.distance_km])
             )
             // Only show referees who are both available AND within distance
             refereeIds = refereeIds.filter(id => spatialMap!.has(id))
