@@ -12,7 +12,7 @@ import type { StatItem } from '@/components/app/DashboardStats'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import {
     ShieldCheck, FileCheck, CalendarDays, Plus, Clock,
-    ClipboardList, Siren, Banknote, Eye, Monitor, Users
+    ClipboardList, Siren, Banknote, Eye, Monitor, Users, Bell
 } from 'lucide-react'
 
 type ViewMode = 'admin' | 'coach' | 'referee'
@@ -116,6 +116,12 @@ export function AdminDashboard({
                             icon={<CalendarDays className="w-6 h-6" />}
                             title="All Bookings"
                             subtitle="View and manage all bookings"
+                        />
+                        <ActionCard
+                            href="/app/admin/notifications"
+                            icon={<Bell className="w-6 h-6" />}
+                            title="Test Notifications"
+                            subtitle="Send test notifications across all categories"
                         />
                     </div>
                 </>
