@@ -12,7 +12,7 @@ import type { StatItem } from '@/components/app/DashboardStats'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import {
     ShieldCheck, FileCheck, CalendarDays, Plus, Clock,
-    ClipboardList, Siren, Banknote, Eye, Monitor
+    ClipboardList, Siren, Banknote, Eye, Monitor, Users
 } from 'lucide-react'
 
 type ViewMode = 'admin' | 'coach' | 'referee'
@@ -98,6 +98,12 @@ export function AdminDashboard({
                             title="Manage Referees"
                             subtitle="Verify FA registration and credentials"
                             variant="primary"
+                        />
+                        <ActionCard
+                            href="/app/admin/coaches"
+                            icon={<Users className="w-6 h-6" />}
+                            title="Manage Coaches"
+                            subtitle="View registered coaches and their bookings"
                         />
                         <ActionCard
                             href="/app/admin/verification"

@@ -43,15 +43,6 @@ const getNavItems = (userRole?: string): NavItem[] => {
         )
     }
 
-    if (userRole === 'coach') {
-        items.push({
-            label: 'Map',
-            href: '/app/map',
-            icon: Map,
-            animation: 'icon-animate-pop',
-        })
-    }
-
     if (userRole === 'referee') {
         items.push({
             label: 'Feed',
