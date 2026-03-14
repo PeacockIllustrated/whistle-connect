@@ -6,28 +6,42 @@ import type { FCMMessage } from '@/lib/firebase-admin'
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error'
 
+export type NotificationCategory =
+    | 'booking_update'
+    | 'offer_update'
+    | 'match_reminder'
+    | 'new_match_nearby'
+    | 'sos_alert'
+    | 'message'
+    | 'verification'
+    | 'rating'
+    | 'system'
+
 interface CreateNotificationParams {
     userId: string
     title: string
     message: string
     type: NotificationType
     link?: string
+    category?: NotificationCategory
     /** Set to 'sos' for high-priority delivery on native devices */
     urgency?: 'normal' | 'sos'
 }
 
 export async function createNotification({
-    userId, title, message, type, link, urgency = 'normal',
+    userId, title, message, type, link, category = 'system', urgency = 'normal',
 }: CreateNotificationParams): Promise<{ success: boolean; error?: string }> {
     const supabase = await createClient()
 
     // 1. Create in-app notification via SECURITY DEFINER RPC function
+    //    The RPC respects user's in-app preference for this category
     const { error } = await supabase.rpc('create_notification', {
         p_user_id: userId,
         p_title: title,
         p_message: message,
         p_type: type,
-        p_link: link || null
+        p_link: link || null,
+        p_category: category,
     })
 
     if (error) {
@@ -35,7 +49,20 @@ export async function createNotification({
         return { success: false, error: error.message }
     }
 
-    // 2. Fetch ALL push subscriptions for this user
+    // 2. Check user's push preference for this category (default: enabled)
+    const { data: pushPref } = await supabase
+        .from('notification_preferences')
+        .select('push')
+        .eq('user_id', userId)
+        .eq('category', category)
+        .maybeSingle()
+
+    const pushEnabled = pushPref?.push ?? true
+    if (!pushEnabled) {
+        return { success: true }
+    }
+
+    // 3. Fetch ALL push subscriptions for this user
     const { data: subscriptions } = await supabase
         .from('push_subscriptions')
         .select('*')
@@ -52,17 +79,34 @@ export async function createNotification({
     const isSOS = urgency === 'sos'
     const payload = { title, body: message, link: link || '/app' }
 
-    // 3a. Send via web-push (existing flow)
+    // 4a. Send via web-push (existing flow)
     if (webSubs.length > 0) {
         await sendWebPush(supabase, webSubs, payload)
     }
 
-    // 3b. Send via Firebase Cloud Messaging (native apps)
+    // 4b. Send via Firebase Cloud Messaging (native apps)
     if (firebaseSubs.length > 0) {
         await sendFirebasePush(supabase, firebaseSubs, payload, isSOS)
     }
 
     return { success: true }
+}
+
+/**
+ * Send notifications to multiple users in parallel.
+ * Failures are logged but don't prevent other notifications from being sent.
+ */
+export async function createNotifications(
+    notifications: CreateNotificationParams[]
+): Promise<{ success: boolean; failedCount: number }> {
+    const results = await Promise.allSettled(
+        notifications.map(params => createNotification(params))
+    )
+    const failed = results.filter(r => r.status === 'rejected')
+    if (failed.length > 0) {
+        console.error(`Failed to send ${failed.length}/${notifications.length} notifications`)
+    }
+    return { success: true, failedCount: failed.length }
 }
 
 // ---------------------------------------------------------------------------

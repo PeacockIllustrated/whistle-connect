@@ -265,6 +265,7 @@ export async function expressInterest(bookingId: string): Promise<{ success?: bo
         message: `${profile.full_name} is available for your match on ${matchDate} at ${booking.ground_name || booking.location_postcode}.`,
         type: 'info',
         link: `/app/bookings/${bookingId}`,
+        category: 'offer_update',
     })
 
     revalidatePath('/app/feed')

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
-import { createNotification } from '@/lib/notifications'
+import { createNotification, createNotifications } from '@/lib/notifications'
 import { checkBookingRateLimit, checkConfirmRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, acceptOfferSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
@@ -139,8 +139,56 @@ export async function createBooking(data: BookingFormData) {
         }
     }
 
+    // Notify nearby available referees about the new booking
+    if (booking?.id && latitude !== null && longitude !== null) {
+        notifyNearbyRefereesOfNewBooking(booking.id, latitude, longitude, data).catch(err =>
+            console.error('Failed to notify nearby referees:', err)
+        )
+    }
+
     revalidatePath('/app/bookings')
     return { success: true, bookingId: booking.id }
+}
+
+/** Notify referees within radius about a new booking (fire-and-forget) */
+async function notifyNearbyRefereesOfNewBooking(
+    bookingId: string,
+    latitude: number,
+    longitude: number,
+    data: BookingFormData,
+) {
+    const supabase = await createClient()
+
+    const { data: nearbyReferees } = await supabase.rpc('find_referees_within_radius', {
+        p_latitude: latitude,
+        p_longitude: longitude,
+        p_radius_km: 25,
+    })
+
+    if (!nearbyReferees || nearbyReferees.length === 0) return
+
+    const matchDate = new Date(data.match_date).toLocaleDateString('en-GB', {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short',
+    })
+    const location = data.ground_name || data.location_postcode
+
+    const notifications = nearbyReferees
+        .filter((r: { is_available: boolean }) => r.is_available)
+        .slice(0, 20)
+        .map((r: { profile_id: string; distance_km: number }) => ({
+            userId: r.profile_id,
+            title: 'New Match Nearby',
+            message: `A match on ${matchDate} at ${location} (${Math.round(r.distance_km)} km away) needs a referee.`,
+            type: 'info' as const,
+            link: `/app/feed`,
+            category: 'new_match_nearby' as const,
+        }))
+
+    if (notifications.length > 0) {
+        await createNotifications(notifications)
+    }
 }
 
 export async function updateBookingStatus(bookingId: string, status: BookingStatus) {
@@ -420,7 +468,8 @@ export async function cancelBooking(bookingId: string) {
             title: 'Referee Pulled Out',
             message: `The assigned referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}. You can now search for a new referee.`,
             type: 'warning',
-            link: `/app/bookings/${bookingId}`
+            link: `/app/bookings/${bookingId}`,
+            category: 'booking_update',
         })
     } else {
         // Coach is cancelling, or non-confirmed booking cancellation
@@ -433,6 +482,13 @@ export async function cancelBooking(bookingId: string) {
             return { error: error.message }
         }
 
+        // Get referees with active offers before withdrawing them
+        const { data: activeOffers } = await supabase
+            .from('booking_offers')
+            .select('referee_id')
+            .eq('booking_id', bookingId)
+            .in('status', ['sent', 'accepted_priced'])
+
         // Withdraw all active offers for this booking so they no longer
         // appear in "Awaiting Action" or any pending offer lists
         await supabase
@@ -441,6 +497,19 @@ export async function cancelBooking(bookingId: string) {
             .eq('booking_id', bookingId)
             .in('status', ['sent', 'accepted_priced'])
 
+        if (isCoach && activeOffers && activeOffers.length > 0) {
+            // Coach cancelled → notify all referees who had active offers
+            const refereeNotifications = activeOffers.map(offer => ({
+                userId: offer.referee_id,
+                title: 'Booking Cancelled',
+                message: `A booking you were offered for ${booking.ground_name || booking.location_postcode} has been cancelled by the coach.`,
+                type: 'warning' as const,
+                link: '/app/offers',
+                category: 'offer_update' as const,
+            }))
+            await createNotifications(refereeNotifications)
+        }
+
         // Notify the coach if the user cancelling is NOT the coach (i.e. it's the referee)
         if (booking && booking.coach_id !== user.id) {
             await createNotification({
@@ -448,7 +517,8 @@ export async function cancelBooking(bookingId: string) {
                 title: 'Booking Cancelled',
                 message: `Referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}.`,
                 type: 'warning',
-                link: `/app/bookings/${bookingId}`
+                link: `/app/bookings/${bookingId}`,
+                category: 'booking_update',
             })
         }
     }
@@ -523,7 +593,8 @@ export async function completeBooking(bookingId: string) {
             title: 'Match Completed',
             message: `${notifyLabel} has marked the booking for ${booking.ground_name || booking.location_postcode} as completed.`,
             type: 'success',
-            link: `/app/bookings/${bookingId}`
+            link: `/app/bookings/${bookingId}`,
+            category: 'booking_update',
         })
     }
 
@@ -583,7 +654,8 @@ export async function acceptOffer(offerId: string, pricePounds: number) {
         title: 'Offer Priced!',
         message: `A referee has accepted your booking request and sent a price of £${pricePounds} for ${offer.booking.ground_name || offer.booking.location_postcode}.`,
         type: 'info',
-        link: `/app/bookings/${offer.booking_id}`
+        link: `/app/bookings/${offer.booking_id}`,
+        category: 'offer_update',
     })
 
     revalidatePath('/app/bookings')
@@ -643,7 +715,14 @@ export async function confirmPrice(offerId: string) {
     // --- Core booking is now atomically committed. Steps 4-7 are secondary ---
     // Failures in these steps are logged but don't fail the overall operation.
 
-    // 4. Withdraw other offers for this booking
+    // 4. Withdraw other offers and notify those referees
+    const { data: otherOffers } = await supabase
+        .from('booking_offers')
+        .select('referee_id')
+        .eq('booking_id', offer.booking_id)
+        .neq('id', offerId)
+        .in('status', ['sent', 'accepted_priced'])
+
     const { error: step4Error } = await supabase
         .from('booking_offers')
         .update({ status: 'withdrawn' })
@@ -652,6 +731,21 @@ export async function confirmPrice(offerId: string) {
 
     if (step4Error) {
         console.error('Failed to withdraw competing offers:', step4Error)
+    }
+
+    // Notify referees whose offers were withdrawn
+    if (otherOffers && otherOffers.length > 0) {
+        const withdrawnNotifications = otherOffers.map(o => ({
+            userId: o.referee_id,
+            title: 'Offer No Longer Available',
+            message: `The booking for ${offer.booking.ground_name || offer.booking.location_postcode} has been filled by another referee.`,
+            type: 'info' as const,
+            link: '/app/offers',
+            category: 'offer_update' as const,
+        }))
+        createNotifications(withdrawnNotifications).catch(err =>
+            console.error('Failed to notify withdrawn referees:', err)
+        )
     }
 
     // 5. Create or get a thread for communication
@@ -713,7 +807,8 @@ export async function confirmPrice(offerId: string) {
         title: 'Booking Confirmed!',
         message: `The coach has accepted your price. The booking for ${offer.booking.ground_name || offer.booking.location_postcode} is now confirmed.`,
         type: 'success',
-        link: `/app/bookings/${offer.booking_id}`
+        link: `/app/bookings/${offer.booking_id}`,
+        category: 'booking_update',
     })
 
     // 7. Auto-remove availability slot
@@ -769,7 +864,8 @@ export async function declineOffer(offerId: string) {
             title: 'Offer Declined',
             message: `A referee declined your booking request for ${booking.ground_name || booking.location_postcode}.`,
             type: 'info',
-            link: '/app/bookings'
+            link: '/app/bookings',
+            category: 'offer_update',
         })
     }
 
@@ -1134,7 +1230,8 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
             title: 'New Booking Request',
             message: `A coach has requested you for a match on ${booking.match_date} at ${booking.ground_name || booking.location_postcode}.`,
             type: 'info',
-            link: '/app/offers' // Redirect to new offers page
+            link: '/app/offers',
+            category: 'offer_update',
         })
     }
 
@@ -1207,6 +1304,7 @@ export async function rateReferee(bookingId: string, refereeId: string, input: R
         message: `You received a ${input.rating}-star rating for your recent match.`,
         type: 'success',
         link: '/app/profile',
+        category: 'rating',
     })
 
     revalidatePath(`/app/bookings/${bookingId}`)
