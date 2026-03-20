@@ -228,7 +228,6 @@ export interface RefereeSearchResult {
     verified: boolean
     fa_verification_status: FAVerificationStatus
     dbs_status: DBSStatus
-    distance_km: number | null
     reliability_score: number | null
     total_matches_completed: number | null
     average_rating: number | null

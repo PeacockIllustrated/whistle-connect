@@ -844,7 +844,6 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
                 dbs_status: r.dbs_status || 'not_provided',
-                distance_km: null,
                 reliability_score: null,
                 total_matches_completed: null,
                 average_rating: null,
@@ -1039,7 +1038,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
 
     if (error) return { error: error.message }
 
-    // 5. Format and sort by distance if available
+    // 5. Format and sort by match score (distance used internally for scoring only, not exposed)
     const formattedResults: RefereeSearchResult[] = ((results || []) as (RefereeProfileQueryResult & {
         reliability_score?: number
         total_matches_completed?: number
@@ -1067,7 +1066,6 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
                 dbs_status: r.dbs_status || 'not_provided',
-                distance_km: distKm != null ? Math.round(distKm * 10) / 10 : null,
                 reliability_score: r.reliability_score ?? null,
                 total_matches_completed: r.total_matches_completed ?? null,
                 average_rating: r.average_rating ?? null,

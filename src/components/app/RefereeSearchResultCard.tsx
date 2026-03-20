@@ -2,7 +2,7 @@ import Image from 'next/image'
 import { RefereeSearchResult } from '@/lib/types'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { ReliabilityBadge } from '@/components/app/ReliabilityBadge'
-import { CheckCircle, ShieldCheck, MapPin } from 'lucide-react'
+import { CheckCircle, ShieldCheck } from 'lucide-react'
 
 interface RefereeSearchResultCardProps {
     referee: RefereeSearchResult
@@ -72,12 +72,6 @@ export function RefereeSearchResultCard({
                                 averageRating={referee.average_rating ?? 0}
                                 compact
                             />
-                        )}
-                        {referee.distance_km != null && (
-                            <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold">
-                                <MapPin className="w-3 h-3" />
-                                {Math.round(referee.distance_km * 10) / 10} km
-                            </span>
                         )}
                         {referee.fa_verification_status !== 'not_provided' && (
                             <FAStatusBadge status={referee.fa_verification_status} />
