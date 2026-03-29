@@ -35,6 +35,18 @@ export async function verifyReferee(refereeId: string, verified: boolean) {
         return { error: error.message }
     }
 
+    // Notify the referee about their verification status change
+    await createNotification({
+        userId: refereeId,
+        title: verified ? 'Account Verified!' : 'Verification Removed',
+        message: verified
+            ? 'Your referee account has been verified by an administrator. You can now receive booking offers.'
+            : 'Your referee verification has been removed. Please contact support if you believe this is an error.',
+        type: verified ? 'success' : 'warning',
+        link: '/app/profile',
+        category: 'verification',
+    })
+
     revalidatePath('/app/admin/referees')
     revalidatePath(`/app/admin/referees/${refereeId}`)
     return { success: true }
@@ -79,6 +91,7 @@ export async function updateFAVerificationStatus(
                 : 'Your FA number verification was not successful. Please check your FA number and try again.',
             type: status === 'verified' ? 'success' : 'warning',
             link: '/app/profile',
+            category: 'verification',
         })
     }
 
@@ -212,6 +225,7 @@ export async function resolveVerificationRequest(
             : 'Your FA number could not be verified by your County FA. Please check it is correct.',
         type: resolution === 'confirmed' ? 'success' : 'warning',
         link: '/app/profile',
+        category: 'verification',
     })
 
     revalidatePath('/app/admin/referees')
@@ -293,4 +307,83 @@ export async function backfillGeolocations() {
     }
 
     return { success: true, profilesUpdated, bookingsUpdated }
+}
+
+// ── Notification Testing ────────────────────────────────────────────────
+
+type TestCategory = 'booking_update' | 'offer_update' | 'match_reminder' | 'new_match_nearby' | 'sos_alert' | 'message' | 'verification' | 'rating' | 'system'
+
+export async function sendTestNotification(
+    targetUserId: string,
+    category: TestCategory,
+) {
+    const supabase = await createClient()
+    const user = await requireAdmin(supabase)
+    if (!user) return { error: 'Admin access required' }
+
+    const testMessages: Record<TestCategory, { title: string; message: string; type: 'info' | 'success' | 'warning' | 'error' }> = {
+        booking_update: {
+            title: 'Test: Booking Confirmed',
+            message: 'This is a test booking notification. Your booking at Test Ground has been confirmed.',
+            type: 'success',
+        },
+        offer_update: {
+            title: 'Test: New Offer Received',
+            message: 'This is a test offer notification. A referee has sent you a price of £45 for your match.',
+            type: 'info',
+        },
+        match_reminder: {
+            title: 'Test: Match Tomorrow',
+            message: 'This is a test reminder. Your match at Test Ground kicks off at 14:00 tomorrow.',
+            type: 'info',
+        },
+        new_match_nearby: {
+            title: 'Test: New Match Nearby',
+            message: 'This is a test nearby match notification. A match 3 km from you needs a referee.',
+            type: 'info',
+        },
+        sos_alert: {
+            title: 'Test: SOS - Referee Needed!',
+            message: 'This is a test SOS notification. Urgent: A match needs a referee today at 15:00!',
+            type: 'warning',
+        },
+        message: {
+            title: 'Test: New Message',
+            message: 'This is a test message notification. You have a new message: "Hello, is everything set for Saturday?"',
+            type: 'info',
+        },
+        verification: {
+            title: 'Test: FA Number Verified',
+            message: 'This is a test verification notification. Your FA number has been verified.',
+            type: 'success',
+        },
+        rating: {
+            title: 'Test: New Rating Received',
+            message: 'This is a test rating notification. You received a 5-star rating for your recent match.',
+            type: 'success',
+        },
+        system: {
+            title: 'Test: System Announcement',
+            message: 'This is a test system notification from Whistle Connect.',
+            type: 'info',
+        },
+    }
+
+    const testMsg = testMessages[category]
+
+    const result = await createNotification({
+        userId: targetUserId,
+        title: testMsg.title,
+        message: testMsg.message,
+        type: testMsg.type,
+        link: '/app/notifications',
+        category,
+        urgency: category === 'sos_alert' ? 'sos' : 'normal',
+    })
+
+    if (!result.success) {
+        return { error: result.error || 'Failed to send notification' }
+    }
+
+    return { success: true }
 }

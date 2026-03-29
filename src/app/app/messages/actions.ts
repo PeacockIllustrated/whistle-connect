@@ -67,7 +67,8 @@ export async function sendMessage(threadId: string, body: string) {
                 title: 'New Message',
                 message: `You have a new message: ${body.substring(0, 50)}${body.length > 50 ? '...' : ''}`,
                 type: 'info',
-                link: `/app/messages/${threadId}`
+                link: `/app/messages/${threadId}`,
+                category: 'message',
             })
         )
 
