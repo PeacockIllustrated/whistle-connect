@@ -69,6 +69,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     const supabase = createAdminClient()
 
+    if (!supabase) {
+        console.error('Admin client unavailable — SUPABASE_SERVICE_ROLE_KEY missing')
+        throw new Error('Admin client unavailable')
+    }
+
     const { data: result, error } = await supabase.rpc('wallet_top_up', {
         p_user_id: userId,
         p_amount_pence: creditPence,

@@ -433,6 +433,19 @@ export async function cancelBooking(bookingId: string) {
             return { error: error.message }
         }
 
+        // Refund escrow if funds were held for this booking
+        if (booking.escrow_amount_pence && booking.escrow_amount_pence > 0 && !booking.escrow_released_at) {
+            const { data: refundResult, error: refundError } = await supabase.rpc('escrow_refund', {
+                p_booking_id: bookingId,
+            })
+
+            if (refundError) {
+                console.error('Escrow refund failed:', refundError)
+            } else if (refundResult?.error) {
+                console.error('Escrow refund returned error:', refundResult.error)
+            }
+        }
+
         // Withdraw all active offers for this booking so they no longer
         // appear in "Awaiting Action" or any pending offer lists
         await supabase
@@ -637,6 +650,22 @@ export async function confirmPrice(offerId: string) {
     }
 
     if (rpcResult?.error) {
+        // Pass through structured wallet errors for UI handling
+        if (rpcResult.code === 'INSUFFICIENT_FUNDS') {
+            return {
+                error: 'Insufficient funds',
+                code: 'INSUFFICIENT_FUNDS',
+                balancePence: rpcResult.balance_pence,
+                requiredPence: rpcResult.required_pence,
+                shortfallPence: rpcResult.shortfall_pence,
+            }
+        }
+        if (rpcResult.code === 'NO_WALLET') {
+            return {
+                error: 'Please top up your wallet before confirming a booking.',
+                code: 'NO_WALLET',
+            }
+        }
         return { error: rpcResult.error }
     }
 
@@ -735,6 +764,7 @@ export async function confirmPrice(offerId: string) {
     revalidatePath('/app/bookings')
     revalidatePath(`/app/bookings/${offer.booking_id}`)
     revalidatePath('/app/messages')
+    revalidatePath('/app/wallet')
 
     return { success: true, threadId: thread?.id }
 }
