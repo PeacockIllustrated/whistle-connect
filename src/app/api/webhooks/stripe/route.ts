@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
                 await handleAccountUpdated(event.data.object as Stripe.Account)
                 break
 
-            case 'transfer.failed':
+            case 'transfer.reversed':
                 await handleTransferFailed(event.data.object as Stripe.Transfer)
                 break
 
