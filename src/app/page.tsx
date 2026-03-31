@@ -98,18 +98,18 @@ export default async function LandingPage() {
       </section>
 
       {/* Stats */}
-      <section className="py-8 bg-[var(--surface)]">
+      <section className="py-5 bg-[var(--surface)]">
         <div className="max-w-[var(--content-max-width)] mx-auto px-4">
           <div className="flex items-center justify-center divide-x divide-[var(--border-color)]">
-            <div className="px-8 text-center">
+            <div className="px-6 text-center">
               <p className="text-2xl font-bold text-[var(--foreground)]">{coachCount ?? 0}</p>
               <p className="text-xs text-[var(--foreground-muted)] mt-0.5">Coaches</p>
             </div>
-            <div className="px-8 text-center">
+            <div className="px-6 text-center">
               <p className="text-2xl font-bold text-[var(--foreground)]">{refereeCount ?? 0}</p>
               <p className="text-xs text-[var(--foreground-muted)] mt-0.5">Referees</p>
             </div>
-            <div className="px-8 text-center">
+            <div className="px-6 text-center">
               <p className="text-2xl font-bold text-[var(--foreground)]">{totalCount ?? 0}</p>
               <p className="text-xs text-[var(--foreground-muted)] mt-0.5">Users</p>
             </div>
@@ -118,31 +118,39 @@ export default async function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="mt-16 py-10 border-t border-[var(--border-color)]">
+      <footer className="py-6 border-t border-[var(--border-color)]">
         <div className="max-w-[var(--content-max-width)] mx-auto px-4 text-center">
-          <p className="text-[10px] uppercase tracking-widest text-[var(--foreground-subtle)] mb-4">
+          <p className="text-[10px] uppercase tracking-widest text-[var(--foreground-subtle)] mb-3">
             Affiliated with
           </p>
-          <div className="flex items-center justify-center gap-8 mb-6">
-            <Image
-              src="/assets/FA For All.png"
-              alt="The FA — For All"
-              width={120}
-              height={60}
-              className="object-contain opacity-80"
-            />
-            <Image
-              src="/assets/NFA Logo.png"
-              alt="Northumberland Football Association"
-              width={56}
-              height={56}
-              className="object-contain opacity-80"
-            />
+          <div className="flex items-start justify-center gap-10 mb-4">
+            <div className="flex flex-col items-center gap-1.5">
+              <Image
+                src="/assets/FA For All.png"
+                alt="The FA — For All"
+                width={120}
+                height={60}
+                className="object-contain"
+                unoptimized
+              />
+              <p className="text-[9px] text-[var(--foreground-subtle)]">The Football Association</p>
+            </div>
+            <div className="flex flex-col items-center gap-1.5">
+              <Image
+                src="/assets/NFA Logo.png"
+                alt="Northumberland Football Association"
+                width={56}
+                height={56}
+                className="object-contain"
+                unoptimized
+              />
+              <p className="text-[9px] text-[var(--foreground-subtle)]">Northumberland FA</p>
+            </div>
           </div>
           <p className="text-sm text-[var(--foreground-muted)]">
             &copy; {new Date().getFullYear()} Whistle Connect
           </p>
-          <div className="flex justify-center gap-4 mt-3">
+          <div className="flex justify-center gap-4 mt-2">
             <Link href="/privacy" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
               Privacy
             </Link>
