@@ -257,6 +257,14 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_key  # Optional, for admin ops
 # Push notifications
 NEXT_PUBLIC_VAPID_PUBLIC_KEY=your_vapid_public
 VAPID_PRIVATE_KEY=your_vapid_private
+
+# Stripe (wallet/escrow system)
+STRIPE_SECRET_KEY=your_stripe_secret_key
+NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
+
+# Cron job security
+CRON_SECRET=your_random_cron_secret
 ```
 
 ---
