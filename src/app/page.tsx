@@ -128,9 +128,9 @@ export default async function LandingPage() {
               <Image
                 src="/assets/FA For All.png"
                 alt="The FA — For All"
-                width={120}
-                height={60}
-                className="object-contain"
+                width={96}
+                height={56}
+                className="object-contain h-14"
                 unoptimized
               />
               <p className="text-[9px] text-[var(--foreground-subtle)]">The Football Association</p>
