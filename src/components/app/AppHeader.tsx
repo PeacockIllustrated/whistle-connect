@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { UserRole } from '@/lib/types'
+import WalletBalanceNav from '@/components/app/WalletBalanceNav'
 
 interface AppHeaderProps {
     userName?: string | null
@@ -37,6 +38,7 @@ export function AppHeader({ userName: _userName, userRole }: AppHeaderProps) {
 
                 {/* Right side */}
                 <div className="flex items-center gap-2">
+                    <WalletBalanceNav />
                     {userRole && (
                         <StatusChip status={userRole} size="sm" />
                     )}
