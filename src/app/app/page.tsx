@@ -7,6 +7,7 @@ import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminDashboard } from '@/components/app/AdminDashboard'
 import { Plus, Clock, ClipboardList, CalendarDays, Siren, Banknote } from 'lucide-react'
+import WalletWidget from '@/components/app/WalletWidget'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import type { StatItem } from '@/components/app/DashboardStats'
 
@@ -316,6 +317,8 @@ export default async function AppHomePage() {
                     {/* Stats Accordion */}
                     <StatsAccordion stats={coachStats} />
 
+                    <WalletWidget userRole="coach" />
+
                     {/* Recent Bookings */}
                     <div className="mb-6">
                         <div className="flex items-center justify-between mb-3">
@@ -385,6 +388,8 @@ export default async function AppHomePage() {
                             <FAStatusBadge status={refereeProfile?.fa_verification_status || 'not_provided'} />
                         </div>
                     </StatsAccordion>
+
+                    <WalletWidget userRole="referee" />
                 </>
             )}
 
