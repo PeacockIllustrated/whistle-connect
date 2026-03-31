@@ -102,6 +102,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
     const isOnboarded = account.charges_enabled && account.payouts_enabled
 
     const supabase = createAdminClient()
+    if (!supabase) return
 
     await supabase
         .from('wallets')
@@ -119,6 +120,7 @@ async function handleTransferFailed(transfer: Stripe.Transfer) {
 
     if (userId) {
         const supabase = createAdminClient()
+        if (!supabase) return
 
         const { data: admins } = await supabase
             .from('profiles')
