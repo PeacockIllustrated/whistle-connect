@@ -2,8 +2,16 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import SplashScreen from '@/components/ui/SplashScreen'
+import { createClient } from '@/lib/supabase/server'
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = await createClient()
+
+  const [{ count: coachCount }, { count: refereeCount }, { count: totalCount }] = await Promise.all([
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'coach'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'referee'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }),
+  ])
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <SplashScreen always />
@@ -89,9 +97,48 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Stats */}
+      <section className="py-8 bg-[var(--surface)]">
+        <div className="max-w-[var(--content-max-width)] mx-auto px-4">
+          <div className="flex items-center justify-center divide-x divide-[var(--border-color)]">
+            <div className="px-8 text-center">
+              <p className="text-2xl font-bold text-[var(--foreground)]">{coachCount ?? 0}</p>
+              <p className="text-xs text-[var(--foreground-muted)] mt-0.5">Coaches</p>
+            </div>
+            <div className="px-8 text-center">
+              <p className="text-2xl font-bold text-[var(--foreground)]">{refereeCount ?? 0}</p>
+              <p className="text-xs text-[var(--foreground-muted)] mt-0.5">Referees</p>
+            </div>
+            <div className="px-8 text-center">
+              <p className="text-2xl font-bold text-[var(--foreground)]">{totalCount ?? 0}</p>
+              <p className="text-xs text-[var(--foreground-muted)] mt-0.5">Users</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="mt-16 py-8 border-t border-[var(--border-color)]">
+      <footer className="mt-16 py-10 border-t border-[var(--border-color)]">
         <div className="max-w-[var(--content-max-width)] mx-auto px-4 text-center">
+          <p className="text-[10px] uppercase tracking-widest text-[var(--foreground-subtle)] mb-4">
+            Affiliated with
+          </p>
+          <div className="flex items-center justify-center gap-8 mb-6">
+            <Image
+              src="/assets/FA For All.png"
+              alt="The FA — For All"
+              width={120}
+              height={60}
+              className="object-contain opacity-80"
+            />
+            <Image
+              src="/assets/NFA Logo.png"
+              alt="Northumberland Football Association"
+              width={56}
+              height={56}
+              className="object-contain opacity-80"
+            />
+          </div>
           <p className="text-sm text-[var(--foreground-muted)]">
             &copy; {new Date().getFullYear()} Whistle Connect
           </p>
