@@ -103,3 +103,19 @@ export function checkOfferRateLimit(userId: string): string | null {
         maxRequests: 10,
     })
 }
+
+/** Wallet top-up: 5 requests per minute */
+export function checkTopUpRateLimit(userId: string): string | null {
+    return checkRateLimit(`topup:${userId}`, {
+        windowMs: 60 * 1000,
+        maxRequests: 5,
+    })
+}
+
+/** Wallet withdrawal: 3 requests per minute */
+export function checkWithdrawRateLimit(userId: string): string | null {
+    return checkRateLimit(`withdraw:${userId}`, {
+        windowMs: 60 * 1000,
+        maxRequests: 3,
+    })
+}

@@ -16,6 +16,7 @@
   "dependencies": {
     "@capacitor/core": "^8.2.0",
     "@capacitor/push-notifications": "^8.0.2",
+    "@stripe/stripe-js": "^9.0.1",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.89.0",
     "@types/web-push": "^3.6.4",
@@ -25,6 +26,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "resend": "^6.9.3",
+    "stripe": "^21.0.1",
     "tailwind-merge": "^3.4.0",
     "web-push": "^3.6.7",
     "zod": "^4.3.6"

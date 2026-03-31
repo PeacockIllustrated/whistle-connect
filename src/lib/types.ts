@@ -316,3 +316,61 @@ export interface CountyFAContact {
     county_name: string
     email: string
 }
+
+// ============================================================================
+// Wallet & Escrow Types
+// ============================================================================
+
+export type WalletTransactionType =
+    | 'top_up'
+    | 'escrow_hold'
+    | 'escrow_release'
+    | 'escrow_refund'
+    | 'withdrawal'
+    | 'platform_fee'
+    | 'admin_credit'
+    | 'admin_debit'
+
+export type WalletTransactionDirection = 'credit' | 'debit'
+
+export type DisputeStatus = 'open' | 'resolved_coach' | 'resolved_referee' | 'resolved_split'
+
+export interface Wallet {
+    id: string
+    user_id: string
+    balance_pence: number
+    escrow_pence: number
+    currency: string
+    stripe_customer_id: string | null
+    stripe_connect_id: string | null
+    stripe_connect_onboarded: boolean
+    created_at: string
+    updated_at: string
+}
+
+export interface WalletTransaction {
+    id: string
+    wallet_id: string
+    type: WalletTransactionType
+    amount_pence: number
+    direction: WalletTransactionDirection
+    balance_after_pence: number
+    reference_type: string | null
+    reference_id: string | null
+    stripe_session_id: string | null
+    stripe_transfer_id: string | null
+    description: string | null
+    created_at: string
+}
+
+export interface Dispute {
+    id: string
+    booking_id: string
+    raised_by: string
+    reason: string
+    status: DisputeStatus
+    admin_notes: string | null
+    admin_user_id: string | null
+    resolved_at: string | null
+    created_at: string
+}

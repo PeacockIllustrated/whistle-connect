@@ -109,3 +109,16 @@ export function validate<T>(schema: z.ZodSchema<T>, data: unknown): string | nul
     if (result.success) return null
     return result.error.issues[0]?.message || 'Invalid input'
 }
+
+export const topUpSchema = z.object({
+    amountPounds: z.number().min(5, 'Minimum top-up is £5').max(500, 'Maximum top-up is £500'),
+})
+
+export const withdrawSchema = z.object({
+    amountPounds: z.number().min(5, 'Minimum withdrawal is £5').max(10000, 'Maximum withdrawal is £10,000'),
+})
+
+export const disputeSchema = z.object({
+    bookingId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Invalid booking ID'),
+    reason: z.string().min(10, 'Please provide at least 10 characters explaining the issue').max(1000),
+})
