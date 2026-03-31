@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/Input'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { RatingModal } from '@/components/app/RatingModal'
 import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil, Search, Star } from 'lucide-react'
+import { getWallet } from '@/app/app/wallet/actions'
 
 interface BookingActionsProps {
     booking: BookingWithDetails
@@ -46,6 +47,17 @@ export function BookingActions({
     } | null>(null)
     const [showRatingModal, setShowRatingModal] = useState(false)
     const [hasRated, setHasRated] = useState(false)
+    const [walletBalance, setWalletBalance] = useState<number | null>(null)
+    const [walletLoading, setWalletLoading] = useState(true)
+
+    useEffect(() => {
+        async function fetchWallet() {
+            const { data } = await getWallet()
+            setWalletBalance(data?.balance_pence ?? 0)
+            setWalletLoading(false)
+        }
+        fetchWallet()
+    }, [])
 
     // ─── Referee: Accept offer with price ───
     const handleAcceptWithPrice = async () => {
@@ -115,6 +127,10 @@ export function BookingActions({
             } else {
                 setErrorMessage(result.error || 'Failed to confirm booking. Please try again.')
                 showToast({ message: result.error || 'Failed to confirm booking', type: 'error' })
+                if ((result as { code?: string }).code === 'INSUFFICIENT_FUNDS' || (result as { code?: string }).code === 'NO_WALLET') {
+                    const { data } = await getWallet()
+                    setWalletBalance(data?.balance_pence ?? 0)
+                }
                 setAccepting(false)
             }
         } catch (error) {
@@ -288,11 +304,35 @@ export function BookingActions({
                     </p>
                 </div>
 
+                {!walletLoading && walletBalance !== null && (
+                    <div className="mt-3 flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Wallet balance:</span>
+                        <span className={walletBalance < (pricedOffer.price_pence ?? 0) ? 'text-red-500 font-medium' : 'text-green-600 font-medium'}>
+                            £{(walletBalance / 100).toFixed(2)}
+                        </span>
+                    </div>
+                )}
+
+                {!walletLoading && walletBalance !== null && walletBalance < (pricedOffer.price_pence ?? 0) && (
+                    <div className="mt-2 rounded-lg bg-red-50 dark:bg-red-950/30 p-3 text-sm">
+                        <p className="text-red-700 dark:text-red-400 font-medium">
+                            Insufficient funds — you need £{(((pricedOffer.price_pence ?? 0) - walletBalance) / 100).toFixed(2)} more
+                        </p>
+                        <a
+                            href={`/app/wallet/top-up?amount=${Math.ceil(((pricedOffer.price_pence ?? 0) - walletBalance) / 100)}`}
+                            className="mt-2 inline-block text-blue-600 dark:text-blue-400 underline"
+                        >
+                            Top up your wallet
+                        </a>
+                    </div>
+                )}
+
                 <Button
                     fullWidth
                     variant="success"
                     onClick={() => handleConfirmPrice(pricedOffer.id)}
                     loading={accepting}
+                    disabled={accepting || walletLoading || (walletBalance !== null && walletBalance < (pricedOffer.price_pence ?? 0))}
                 >
                     <Check className="w-5 h-5 mr-2" />
                     Accept Price &amp; Confirm Booking
@@ -397,6 +437,27 @@ export function BookingActions({
                             variant="danger"
                         />
                     </>
+                )}
+
+                {/* Raise Dispute — confirmed bookings */}
+                {booking.status === 'confirmed' && (
+                    <button
+                        onClick={async () => {
+                            const reason = prompt('Please describe the issue (minimum 10 characters):')
+                            if (reason && reason.length >= 10) {
+                                const { raiseDispute } = await import('@/app/app/disputes/actions')
+                                const result = await raiseDispute(booking.id, reason)
+                                if (result.error) {
+                                    showToast({ message: result.error, type: 'error' })
+                                } else {
+                                    showToast({ message: 'Dispute raised. An admin will review it.', type: 'success' })
+                                }
+                            }
+                        }}
+                        className="w-full rounded-lg border border-red-300 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                    >
+                        Raise Dispute
+                    </button>
                 )}
 
                 {/* Rate Referee — coach only, completed bookings */}
