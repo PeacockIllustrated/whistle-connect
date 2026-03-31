@@ -314,10 +314,10 @@ export default async function AppHomePage() {
                         />
                     </div>
 
+                    <WalletWidget userRole="coach" />
+
                     {/* Stats Accordion */}
                     <StatsAccordion stats={coachStats} />
-
-                    <WalletWidget userRole="coach" />
 
                     {/* Recent Bookings */}
                     <div className="mb-6">
@@ -381,6 +381,8 @@ export default async function AppHomePage() {
                         />
                     </div>
 
+                    <WalletWidget userRole="referee" />
+
                     {/* Stats Accordion */}
                     <StatsAccordion stats={refereeStats}>
                         <div className="flex items-center justify-between py-2 px-1">
@@ -388,8 +390,6 @@ export default async function AppHomePage() {
                             <FAStatusBadge status={refereeProfile?.fa_verification_status || 'not_provided'} />
                         </div>
                     </StatsAccordion>
-
-                    <WalletWidget userRole="referee" />
                 </>
             )}
 

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { createTopUpSession } from '@/app/app/wallet/actions'
 import { calculateChargeAmount } from '@/lib/stripe/config'
+import { X, CreditCard } from 'lucide-react'
 
 const PRESET_AMOUNTS = [10, 20, 50]
 
@@ -46,27 +47,37 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
             <div
-                className="w-full max-w-sm rounded-xl bg-card border shadow-lg p-6 space-y-4"
+                className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl bg-[var(--background-elevated)] border border-[var(--border-color)] shadow-xl p-5 space-y-4"
                 onClick={(e) => e.stopPropagation()}
             >
+                {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold">Add Funds</h2>
-                    <button onClick={onClose} className="text-muted-foreground hover:text-foreground text-xl">
-                        &times;
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--brand-primary)]/10 to-[var(--brand-primary)]/5 flex items-center justify-center">
+                            <CreditCard className="w-4 h-4 text-[var(--brand-primary)]" />
+                        </div>
+                        <h2 className="text-lg font-semibold text-[var(--foreground)]">Add Funds</h2>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="w-8 h-8 rounded-lg bg-[var(--neutral-100)] flex items-center justify-center text-[var(--neutral-500)] hover:text-[var(--foreground)] transition-colors"
+                    >
+                        <X className="w-4 h-4" />
                     </button>
                 </div>
 
+                {/* Preset amounts */}
                 <div className="grid grid-cols-3 gap-2">
                     {PRESET_AMOUNTS.map((preset) => (
                         <button
                             key={preset}
                             onClick={() => { setAmount(preset); setCustomAmount('') }}
-                            className={`rounded-lg border-2 py-3 text-center font-semibold text-sm transition ${
+                            className={`rounded-xl border-2 py-3.5 text-center font-bold text-sm transition-all duration-200 ${
                                 amount === preset
-                                    ? 'border-primary bg-primary/10 text-primary'
-                                    : 'border-border hover:border-primary/50'
+                                    ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] shadow-sm'
+                                    : 'border-[var(--border-color)] bg-[var(--background-soft)] text-[var(--foreground)] hover:border-[var(--brand-primary)]/50'
                             }`}
                         >
                             &pound;{preset}
@@ -74,8 +85,9 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
                     ))}
                 </div>
 
+                {/* Custom amount */}
                 <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">&pound;</span>
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] text-sm font-medium">&pound;</span>
                     <input
                         type="number"
                         min="5"
@@ -84,31 +96,41 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
                         value={customAmount}
                         onChange={(e) => { setCustomAmount(e.target.value); setAmount(null) }}
                         placeholder="Custom amount"
-                        className="w-full rounded-lg border bg-background py-2.5 pl-7 pr-4 text-sm"
+                        className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--background-soft)] py-3 pl-8 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:outline-none focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)]/30 transition-all"
                     />
                 </div>
 
+                {/* Fee breakdown */}
                 {feeInfo && isValid && (
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                        <div className="flex justify-between">
-                            <span>Wallet credit: &pound;{effectiveAmount!.toFixed(2)}</span>
-                            <span>Fee: ~&pound;{(feeInfo.estimatedFeePence / 100).toFixed(2)}</span>
+                    <div className="rounded-xl bg-[var(--background-soft)] border border-[var(--border-color)] p-3 text-xs space-y-1">
+                        <div className="flex justify-between text-[var(--foreground-muted)]">
+                            <span>Wallet credit</span>
+                            <span>&pound;{effectiveAmount!.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between font-medium text-foreground">
-                            <span>Total charge</span>
+                        <div className="flex justify-between text-[var(--foreground-muted)]">
+                            <span>Processing fee</span>
+                            <span>~&pound;{(feeInfo.estimatedFeePence / 100).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between font-semibold text-[var(--foreground)] border-t border-[var(--border-color)] pt-1.5 mt-1.5">
+                            <span>You pay</span>
                             <span>&pound;{(feeInfo.chargePence / 100).toFixed(2)}</span>
                         </div>
                     </div>
                 )}
 
-                {error && <p className="text-xs text-red-500">{error}</p>}
+                {error && (
+                    <div className="rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 p-3">
+                        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+                    </div>
+                )}
 
+                {/* Submit button */}
                 <button
                     onClick={handleSubmit}
                     disabled={!isValid || loading}
-                    className="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-dark)] text-white shadow-lg shadow-[var(--brand-primary)]/20 hover:shadow-xl hover:shadow-[var(--brand-primary)]/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg transition-all duration-200"
                 >
-                    {loading ? 'Redirecting...' : 'Pay with Stripe'}
+                    {loading ? 'Redirecting to Stripe...' : 'Pay with Stripe'}
                 </button>
             </div>
         </div>
