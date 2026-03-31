@@ -1,3 +1,13 @@
 {
-    "framework": "nextjs"
+    "framework": "nextjs",
+    "crons": [
+        {
+            "path": "/api/cron/escrow-release",
+            "schedule": "*/15 * * * *"
+        },
+        {
+            "path": "/api/cron/reconcile",
+            "schedule": "0 6 * * 1"
+        }
+    ]
 }
