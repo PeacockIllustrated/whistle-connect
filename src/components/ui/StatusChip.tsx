@@ -60,6 +60,10 @@ const statusConfig: Record<StatusType, { label: string; colors: string }> = {
         label: 'Price Proposed',
         colors: 'bg-indigo-50 text-indigo-700 border-indigo-200'
     },
+    expired: {
+        label: 'Expired',
+        colors: 'bg-slate-100 text-slate-500 border-slate-200'
+    },
 
     // Verification
     verified: {

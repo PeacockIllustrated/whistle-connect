@@ -30,10 +30,10 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TYPE user_role AS ENUM ('coach', 'referee', 'admin');
 CREATE TYPE booking_status AS ENUM ('draft', 'pending', 'offered', 'confirmed', 'completed', 'cancelled');
-CREATE TYPE offer_status AS ENUM ('sent', 'accepted', 'declined', 'withdrawn', 'expired');
+CREATE TYPE offer_status AS ENUM ('sent', 'accepted', 'accepted_priced', 'declined', 'withdrawn', 'expired');
 CREATE TYPE compliance_status AS ENUM ('not_provided', 'provided', 'verified', 'expired');
 CREATE TYPE message_kind AS ENUM ('user', 'system');
-CREATE TYPE match_format AS ENUM ('5v5', '7v7', '9v9', '11v11');
+CREATE TYPE match_format AS ENUM ('5v5', '7v7', '8v8', '9v9', '11v11');
 CREATE TYPE competition_type AS ENUM ('league', 'cup', 'friendly', 'tournament', 'other');
 
 -- ============================================
@@ -59,15 +59,17 @@ CREATE INDEX idx_profiles_role ON profiles(role);
 
 CREATE TABLE clubs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    owner_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
-    coach_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
-    home_ground TEXT,
-    postcode TEXT,
+    home_postcode TEXT NOT NULL,
+    ground_name TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_clubs_coach ON clubs(coach_id);
+CREATE INDEX idx_clubs_owner ON clubs(owner_id);
 
 -- ============================================
 -- REFEREE PROFILES

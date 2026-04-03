@@ -9,7 +9,7 @@ export type UserRole = 'coach' | 'referee' | 'admin'
 export type BookingStatus = 'draft' | 'pending' | 'offered' | 'confirmed' | 'completed' | 'cancelled'
 
 // Offer Status
-export type OfferStatus = 'sent' | 'accepted' | 'accepted_priced' | 'declined' | 'withdrawn'
+export type OfferStatus = 'sent' | 'accepted' | 'accepted_priced' | 'declined' | 'withdrawn' | 'expired'
 
 // FA Verification Status
 export type FAVerificationStatus = 'not_provided' | 'pending' | 'verified' | 'rejected'
@@ -47,6 +47,8 @@ export interface Club {
     name: string
     home_postcode: string
     ground_name: string | null
+    latitude: number | null
+    longitude: number | null
     created_at: string
     updated_at: string
 }
@@ -61,11 +63,15 @@ export interface RefereeProfile {
     travel_radius_km: number
     county: string | null
     verified: boolean
-    bio: string | null
     central_venue_opt_in: boolean
     is_available: boolean
     dbs_status: DBSStatus
+    dbs_expires_at: string | null
     safeguarding_status: DBSStatus
+    safeguarding_expires_at: string | null
+    reliability_score: number
+    total_matches_completed: number
+    average_rating: number
     created_at: string
     updated_at: string
 }
@@ -111,6 +117,10 @@ export interface Booking {
     latitude: number | null
     longitude: number | null
     is_sos: boolean
+    sos_expires_at: string | null
+    deleted_at: string | null
+    escrow_amount_pence: number | null
+    escrow_released_at: string | null
     created_at: string
     updated_at: string
 }
