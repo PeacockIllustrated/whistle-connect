@@ -86,7 +86,7 @@ export default async function AppLayout({
                         />
 
                         {/* Development banner */}
-                        <div className="fixed top-[var(--header-height)] left-0 right-0 z-40 overflow-hidden bg-gradient-to-r from-amber-500/90 via-orange-500/90 to-amber-500/90 backdrop-blur-sm">
+                        <div className="fixed top-[var(--header-height)] left-0 right-0 z-40 overflow-hidden bg-[var(--wc-blue)]/95 backdrop-blur-sm">
                             <div className="dev-banner-scroll flex whitespace-nowrap py-1">
                                 {Array.from({ length: 4 }).map((_, i) => (
                                     <span key={i} className="inline-flex items-center gap-6 px-6 text-[11px] font-semibold tracking-widest uppercase text-white/90">
