@@ -47,8 +47,13 @@ export function PushNotificationManager() {
             return // Skip all web push logic — native handles its own permissions UI
         }
 
-        // Web path: existing web push flow (unchanged)
+        // Web path: existing web push flow
         if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
+            // Respect dismissal for 24 hours
+            const dismissed = localStorage.getItem('notifications_dismissed')
+            if (dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000) {
+                return
+            }
             setIsSupported(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: standard feature-detection pattern
             registerServiceWorker()
         }
@@ -100,26 +105,37 @@ export function PushNotificationManager() {
 
     if (!subscription) {
         return (
-            <div className="fixed bottom-4 right-4 z-50 p-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg shadow-lg max-w-sm animate-in fade-in slide-in-from-bottom-5">
-                <div className="flex flex-col gap-2">
-                    <p className="text-sm font-medium text-white">Enable Notifications?</p>
-                    <p className="text-xs text-white/70">Get instant updates about bookings and messages.</p>
-                    <div className="flex gap-2 mt-1">
-                        <button
-                            onClick={subscribe}
-                            className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs px-3 py-1.5 rounded-md transition-colors"
-                        >
-                            Enable
-                        </button>
-                        <button
-                            onClick={() => {
-                                // Logic to dismiss (maybe save to local storage to not show again for a while)
-                                setIsSupported(false)
-                            }}
-                            className="text-xs text-white/50 hover:text-white px-2"
-                        >
-                            Later
-                        </button>
+            <div className="fixed bottom-[calc(var(--bottom-nav-height,72px)+16px)] left-4 right-4 z-50 mx-auto max-w-[var(--content-max-width,480px)] animate-in fade-in slide-in-from-bottom-5 duration-500">
+                <div className="rounded-[var(--radius-lg,14px)] bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] p-4 shadow-[var(--shadow-xl)] border border-white/10">
+                    <div className="flex items-start gap-3">
+                        {/* Bell icon */}
+                        <div className="flex-shrink-0 mt-0.5 w-10 h-10 rounded-full bg-white/15 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                                <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                            </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-white">Enable Notifications</p>
+                            <p className="text-xs text-white/70 mt-0.5">Get instant updates about bookings, messages and match offers.</p>
+                            <div className="flex gap-2 mt-3">
+                                <button
+                                    onClick={subscribe}
+                                    className="bg-white text-[var(--brand-primary)] font-semibold text-sm px-4 py-2 rounded-[var(--radius-md,10px)] transition-all duration-200 hover:bg-white/90 hover:shadow-md active:scale-[0.97]"
+                                >
+                                    Enable
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        localStorage.setItem('notifications_dismissed', Date.now().toString())
+                                        setIsSupported(false)
+                                    }}
+                                    className="text-sm text-white/60 hover:text-white px-3 py-2 transition-colors duration-200"
+                                >
+                                    Later
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
