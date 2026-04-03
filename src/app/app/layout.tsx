@@ -85,9 +85,33 @@ export default async function AppLayout({
                             userRole={profile?.role}
                         />
 
+                        {/* Development banner */}
+                        <div className="fixed top-[var(--header-height)] left-0 right-0 z-40 overflow-hidden bg-gradient-to-r from-amber-500/90 via-orange-500/90 to-amber-500/90 backdrop-blur-sm">
+                            <div className="dev-banner-scroll flex whitespace-nowrap py-1">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <span key={i} className="inline-flex items-center gap-6 px-6 text-[11px] font-semibold tracking-widest uppercase text-white/90">
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-pulse" />
+                                            In Development
+                                        </span>
+                                        <span className="text-white/50">/</span>
+                                        <span>Preview Build</span>
+                                        <span className="text-white/50">/</span>
+                                        <span className="inline-flex items-center gap-1.5">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-pulse" />
+                                            In Development
+                                        </span>
+                                        <span className="text-white/50">/</span>
+                                        <span>Preview Build</span>
+                                        <span className="text-white/50 pl-6">/</span>
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+
                         <PushNotificationManager />
 
-                        <main className="pt-[var(--header-height)] pb-[var(--bottom-nav-height)]">
+                        <main className="pt-[calc(var(--header-height)+24px)] pb-[var(--bottom-nav-height)]">
                             {children}
                         </main>
 

@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Development banner ticker */
+@keyframes dev-banner-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.dev-banner-scroll {
+  animation: dev-banner-scroll 20s linear infinite;
+}
+
 /* ============================================
    WHISTLE CONNECT - DESIGN SYSTEM
    Fresh, Modern, Professional
