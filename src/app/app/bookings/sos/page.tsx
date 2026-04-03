@@ -19,6 +19,7 @@ const AGE_GROUPS = [
 const FORMATS = [
     { value: '5v5', label: '5v5' },
     { value: '7v7', label: '7v7' },
+    { value: '8v8', label: '8v8' },
     { value: '9v9', label: '9v9' },
     { value: '11v11', label: '11v11' },
 ]

@@ -12,6 +12,7 @@ import { UK_COUNTIES } from '@/lib/constants'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { AvailabilityToggle } from '@/components/app/AvailabilityToggle'
+import { toLocalDateString } from '@/lib/utils'
 import { ChevronLeft, Check, AlertCircle, CalendarDays, ChevronDown } from 'lucide-react'
 
 export default function AvailabilityPage() {
@@ -85,7 +86,7 @@ export default function AvailabilityPage() {
     }
 
     async function loadDateAvailability(date: Date) {
-        const dateStr = date.toISOString().split('T')[0]
+        const dateStr = toLocalDateString(date)
         const result = await getDateAvailability(dateStr)
         if (result.data) {
             setDateAvailability(result.data)
@@ -128,7 +129,7 @@ export default function AvailabilityPage() {
             // In multi-select mode, update all selected dates
             if (multiSelectMode && selectedDates.length > 0) {
                 const dateUpdatePromises = selectedDates.map(date => {
-                    const dateStr = date.toISOString().split('T')[0]
+                    const dateStr = toLocalDateString(date)
                     return updateDateAvailability(dateStr, slots)
                 })
 
@@ -158,7 +159,7 @@ export default function AvailabilityPage() {
                 }
             } else {
                 // Single date mode
-                const dateStr = selectedDate.toISOString().split('T')[0]
+                const dateStr = toLocalDateString(selectedDate)
 
                 const results = await Promise.all([
                     updateDateAvailability(dateStr, slots),

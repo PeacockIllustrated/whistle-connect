@@ -18,6 +18,7 @@ export const UK_COUNTIES = [
 export const MATCH_FORMATS = [
     { value: '5v5', label: '5-a-side' },
     { value: '7v7', label: '7-a-side' },
+    { value: '8v8', label: '8-a-side' },
     { value: '9v9', label: '9-a-side' },
     { value: '11v11', label: '11-a-side' },
 ]

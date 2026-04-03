@@ -11,6 +11,7 @@ import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
 import { use } from 'react'
 import { ChevronLeft } from 'lucide-react'
+import { toLocalDateString } from '@/lib/utils'
 import { VenueMap } from '@/components/ui/VenueMap'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
@@ -153,7 +154,7 @@ export default function EditBookingPage({
                                         type="date"
                                         value={formData.match_date}
                                         onChange={(e) => updateField('match_date', e.target.value)}
-                                        min={new Date().toISOString().split('T')[0]}
+                                        min={toLocalDateString(new Date())}
                                         required
                                     />
                                     <Input

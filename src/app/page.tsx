@@ -70,7 +70,7 @@ export default async function LandingPage() {
           </h2>
 
           <p className="text-white/60 text-lg max-w-xs mx-auto mb-10">
-            Connecting Grass Roots coaches with Local Referees
+            Connecting Grassroots coaches with Local Referees
           </p>
 
           <div className="flex flex-col gap-4 max-w-xs mx-auto">

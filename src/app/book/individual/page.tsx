@@ -11,6 +11,7 @@ import { UK_COUNTIES, AGE_GROUPS, MATCH_FORMATS, COMPETITION_TYPES } from '@/lib
 import { createBooking } from '@/app/app/bookings/actions'
 import { MatchFormat, CompetitionType } from '@/lib/types'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
+import { toLocalDateString } from '@/lib/utils'
 import { VenueMap } from '@/components/ui/VenueMap'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
@@ -134,7 +135,7 @@ export default function IndividualBookingPage() {
                                     type="date"
                                     value={formData.match_date}
                                     onChange={(e) => updateField('match_date', e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
+                                    min={toLocalDateString(new Date())}
                                     required
                                 />
                                 <Input

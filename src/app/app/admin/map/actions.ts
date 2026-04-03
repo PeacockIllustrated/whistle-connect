@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { toLocalDateString } from '@/lib/utils'
 
 export interface AdminMapReferee {
     id: string
@@ -55,7 +56,7 @@ export async function getAdminMapData(): Promise<{
 
     if (profile?.role !== 'admin') return { error: 'Admin access required' }
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString(new Date())
 
     const [
         { data: refProfiles },

@@ -34,7 +34,9 @@ export default function LoginPage() {
             if (result?.error) {
                 setError(result.error)
             }
-        } catch {
+        } catch (err) {
+            // Next.js redirect() throws a special error — let it propagate
+            if (err && typeof err === 'object' && 'digest' in err) throw err
             setError('An unexpected error occurred')
         } finally {
             setLoading(false)

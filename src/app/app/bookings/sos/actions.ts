@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { validate, bookingSchema } from '@/lib/validation'
+import { toLocalDateString } from '@/lib/utils'
 
 interface SOSBookingData {
     location_postcode: string
@@ -23,7 +24,7 @@ export async function createSOSBooking(data: SOSBookingData) {
     if (!user) return { error: 'Unauthorized' }
 
     // Validate
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString(new Date())
     const validationError = validate(bookingSchema, {
         match_date: today,
         kickoff_time: data.kickoff_time,

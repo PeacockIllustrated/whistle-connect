@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { ActionCard } from '@/components/app/ActionCard'
-import { BookingCardCompact } from '@/components/app/BookingCard'
+import { SwipeableBookingList } from '@/components/app/SwipeableBookingList'
 import { StatsAccordion } from '@/components/app/StatsAccordion'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminDashboard } from '@/components/app/AdminDashboard'
+import { toLocalDateString } from '@/lib/utils'
 import { Plus, Clock, ClipboardList, CalendarDays, Siren, Banknote } from 'lucide-react'
 import WalletWidget from '@/components/app/WalletWidget'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
@@ -49,7 +50,7 @@ export default async function AppHomePage() {
     const isReferee = profile.role === 'referee'
     const isAdmin = profile.role === 'admin'
 
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString(new Date())
 
     // ── Coach data & stats ──────────────────────────────
     let recentBookings: BookingWithDetails[] = []
@@ -328,11 +329,7 @@ export default async function AppHomePage() {
                             </Link>
                         </div>
                         {recentBookings.length > 0 ? (
-                            <div className="space-y-2">
-                                {recentBookings.map((booking) => (
-                                    <BookingCardCompact key={booking.id} booking={booking} />
-                                ))}
-                            </div>
+                            <SwipeableBookingList bookings={recentBookings} />
                         ) : (
                             <EmptyState
                                 title="No bookings yet"

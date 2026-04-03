@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { UK_COUNTIES } from '@/lib/constants'
+import { toLocalDateString } from '@/lib/utils'
 import { createBooking } from '@/app/app/bookings/actions'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { VenueMap } from '@/components/ui/VenueMap'
@@ -125,7 +126,7 @@ export default function CentralBookingPage() {
                                     type="date"
                                     value={formData.match_date}
                                     onChange={(e) => updateField('match_date', e.target.value)}
-                                    min={new Date().toISOString().split('T')[0]}
+                                    min={toLocalDateString(new Date())}
                                     required
                                 />
                                 <Input

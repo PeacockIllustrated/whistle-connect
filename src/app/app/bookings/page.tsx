@@ -8,6 +8,7 @@ import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/Awa
 import { AdminBookingsView } from '@/components/app/AdminBookingsView'
 import type { AdminBooking } from '@/components/app/AdminBookingsView'
 import { BookingStatus, BookingWithDetails } from '@/lib/types'
+import { toLocalDateString } from '@/lib/utils'
 import { CalendarDays } from 'lucide-react'
 import { Pagination } from '@/components/app/Pagination'
 
@@ -103,7 +104,7 @@ export default async function BookingsPage({
     let adminCompleted: AdminBooking[] = []
 
     if (isAdmin) {
-        const today = new Date().toISOString().split('T')[0]
+        const today = toLocalDateString(new Date())
 
         // Supabase join result types for admin booking queries
         interface AdminBookingRow {

@@ -15,7 +15,7 @@ export type OfferStatus = 'sent' | 'accepted' | 'accepted_priced' | 'declined' |
 export type FAVerificationStatus = 'not_provided' | 'pending' | 'verified' | 'rejected'
 
 // Match Formats
-export type MatchFormat = '5v5' | '7v7' | '9v9' | '11v11'
+export type MatchFormat = '5v5' | '7v7' | '8v8' | '9v9' | '11v11'
 
 // Competition Types
 export type CompetitionType = 'league' | 'cup' | 'friendly' | 'tournament' | 'other'

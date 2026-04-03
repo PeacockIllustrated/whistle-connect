@@ -52,7 +52,7 @@ export const bookingSchema = z.object({
     county: z.string().max(100).optional().or(z.literal('')),
     ground_name: z.string().max(200, 'Ground name is too long').optional().or(z.literal('')),
     age_group: z.string().max(50).optional().or(z.literal('')),
-    format: z.enum(['5v5', '7v7', '9v9', '11v11']).optional().or(z.literal('')),
+    format: z.enum(['5v5', '7v7', '8v8', '9v9', '11v11']).optional().or(z.literal('')),
     competition_type: z.enum(['league', 'cup', 'friendly', 'tournament', 'other']).optional().or(z.literal('')),
     referee_level_required: z.string().max(50).optional().or(z.literal('')),
     home_team: z.string().max(100, 'Team name is too long').optional().or(z.literal('')),

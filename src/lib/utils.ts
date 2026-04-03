@@ -5,6 +5,17 @@ export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs))
 }
 
+/**
+ * Formats a Date object as YYYY-MM-DD in local timezone.
+ * Avoids toISOString() which converts to UTC and can shift the date.
+ */
+export function toLocalDateString(date: Date): string {
+    const y = date.getFullYear()
+    const m = String(date.getMonth() + 1).padStart(2, '0')
+    const d = String(date.getDate()).padStart(2, '0')
+    return `${y}-${m}-${d}`
+}
+
 export function formatDate(dateString: string): string {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-GB', {
