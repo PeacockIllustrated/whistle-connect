@@ -36,6 +36,11 @@ export function PushNotificationManager() {
             updateViaCache: 'none',
         })
         const sub = await registration.pushManager.getSubscription()
+        if (sub) {
+            // Re-save on every load to ensure the DB always has the current subscription
+            // (handles cases where the DB record was lost, e.g. cleanup, migration, etc.)
+            await saveSubscription(sub)
+        }
         setSubscription(sub)
         setPermission(Notification.permission)
     }
@@ -88,12 +93,19 @@ export function PushNotificationManager() {
 
         if (!p256dh || !auth) return
 
-        await supabase.from('push_subscriptions').upsert({
+        const { error } = await supabase.from('push_subscriptions').upsert({
             user_id: user.id,
             endpoint: sub.endpoint,
             p256dh,
-            auth
+            auth,
+            platform: 'web',
         }, { onConflict: 'user_id, endpoint' })
+
+        if (error) {
+            console.error('[PushNotification] Failed to save subscription:', error)
+        } else {
+            console.log('[PushNotification] Subscription saved successfully')
+        }
     }
 
     if (!isSupported) return null
