@@ -820,22 +820,39 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
     const kickoff = criteria.kickoff_time + ':00'
 
     // Step 1: Get referee IDs who have availability for this date/time
-    const { data: availableReferees, error: availError } = await supabase
-        .from('referee_date_availability')
-        .select('referee_id')
-        .eq('date', criteria.match_date)
-        .lte('start_time', kickoff)
-        .gte('end_time', kickoff)
+    // Check both date-specific availability AND recurring weekly availability
+    const matchDate = new Date(criteria.match_date + 'T00:00:00')
+    const dayOfWeek = matchDate.getDay() // 0=Sunday, 6=Saturday (matches DB convention)
 
-    if (availError) {
-        return { error: availError.message }
+    const [dateAvailResult, weeklyAvailResult] = await Promise.all([
+        supabase
+            .from('referee_date_availability')
+            .select('referee_id')
+            .eq('date', criteria.match_date)
+            .lte('start_time', kickoff)
+            .gte('end_time', kickoff),
+        supabase
+            .from('referee_availability')
+            .select('referee_id')
+            .eq('day_of_week', dayOfWeek)
+            .lte('start_time', kickoff)
+            .gte('end_time', kickoff),
+    ])
+
+    if (dateAvailResult.error) {
+        return { error: dateAvailResult.error.message }
     }
 
-    if (!availableReferees || availableReferees.length === 0) {
+    // Merge referee IDs from both date-specific and weekly recurring availability
+    const refereeIdSet = new Set<string>()
+    for (const r of (dateAvailResult.data || [])) refereeIdSet.add(r.referee_id)
+    for (const r of (weeklyAvailResult.data || [])) refereeIdSet.add(r.referee_id)
+
+    if (refereeIdSet.size === 0) {
         return { data: [] }
     }
 
-    const refereeIds = availableReferees.map(a => a.referee_id)
+    const refereeIds = Array.from(refereeIdSet)
 
     // Step 2: Get referee profiles for those who have availability and match county
     const { data: results, error } = await supabase
@@ -971,22 +988,39 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     const kickoff = booking.kickoff_time
 
     // 3. Step 1: Get referee IDs who have availability for this date/time
-    const { data: availableReferees, error: availError } = await supabase
-        .from('referee_date_availability')
-        .select('referee_id')
-        .eq('date', booking.match_date)
-        .lte('start_time', kickoff)
-        .gte('end_time', kickoff)
+    // Check both date-specific availability AND recurring weekly availability
+    const matchDate = new Date(booking.match_date + 'T00:00:00')
+    const dayOfWeek = matchDate.getDay() // 0=Sunday, 6=Saturday (matches DB convention)
 
-    if (availError) {
-        return { error: availError.message }
+    const [dateAvailResult, weeklyAvailResult] = await Promise.all([
+        supabase
+            .from('referee_date_availability')
+            .select('referee_id')
+            .eq('date', booking.match_date)
+            .lte('start_time', kickoff)
+            .gte('end_time', kickoff),
+        supabase
+            .from('referee_availability')
+            .select('referee_id')
+            .eq('day_of_week', dayOfWeek)
+            .lte('start_time', kickoff)
+            .gte('end_time', kickoff),
+    ])
+
+    if (dateAvailResult.error) {
+        return { error: dateAvailResult.error.message }
     }
 
-    if (!availableReferees || availableReferees.length === 0) {
+    // Merge referee IDs from both date-specific and weekly recurring availability
+    const refereeIdSet = new Set<string>()
+    for (const r of (dateAvailResult.data || [])) refereeIdSet.add(r.referee_id)
+    for (const r of (weeklyAvailResult.data || [])) refereeIdSet.add(r.referee_id)
+
+    if (refereeIdSet.size === 0) {
         return { data: [] }
     }
 
-    let refereeIds = availableReferees.map(a => a.referee_id)
+    let refereeIds = Array.from(refereeIdSet)
 
     // 3b. Exclude referees who already have a confirmed booking assignment at the same date/time
     const { data: bookedReferees } = await supabase
