@@ -166,3 +166,79 @@ export async function updateFANumber(faNumber: string) {
     revalidatePath('/app/profile')
     return { success: true }
 }
+
+// ── Notification Test Simulator ────────────────────────────────────────────
+
+const TEST_SCENARIOS = [
+    {
+        title: 'SOS — Referee Needed!',
+        message: 'Urgent: A match at Hackney Marshes needs a referee today at 14:00! 3 km from you.',
+        type: 'warning' as const,
+        urgency: 'sos' as const,
+        link: '/app/bookings',
+    },
+    {
+        title: 'New Booking Request',
+        message: 'Coach Mike has sent you a booking request for Saturday at Victoria Park.',
+        type: 'info' as const,
+        link: '/app/offers',
+    },
+    {
+        title: 'Offer Priced!',
+        message: 'A referee has accepted your booking request and sent a price of £35 for Hackney Downs.',
+        type: 'info' as const,
+        link: '/app/bookings',
+    },
+    {
+        title: 'Booking Confirmed!',
+        message: 'The coach has accepted your price. The booking for Springfield Park is now confirmed.',
+        type: 'success' as const,
+        link: '/app/bookings',
+    },
+    {
+        title: 'Referee Pulled Out',
+        message: 'The assigned referee has cancelled the booking for London Fields. You can search for a new referee.',
+        type: 'warning' as const,
+        link: '/app/bookings',
+    },
+    {
+        title: 'Match Completed',
+        message: 'The coach has marked the booking for Mabley Green as completed. Well done!',
+        type: 'success' as const,
+        link: '/app/bookings',
+    },
+    {
+        title: 'Offer Declined',
+        message: 'A referee declined your booking request for Weavers Fields.',
+        type: 'info' as const,
+        link: '/app/bookings',
+    },
+]
+
+export async function fireTestNotification(scenarioIndex: number) {
+    const { createNotification } = await import('@/lib/notifications')
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) return { error: 'Not authenticated' }
+
+    const scenario = TEST_SCENARIOS[scenarioIndex % TEST_SCENARIOS.length]
+
+    const result = await createNotification({
+        userId: user.id,
+        title: scenario.title,
+        message: scenario.message,
+        type: scenario.type,
+        link: scenario.link,
+        urgency: scenario.urgency || 'normal',
+    })
+
+    if (!result.success) return { error: result.error || 'Failed to send' }
+
+    return { success: true, scenario: scenario.title }
+}
+
+export function getTestScenarios() {
+    return TEST_SCENARIOS.map(s => ({ title: s.title, type: s.type }))
+}

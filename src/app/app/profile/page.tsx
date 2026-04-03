@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { ProfileClient } from './ProfileClient'
 import { SignOutButton } from '@/components/app/SignOutButton'
 import { Clock, ChevronRight, ShieldCheck } from 'lucide-react'
+import { NotificationTester } from '@/components/app/NotificationTester'
 
 export default async function ProfilePage() {
     const supabase = await createClient()
@@ -73,6 +74,9 @@ export default async function ProfilePage() {
                 )}
 
             </Card>
+
+            {/* Notification Test */}
+            <NotificationTester />
 
             {/* Sign Out */}
             <SignOutButton />
