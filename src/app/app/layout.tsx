@@ -82,9 +82,7 @@ export default async function AppLayout({
                 <BookingUpdatesProvider userId={user.id} initialOfferCount={offerCount}>
                     <div className="min-h-screen bg-[var(--background)]">
                         <AppHeader
-                            userName={profile?.full_name}
                             userRole={profile?.role}
-                            notificationCount={0}
                         />
 
                         <PushNotificationManager />

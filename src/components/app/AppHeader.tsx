@@ -5,15 +5,14 @@ import Image from 'next/image'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { UserRole } from '@/lib/types'
 import WalletBalanceNav from '@/components/app/WalletBalanceNav'
+import { NotificationDropdown } from '@/components/app/NotificationDropdown'
 
 interface AppHeaderProps {
     userName?: string | null
     userRole?: UserRole | null
-    notificationCount?: number // Deprecated, handled internally by NotificationDropdown
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function AppHeader({ userName: _userName, userRole }: AppHeaderProps) {
+export function AppHeader({ userRole }: AppHeaderProps) {
     return (
         <header className="fixed top-0 left-0 right-0 z-50 h-[var(--header-height)]">
             {/* Gradient background */}
@@ -39,6 +38,7 @@ export function AppHeader({ userName: _userName, userRole }: AppHeaderProps) {
                 {/* Right side */}
                 <div className="flex items-center gap-2">
                     <WalletBalanceNav />
+                    <NotificationDropdown />
                     {userRole && (
                         <StatusChip status={userRole} size="sm" />
                     )}
