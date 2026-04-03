@@ -8,7 +8,16 @@ const STATIC_ASSETS = [
 // ── Install: pre-cache static assets ─────────────────────────────────────
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
+        caches.open(CACHE_NAME).then((cache) =>
+            // Cache each asset individually so one failure doesn't block SW activation
+            Promise.allSettled(
+                STATIC_ASSETS.map((url) =>
+                    cache.add(url).catch((err) =>
+                        console.warn('[SW] Failed to cache', url, err)
+                    )
+                )
+            )
+        )
     );
     self.skipWaiting();
 });
@@ -81,7 +90,7 @@ self.addEventListener('push', (event) => {
     const options = {
         body: payload.body,
         icon: '/icon-192x192.png',
-        badge: '/badge-72x72.png',
+        badge: '/icon-192x192.png',
         data: {
             link: payload.link || '/app',
         },

@@ -42,12 +42,14 @@ export async function createNotification({
         .eq('user_id', userId)
 
     if (!subscriptions || subscriptions.length === 0) {
+        console.log(`[Notifications] No push subscriptions found for user ${userId}`)
         return { success: true }
     }
 
     // Split subscriptions by platform
     const webSubs = subscriptions.filter(s => s.platform === 'web')
     const firebaseSubs = subscriptions.filter(s => s.platform === 'firebase')
+    console.log(`[Notifications] Sending push to ${webSubs.length} web + ${firebaseSubs.length} firebase subscriptions`)
 
     const isSOS = urgency === 'sos'
     const payload = { title, body: message, link: link || '/app' }
@@ -75,6 +77,7 @@ async function sendWebPush(
     payload: { title: string; body: string; link: string },
 ) {
     if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+        console.warn('[WebPush] VAPID keys not configured — skipping web push send')
         return
     }
 
@@ -103,7 +106,14 @@ async function sendWebPush(
             })
         )
 
-        // Cleanup expired subscriptions (410 Gone)
+        // Log any failures and cleanup expired subscriptions (410 Gone)
+        results.forEach((result, index) => {
+            if (result.status === 'rejected') {
+                const statusCode = (result.reason as { statusCode?: number })?.statusCode
+                console.error(`[WebPush] Failed to send to subscription ${subscriptions[index].id}:`, statusCode, result.reason)
+            }
+        })
+
         const cleanupPromises = results
             .map((result, index) => {
                 if (result.status === 'rejected' &&
