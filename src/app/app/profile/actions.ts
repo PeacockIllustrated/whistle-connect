@@ -239,6 +239,6 @@ export async function fireTestNotification(scenarioIndex: number) {
     return { success: true, scenario: scenario.title }
 }
 
-export function getTestScenarios() {
+export async function getTestScenarios() {
     return TEST_SCENARIOS.map(s => ({ title: s.title, type: s.type }))
 }
