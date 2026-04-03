@@ -853,6 +853,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 avatar_url
             )
         `)
+        .eq('is_available', true)
         .eq('county', criteria.county)
         .in('profile_id', refereeIds)
 
@@ -1012,7 +1013,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     }
 
     // 4. Step 2: Get referee profiles for those who have availability
-    // If booking has coordinates, use spatial RPC for distance-sorted results
+    // If booking has coordinates, use spatial RPC for distance enrichment (not hard filtering)
     let spatialMap: Map<string, number> | null = null
     if (booking.latitude && booking.longitude) {
         const { data: spatialResults } = await supabase.rpc('find_referees_within_radius', {
@@ -1020,17 +1021,11 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
             p_longitude: booking.longitude,
             p_radius_km: 50,
         })
-        if (spatialResults) {
+        if (spatialResults && spatialResults.length > 0) {
             spatialMap = new Map(
                 (spatialResults as { profile_id: string; distance_km: number }[]).map(r => [r.profile_id, r.distance_km])
             )
-            // Only show referees who are both available AND within distance
-            refereeIds = refereeIds.filter(id => spatialMap!.has(id))
         }
-    }
-
-    if (refereeIds.length === 0) {
-        return { data: [] }
     }
 
     let query = supabase
@@ -1052,9 +1047,10 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 avatar_url
             )
         `)
+        .eq('is_available', true)
         .in('profile_id', refereeIds)
 
-    // Fall back to county match if no spatial data
+    // When no spatial data is available, filter by county instead
     if (!spatialMap && booking.county) {
         query = query.eq('county', booking.county)
     }
