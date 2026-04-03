@@ -9,7 +9,7 @@ import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
 import { updateFANumber } from './actions'
-import { Pencil, ShieldCheck } from 'lucide-react'
+import { Pencil, ShieldCheck, BadgeCheck } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile } from '@/lib/types'
 
@@ -148,6 +148,17 @@ function RefereeDetailsCard({ refereeProfile, onUpdate }: { refereeProfile: Refe
                 Referee Details
             </h2>
             <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
+                    <span className="text-sm">Verified</span>
+                    <span className={`inline-flex items-center gap-1 text-sm font-medium ${
+                        refereeProfile.verified
+                            ? 'text-green-700'
+                            : 'text-[var(--foreground-muted)]'
+                    }`}>
+                        <BadgeCheck className="w-3.5 h-3.5" />
+                        {refereeProfile.verified ? 'Verified' : 'Not verified'}
+                    </span>
+                </div>
                 <div className="flex justify-between items-center py-2 border-b border-[var(--border-color)]">
                     <span className="text-sm">FA Number</span>
                     {editingFA ? (

@@ -197,11 +197,26 @@ export async function updateBooking(bookingId: string, data: Partial<BookingForm
     // Build update object - use ground_name as fallback for address_text
     const groundNameValue = data.address_text || data.ground_name || null
 
+    // Re-geocode if postcode changed so spatial referee search stays accurate
+    let geoLat: number | null = null
+    let geoLng: number | null = null
+    if (data.location_postcode !== undefined && data.location_postcode) {
+        const geo = await geocodePostcode(data.location_postcode)
+        if (geo) {
+            geoLat = geo.lat
+            geoLng = geo.lng
+        }
+    }
+
     // Core fields that should always exist
     const coreUpdateData: Record<string, unknown> = {}
     if (data.match_date !== undefined) coreUpdateData.match_date = data.match_date
     if (data.kickoff_time !== undefined) coreUpdateData.kickoff_time = data.kickoff_time + ':00'
     if (data.location_postcode !== undefined) coreUpdateData.location_postcode = data.location_postcode
+    if (geoLat !== null && geoLng !== null) {
+        coreUpdateData.latitude = geoLat
+        coreUpdateData.longitude = geoLng
+    }
     if (data.ground_name !== undefined || data.address_text !== undefined) coreUpdateData.ground_name = groundNameValue
     if (data.age_group !== undefined) coreUpdateData.age_group = data.age_group || null
     if (data.format !== undefined) coreUpdateData.format = data.format || null
@@ -848,6 +863,19 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
     for (const r of (dateAvailResult.data || [])) refereeIdSet.add(r.referee_id)
     for (const r of (weeklyAvailResult.data || [])) refereeIdSet.add(r.referee_id)
 
+    // Also include referees with the general is_available toggle on,
+    // so newly registered referees appear even before setting specific availability slots.
+    const { data: generallyAvailable } = await supabase
+        .from('referee_profiles')
+        .select('profile_id')
+        .eq('is_available', true)
+
+    if (generallyAvailable) {
+        for (const r of generallyAvailable) {
+            refereeIdSet.add(r.profile_id)
+        }
+    }
+
     if (refereeIdSet.size === 0) {
         return { data: [] }
     }
@@ -1015,6 +1043,19 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     const refereeIdSet = new Set<string>()
     for (const r of (dateAvailResult.data || [])) refereeIdSet.add(r.referee_id)
     for (const r of (weeklyAvailResult.data || [])) refereeIdSet.add(r.referee_id)
+
+    // Also include referees who have the general is_available toggle on,
+    // so newly registered referees appear even before setting specific date slots.
+    const { data: generallyAvailable2 } = await supabase
+        .from('referee_profiles')
+        .select('profile_id')
+        .eq('is_available', true)
+
+    if (generallyAvailable2) {
+        for (const r of generallyAvailable2) {
+            refereeIdSet.add(r.profile_id)
+        }
+    }
 
     if (refereeIdSet.size === 0) {
         return { data: [] }

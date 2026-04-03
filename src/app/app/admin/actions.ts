@@ -26,10 +26,27 @@ export async function verifyReferee(refereeId: string, verified: boolean) {
     const user = await requireAdmin(supabase)
     if (!user) return { error: 'Admin access required' }
 
+    // When verifying, also promote fa_verification_status so the referee
+    // sees the change on their profile page (which reads fa_verification_status).
+    // When un-verifying, reset fa_verification_status to 'pending' only if it was 'verified'.
+    const updateData: Record<string, unknown> = { verified }
+    if (verified) {
+        updateData.fa_verification_status = 'verified'
+    }
+
     const { error } = await supabase
         .from('referee_profiles')
-        .update({ verified })
+        .update(updateData)
         .eq('profile_id', refereeId)
+
+    // If un-verifying, only reset FA status if it was 'verified' (don't overwrite 'pending'/'rejected')
+    if (!verified) {
+        await supabase
+            .from('referee_profiles')
+            .update({ fa_verification_status: 'pending' })
+            .eq('profile_id', refereeId)
+            .eq('fa_verification_status', 'verified')
+    }
 
     if (error) {
         return { error: error.message }
@@ -37,6 +54,8 @@ export async function verifyReferee(refereeId: string, verified: boolean) {
 
     revalidatePath('/app/admin/referees')
     revalidatePath(`/app/admin/referees/${refereeId}`)
+    revalidatePath('/app/admin/verification')
+    revalidatePath('/app/profile')
     return { success: true }
 }
 
@@ -85,6 +104,7 @@ export async function updateFAVerificationStatus(
     revalidatePath('/app/admin/referees')
     revalidatePath(`/app/admin/referees/${refereeId}`)
     revalidatePath('/app/admin/verification')
+    revalidatePath('/app/profile')
     return { success: true }
 }
 
@@ -217,6 +237,7 @@ export async function resolveVerificationRequest(
     revalidatePath('/app/admin/referees')
     revalidatePath(`/app/admin/referees/${request.referee_id}`)
     revalidatePath('/app/admin/verification')
+    revalidatePath('/app/profile')
     return { success: true }
 }
 
