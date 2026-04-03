@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useCallback } from 'react'
 import { toggleAvailability, updateTravelRadius } from '@/app/app/availability/actions'
 import { useToast } from '@/components/ui/Toast'
 import { MapPin, Zap, ZapOff } from 'lucide-react'
@@ -13,29 +13,41 @@ interface AvailabilityToggleProps {
 export function AvailabilityToggle({ initialAvailable, initialRadius }: AvailabilityToggleProps) {
     const [isAvailable, setIsAvailable] = useState(initialAvailable)
     const [radius, setRadius] = useState(initialRadius)
-    const [isPending, startTransition] = useTransition()
+    const [togglePending, startToggleTransition] = useTransition()
+    const [radiusPending, startRadiusTransition] = useTransition()
     const { showToast } = useToast()
+    const radiusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const handleToggle = () => {
         const newValue = !isAvailable
         setIsAvailable(newValue)
-        startTransition(async () => {
+        startToggleTransition(async () => {
             const result = await toggleAvailability(newValue)
             if (result.error) {
                 setIsAvailable(!newValue) // revert
                 showToast({ message: result.error, type: 'error' })
+            } else {
+                showToast({ message: newValue ? 'You are now available' : 'You are now unavailable', type: 'success' })
             }
         })
     }
 
+    // Debounce radius saves — update UI instantly, save after user stops dragging
+    const saveRadius = useCallback((value: number) => {
+        if (radiusTimerRef.current) clearTimeout(radiusTimerRef.current)
+        radiusTimerRef.current = setTimeout(() => {
+            startRadiusTransition(async () => {
+                const result = await updateTravelRadius(value)
+                if (result.error) {
+                    showToast({ message: result.error, type: 'error' })
+                }
+            })
+        }, 400)
+    }, [showToast])
+
     const handleRadiusChange = (newRadius: number) => {
         setRadius(newRadius)
-        startTransition(async () => {
-            const result = await updateTravelRadius(newRadius)
-            if (result.error) {
-                showToast({ message: result.error, type: 'error' })
-            }
-        })
+        saveRadius(newRadius)
     }
 
     return (
@@ -61,10 +73,10 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
                 </div>
                 <button
                     onClick={handleToggle}
-                    disabled={isPending}
+                    disabled={togglePending}
                     className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
                         isAvailable ? 'bg-emerald-500' : 'bg-[var(--neutral-300)]'
-                    }`}
+                    } ${togglePending ? 'opacity-60' : ''}`}
                     aria-label={isAvailable ? 'Disable availability' : 'Enable availability'}
                 >
                     <span
