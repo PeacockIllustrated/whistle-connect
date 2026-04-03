@@ -24,7 +24,11 @@ export function MonthCalendar({
     const [viewDate, setViewDate] = useState(new Date(selectedDate || selectedDates[0] || new Date()))
 
     const daysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate()
-    const firstDayOfMonth = (year: number, month: number) => new Date(year, month, 1).getDay()
+    // Convert getDay() (0=Sun) to Monday-first (0=Mon, 6=Sun)
+    const firstDayOfMonth = (year: number, month: number) => {
+        const day = new Date(year, month, 1).getDay()
+        return day === 0 ? 6 : day - 1
+    }
 
     const year = viewDate.getFullYear()
     const month = viewDate.getMonth()
@@ -134,7 +138,7 @@ export function MonthCalendar({
             </div>
 
             <div className="grid grid-cols-7 gap-1 mb-2">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+                {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
                     <div key={i} className="text-[10px] font-bold text-[var(--foreground-muted)] text-center py-1">
                         {d}
                     </div>
