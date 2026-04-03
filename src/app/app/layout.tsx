@@ -7,6 +7,7 @@ import { PushNotificationManager } from '@/components/app/PushNotificationManage
 import { UnreadMessagesProvider } from '@/components/app/UnreadMessagesProvider'
 import { BookingUpdatesProvider } from '@/components/app/BookingUpdatesProvider'
 import SplashScreen from '@/components/ui/SplashScreen'
+import { DevBanner } from '@/components/app/DevBanner'
 
 export default async function AppLayout({
     children,
@@ -85,29 +86,7 @@ export default async function AppLayout({
                             userRole={profile?.role}
                         />
 
-                        {/* Development banner */}
-                        <div className="fixed top-[var(--header-height)] left-0 right-0 z-40 overflow-hidden bg-[var(--wc-blue)]/95 backdrop-blur-sm">
-                            <div className="dev-banner-scroll flex whitespace-nowrap py-1">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <span key={i} className="inline-flex items-center gap-6 px-6 text-[11px] font-semibold tracking-widest uppercase text-white/90">
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-pulse" />
-                                            In Development
-                                        </span>
-                                        <span className="text-white/50">/</span>
-                                        <span>Preview Build</span>
-                                        <span className="text-white/50">/</span>
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <span className="w-1.5 h-1.5 rounded-full bg-white/80 animate-pulse" />
-                                            In Development
-                                        </span>
-                                        <span className="text-white/50">/</span>
-                                        <span>Preview Build</span>
-                                        <span className="text-white/50 pl-6">/</span>
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
+                        <DevBanner />
 
                         <PushNotificationManager />
 
