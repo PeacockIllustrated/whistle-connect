@@ -116,13 +116,19 @@ self.addEventListener('push', (event) => {
     const isSOS = payload.urgency === 'sos' || (payload.title && payload.title.includes('SOS'));
     const tag = getTag(payload);
 
+    // Build the notification title with app branding
+    // On installed PWAs, the OS shows the app name from the manifest.
+    // On browser, we prepend "Whistle Connect" so the brand is always visible.
+    const title = payload.title || 'Whistle Connect';
+
     const options = {
         body: payload.body,
-        icon: '/icon-192x192.png',
-        badge: '/icon-192x192.png',
+        icon: self.location.origin + '/icon-192x192.png',
+        badge: self.location.origin + '/icon-192x192.png',
         tag: tag,
-        renotify: true,             // Vibrate/sound even when replacing same tag
+        renotify: true,
         timestamp: Date.now(),
+        silent: false,
         data: {
             link: payload.link || '/app',
             type: payload.type || 'info',
@@ -133,7 +139,7 @@ self.addEventListener('push', (event) => {
     if (isSOS) {
         options.requireInteraction = true;
         options.vibrate = [200, 100, 200, 100, 200];
-        options.tag = TAG_MAP.sos + '-' + Date.now(); // Don't collapse SOS — each one matters
+        options.tag = TAG_MAP.sos + '-' + Date.now();
         options.actions = [
             { action: 'claim', title: 'Claim Match' },
             { action: 'pass', title: 'Pass' },
@@ -151,7 +157,7 @@ self.addEventListener('push', (event) => {
     }
 
     event.waitUntil(
-        self.registration.showNotification(payload.title || 'Whistle Connect', options)
+        self.registration.showNotification(title, options)
     );
 });
 

@@ -54,13 +54,15 @@ export function PushNotificationManager() {
 
         // Web path: existing web push flow
         if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
-            // Respect dismissal for 24 hours
-            const dismissed = localStorage.getItem('notifications_dismissed')
-            if (dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000) {
-                return
-            }
-            setIsSupported(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: standard feature-detection pattern
+            // Always register the SW and re-save subscription (fixes stale records)
             registerServiceWorker()
+
+            // Only suppress the enable-prompt if user dismissed within 24h
+            const dismissed = localStorage.getItem('notifications_dismissed')
+            const recentlyDismissed = dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000
+            if (!recentlyDismissed) {
+                setIsSupported(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: standard feature-detection pattern
+            }
         }
     }, [VAPID_PUBLIC_KEY])
 
