@@ -52,7 +52,13 @@ export async function createNotification({
     console.log(`[Notifications] Sending push to ${webSubs.length} web + ${firebaseSubs.length} firebase subscriptions`)
 
     const isSOS = urgency === 'sos'
-    const payload = { title, body: message, link: link || '/app' }
+    const payload = {
+        title,
+        body: message,
+        link: link || '/app',
+        type,
+        urgency,
+    }
 
     // 3a. Send via web-push (existing flow)
     if (webSubs.length > 0) {

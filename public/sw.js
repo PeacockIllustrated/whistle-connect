@@ -81,6 +81,24 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ── Push Notifications ───────────────────────────────────────────────────
+
+// Tag groups prevent notification flood — same-type notifs replace each other
+const TAG_MAP = {
+    sos:       'wc-sos',
+    booking:   'wc-booking',
+    offer:     'wc-offer',
+    message:   'wc-message',
+    default:   'wc-general',
+};
+
+function getTag(payload) {
+    if (payload.urgency === 'sos' || (payload.title && payload.title.includes('SOS'))) return TAG_MAP.sos;
+    if (payload.title && (payload.title.includes('Booking') || payload.title.includes('Match'))) return TAG_MAP.booking;
+    if (payload.title && (payload.title.includes('Offer') || payload.title.includes('Price'))) return TAG_MAP.offer;
+    if (payload.type === 'info') return TAG_MAP.default;
+    return TAG_MAP.default;
+}
+
 self.addEventListener('push', (event) => {
     if (!event.data) {
         console.warn('[SW] Push received with no data');
@@ -95,29 +113,45 @@ self.addEventListener('push', (event) => {
         payload = { title: 'Whistle Connect', body: event.data.text() };
     }
 
-    const isSOS = payload.title?.includes('SOS') || payload.urgency === 'sos';
+    const isSOS = payload.urgency === 'sos' || (payload.title && payload.title.includes('SOS'));
+    const tag = getTag(payload);
 
     const options = {
         body: payload.body,
         icon: '/icon-192x192.png',
         badge: '/icon-192x192.png',
+        tag: tag,
+        renotify: true,             // Vibrate/sound even when replacing same tag
+        timestamp: Date.now(),
         data: {
             link: payload.link || '/app',
+            type: payload.type || 'info',
         },
-        // SOS notifications are more urgent
-        ...(isSOS && {
-            requireInteraction: true,
-            vibrate: [200, 100, 200, 100, 200],
-            tag: 'sos-' + Date.now(),
-            actions: [
-                { action: 'claim', title: 'Claim Match' },
-                { action: 'pass', title: 'Pass' },
-            ],
-        }),
     };
 
+    // SOS: urgent, sticky, with action buttons and vibration
+    if (isSOS) {
+        options.requireInteraction = true;
+        options.vibrate = [200, 100, 200, 100, 200];
+        options.tag = TAG_MAP.sos + '-' + Date.now(); // Don't collapse SOS — each one matters
+        options.actions = [
+            { action: 'claim', title: 'Claim Match' },
+            { action: 'pass', title: 'Pass' },
+        ];
+    }
+
+    // Success notifications (confirmed, completed): short vibration
+    if (payload.type === 'success') {
+        options.vibrate = [100, 50, 100];
+    }
+
+    // Warning notifications (pullout, cancellation): longer vibration
+    if (payload.type === 'warning' && !isSOS) {
+        options.vibrate = [150, 75, 150];
+    }
+
     event.waitUntil(
-        self.registration.showNotification(payload.title, options)
+        self.registration.showNotification(payload.title || 'Whistle Connect', options)
     );
 });
 
@@ -126,17 +160,23 @@ self.addEventListener('notificationclick', (event) => {
 
     const link = event.notification.data?.link || '/app';
 
-    // Handle SOS action buttons
-    if (event.action === 'claim') {
-        event.waitUntil(clients.openWindow(link));
-        return;
-    }
+    // "Pass" action on SOS: just dismiss
+    if (event.action === 'pass') return;
 
-    if (event.action === 'pass') {
-        // Just close — do nothing
-        return;
-    }
-
-    // Default: open the link
-    event.waitUntil(clients.openWindow(link));
+    // For all other clicks (including "Claim"): navigate to the link
+    // Try to focus an existing app window instead of opening a new one
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            // Find an existing Whistle Connect window
+            for (const client of windowClients) {
+                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                    client.focus();
+                    client.navigate(link);
+                    return;
+                }
+            }
+            // No existing window — open a new one
+            return clients.openWindow(link);
+        })
+    );
 });
