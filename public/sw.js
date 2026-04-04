@@ -1,4 +1,4 @@
-const CACHE_NAME = 'whistle-connect-v1';
+const CACHE_NAME = 'whistle-connect-v2';
 const STATIC_ASSETS = [
     '/offline',
     '/icon-192x192.png',

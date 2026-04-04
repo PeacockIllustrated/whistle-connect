@@ -12,6 +12,25 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      // Service worker: must be served uncached at root scope for push to work in background
+      {
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Service-Worker-Allowed",
+            value: "/",
+          },
+          {
+            key: "Cache-Control",
+            value: "max-age=0, no-cache, no-store, must-revalidate",
+          },
+          {
+            key: "Content-Type",
+            value: "application/javascript; charset=utf-8",
+          },
+        ],
+      },
+      // Global security headers
       {
         source: "/(.*)",
         headers: [
@@ -29,7 +48,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            value: "camera=(), microphone=(), geolocation=(self)",
           },
           {
             key: "X-DNS-Prefetch-Control",
