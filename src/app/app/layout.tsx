@@ -90,7 +90,7 @@ export default async function AppLayout({
 
                         <PushNotificationManager />
 
-                        <main className="pt-[calc(var(--header-height)+24px)] pb-[var(--bottom-nav-height)]">
+                        <main className="pt-[calc(var(--header-height)+24px)] pb-[calc(var(--bottom-nav-height)+24px)]">
                             {children}
                         </main>
 
