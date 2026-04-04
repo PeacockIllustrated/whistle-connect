@@ -86,12 +86,18 @@ export function PushNotificationManager() {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
 
-        if (!user) return
+        if (!user) {
+            console.error('[Push] Cannot save subscription: user not authenticated')
+            return
+        }
 
         const p256dh = sub.toJSON().keys?.p256dh
         const auth = sub.toJSON().keys?.auth
 
-        if (!p256dh || !auth) return
+        if (!p256dh || !auth) {
+            console.error('[Push] Subscription missing VAPID keys:', { p256dh: !!p256dh, auth: !!auth })
+            return
+        }
 
         const { error } = await supabase.from('push_subscriptions').upsert({
             user_id: user.id,

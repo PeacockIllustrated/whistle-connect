@@ -82,9 +82,19 @@ self.addEventListener('fetch', (event) => {
 
 // ── Push Notifications ───────────────────────────────────────────────────
 self.addEventListener('push', (event) => {
-    if (!event.data) return;
+    if (!event.data) {
+        console.warn('[SW] Push received with no data');
+        return;
+    }
 
-    const payload = event.data.json();
+    let payload;
+    try {
+        payload = event.data.json();
+    } catch (e) {
+        console.error('[SW] Failed to parse push payload:', e);
+        payload = { title: 'Whistle Connect', body: event.data.text() };
+    }
+
     const isSOS = payload.title?.includes('SOS') || payload.urgency === 'sos';
 
     const options = {
