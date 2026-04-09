@@ -227,6 +227,14 @@ otp_expiry = 3600
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"
 
+[auth.email.template.recovery]
+subject = "Reset your Whistle Connect password"
+content_path = "./emails/reset_password.html"
+
+[auth.email.template.confirmation]
+subject = "Confirm your Whistle Connect account"
+content_path = "./emails/confirmation.html"
+
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
 # enabled = true

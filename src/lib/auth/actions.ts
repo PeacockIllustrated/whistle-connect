@@ -5,10 +5,26 @@ import { redirect } from 'next/navigation'
 import { RegisterFormData } from '@/lib/types'
 import { isValidFANumber } from '@/lib/utils'
 import { checkAuthRateLimit } from '@/lib/rate-limit'
-import { validate, signInSchema, signUpSchema } from '@/lib/validation'
+import {
+    validate,
+    signInSchema,
+    signUpSchema,
+    resetPasswordRequestSchema,
+    updatePasswordSchema,
+} from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { sendFAVerificationEmail } from '@/lib/email/fa-verification'
 import type { SupabaseClient } from '@supabase/supabase-js'
+
+/**
+ * Resolves the canonical site URL for constructing email redirect links.
+ * Uses NEXT_PUBLIC_SITE_URL in production, falls back to VERCEL_URL, then localhost.
+ */
+function getSiteUrl(): string {
+    if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
+    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
+    return 'http://localhost:3000'
+}
 
 /**
  * Validates a redirect URL to prevent open redirect attacks.
@@ -240,6 +256,71 @@ export async function signOut() {
     const supabase = await createClient()
     await supabase.auth.signOut()
     redirect('/')
+}
+
+/**
+ * Sends a password reset email using Supabase's built-in flow.
+ * Always returns a success response (even if the email is not registered)
+ * to avoid leaking which addresses exist in the database.
+ */
+export async function requestPasswordReset(email: string) {
+    const validationError = validate(resetPasswordRequestSchema, { email })
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    // Rate limit by email to prevent abuse of the email-sending endpoint
+    const rateLimitError = checkAuthRateLimit(email.toLowerCase())
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
+
+    const supabase = await createClient()
+
+    // The link lands on /auth/callback which exchanges the code for a session
+    // and then redirects to /auth/reset-password where the user sets a new password.
+    const redirectTo = `${getSiteUrl()}/auth/callback?next=${encodeURIComponent('/auth/reset-password')}`
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo,
+    })
+
+    if (error) {
+        // Log for observability but don't leak whether the account exists
+        console.error('resetPasswordForEmail error:', error.message)
+    }
+
+    return {
+        success: true,
+        message: 'If an account exists for that email, a reset link has been sent.',
+    }
+}
+
+/**
+ * Updates the current user's password. The user must already have an
+ * authenticated session — this is populated by the /auth/callback handler
+ * after they click the link in their reset email.
+ */
+export async function updatePassword(password: string) {
+    const validationError = validate(updatePasswordSchema, { password })
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    const supabase = await createClient()
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        return { error: 'Your reset link has expired. Please request a new one.' }
+    }
+
+    const { error } = await supabase.auth.updateUser({ password })
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    return { success: true }
 }
 
 export async function getSession() {
