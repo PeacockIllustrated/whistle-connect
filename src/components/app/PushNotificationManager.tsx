@@ -36,13 +36,38 @@ export function PushNotificationManager() {
             updateViaCache: 'none',
         })
         const sub = await registration.pushManager.getSubscription()
+        const currentPermission = Notification.permission
+
         if (sub) {
             // Re-save on every load to ensure the DB always has the current subscription
             // (handles cases where the DB record was lost, e.g. cleanup, migration, etc.)
             await saveSubscription(sub)
+            setSubscription(sub)
+        } else if (currentPermission === 'granted' && VAPID_PUBLIC_KEY) {
+            // Permission already granted but subscription was lost — silently re-subscribe
+            try {
+                const newSub = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+                })
+                await saveSubscription(newSub)
+                setSubscription(newSub)
+            } catch (err) {
+                console.error('[Push] Silent re-subscribe failed:', err)
+            }
         }
-        setSubscription(sub)
-        setPermission(Notification.permission)
+
+        setPermission(currentPermission)
+
+        // Only show the enable-prompt UI when the user has never made a decision.
+        // If permission is 'granted' we silently (re)subscribed above; if 'denied' we can't act.
+        if (currentPermission === 'default') {
+            const dismissed = localStorage.getItem('notifications_dismissed')
+            const recentlyDismissed = dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000
+            if (!recentlyDismissed) {
+                setIsSupported(true)
+            }
+        }
     }
 
     useEffect(() => {
@@ -52,17 +77,9 @@ export function PushNotificationManager() {
             return // Skip all web push logic — native handles its own permissions UI
         }
 
-        // Web path: existing web push flow
+        // Web path: register SW, then decide whether to show the prompt inside the async flow
         if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
-            // Always register the SW and re-save subscription (fixes stale records)
             registerServiceWorker()
-
-            // Only suppress the enable-prompt if user dismissed within 24h
-            const dismissed = localStorage.getItem('notifications_dismissed')
-            const recentlyDismissed = dismissed && Date.now() - Number(dismissed) < 24 * 60 * 60 * 1000
-            if (!recentlyDismissed) {
-                setIsSupported(true) // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: standard feature-detection pattern
-            }
         }
     }, [VAPID_PUBLIC_KEY])
 
