@@ -21,7 +21,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [role, setRole] = useState<UserRole>('coach')
-    const [error, setError] = useState('')
+    const [error, setError] = useState(searchParams.get('error') || '')
     const [loading, setLoading] = useState(false)
 
     async function handleSubmit(e: React.FormEvent) {
@@ -123,6 +123,15 @@ export default function LoginPage() {
                             placeholder="••••••••"
                             required
                         />
+
+                        <div className="flex justify-end">
+                            <Link
+                                href="/auth/forgot-password"
+                                className="text-sm font-medium text-[var(--brand-primary)] hover:underline"
+                            >
+                                Forgot password?
+                            </Link>
+                        </div>
 
                         <div className="pt-2">
                             <Button
