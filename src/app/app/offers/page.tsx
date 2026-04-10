@@ -78,7 +78,7 @@ export default async function OffersPage() {
             )
         `)
         .eq('referee_id', user.id)
-        .in('status', ['sent', 'accepted_priced'])
+        .in('status', ['sent'])
         .order('created_at', { ascending: false })
 
     // Filter out offers for soft-deleted bookings
@@ -98,7 +98,6 @@ export default async function OffersPage() {
             {offers && offers.length > 0 ? (
                 <div className="space-y-4">
                     {(offers as OfferWithBooking[]).map((offer) => {
-                        const isSent = offer.status === 'sent'
                         return (
                         <Link
                             key={offer.id}
@@ -108,8 +107,8 @@ export default async function OffersPage() {
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className={`text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded ${isSent ? 'text-[var(--color-primary)] bg-blue-50' : 'text-emerald-700 bg-emerald-50'}`}>
-                                            {isSent ? 'New Request' : 'Price Sent'}
+                                        <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded text-emerald-700 bg-emerald-50">
+                                            {offer.price_pence ? `£${(offer.price_pence / 100).toFixed(2)} offered` : 'New Offer'}
                                         </span>
                                         <span className="text-xs text-[var(--foreground-muted)]">
                                             Received {formatDate(offer.created_at)}
@@ -118,13 +117,8 @@ export default async function OffersPage() {
                                     <h2 className="text-lg font-bold group-hover:text-[var(--color-primary)] transition-colors">
                                         {offer.booking.ground_name || offer.booking.location_postcode}
                                     </h2>
-                                    {!isSent && offer.price_pence && (
-                                        <p className="text-sm text-emerald-600 font-medium mt-0.5">
-                                            Your quote: &pound;{(offer.price_pence / 100).toFixed(2)}
-                                        </p>
-                                    )}
                                 </div>
-                                <StatusChip status={isSent ? 'pending' : 'accepted_priced'} size="sm" />
+                                <StatusChip status="pending" size="sm" />
                             </div>
 
                             {/* Teams Display */}

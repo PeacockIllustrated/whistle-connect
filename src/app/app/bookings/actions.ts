@@ -5,8 +5,9 @@ import { revalidatePath } from 'next/cache'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
 import { checkBookingRateLimit, checkConfirmRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
-import { validate, bookingSchema, confirmPriceSchema, acceptOfferSchema } from '@/lib/validation'
+import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
+import { requiresDBS } from '@/lib/constants'
 
 /** Shape returned by Supabase when querying referee_profiles with a joined profile */
 interface RefereeProfileQueryResult {
@@ -560,7 +561,7 @@ export async function completeBooking(bookingId: string) {
     return { success: true }
 }
 
-export async function acceptOffer(offerId: string, pricePounds: number) {
+export async function acceptOffer(offerId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -568,12 +569,12 @@ export async function acceptOffer(offerId: string, pricePounds: number) {
         return { error: 'Unauthorized' }
     }
 
-    const validationError = validate(acceptOfferSchema, { offerId, pricePounds })
+    const validationError = validate(confirmPriceSchema, { offerId })
     if (validationError) {
         return { error: validationError }
     }
 
-    // Get the offer
+    // Get the offer to verify ownership and fetch booking details
     const { data: offer, error: offerError } = await supabase
         .from('booking_offers')
         .select('*, booking:bookings(*)')
@@ -589,73 +590,17 @@ export async function acceptOffer(offerId: string, pricePounds: number) {
         return { error: 'This offer is no longer available' }
     }
 
-    const pricePence = Math.round(pricePounds * 100)
+    if (!offer.price_pence || offer.price_pence <= 0) {
+        return { error: 'This offer has no valid price' }
+    }
 
-    // Update offer status to accepted_priced and store price
-    const { error: updateError } = await supabase
+    // Record responded_at timestamp
+    await supabase
         .from('booking_offers')
-        .update({
-            status: 'accepted_priced',
-            price_pence: pricePence,
-            responded_at: new Date().toISOString()
-        })
+        .update({ responded_at: new Date().toISOString() })
         .eq('id', offerId)
 
-    if (updateError) {
-        return { error: updateError.message }
-    }
-
-    // Notify Coach
-    await createNotification({
-        userId: offer.booking.coach_id,
-        title: 'Offer Priced!',
-        message: `A referee has accepted your booking request and sent a price of £${pricePounds} for ${offer.booking.ground_name || offer.booking.location_postcode}.`,
-        type: 'info',
-        link: `/app/bookings/${offer.booking_id}`
-    })
-
-    revalidatePath('/app/bookings')
-    revalidatePath(`/app/bookings/${offer.booking_id}`)
-
-    return { success: true }
-}
-
-export async function confirmPrice(offerId: string) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-        return { error: 'Unauthorized' }
-    }
-
-    const rateLimitError = checkConfirmRateLimit(user.id)
-    if (rateLimitError) {
-        return { error: rateLimitError }
-    }
-
-    const validationError = validate(confirmPriceSchema, { offerId })
-    if (validationError) {
-        return { error: validationError }
-    }
-
-    // Get the offer with booking detail
-    const { data: offer, error: offerError } = await supabase
-        .from('booking_offers')
-        .select('*, booking:bookings(*)')
-        .eq('id', offerId)
-        .single()
-
-    if (offerError || !offer) {
-        return { error: 'Offer not found' }
-    }
-
-    // Ensure user is the coach of this booking
-    if (offer.booking.coach_id !== user.id) {
-        return { error: 'Unauthorized' }
-    }
-
-    // Steps 1-3 (accept offer → create assignment → confirm booking) are wrapped
-    // in an atomic PostgreSQL transaction via RPC. If any step fails, all roll back.
+    // Confirm booking atomically: accept offer → escrow hold → create assignment
     const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
         p_offer_id: offerId,
     })
@@ -665,40 +610,35 @@ export async function confirmPrice(offerId: string) {
     }
 
     if (rpcResult?.error) {
-        // Pass through structured wallet errors for UI handling
         if (rpcResult.code === 'INSUFFICIENT_FUNDS') {
             return {
-                error: 'Insufficient funds',
+                error: `The coach doesn't have enough funds to cover this booking. Please ask them to top up their wallet.`,
                 code: 'INSUFFICIENT_FUNDS',
-                balancePence: rpcResult.balance_pence,
-                requiredPence: rpcResult.required_pence,
-                shortfallPence: rpcResult.shortfall_pence,
             }
         }
         if (rpcResult.code === 'NO_WALLET') {
             return {
-                error: 'Please top up your wallet before confirming a booking.',
+                error: 'The coach needs to set up their wallet before this booking can be confirmed.',
                 code: 'NO_WALLET',
             }
         }
         return { error: rpcResult.error }
     }
 
-    // --- Core booking is now atomically committed. Steps 4-7 are secondary ---
-    // Failures in these steps are logged but don't fail the overall operation.
+    // --- Core booking is now atomically committed. Steps below are secondary ---
 
-    // 4. Withdraw other offers for this booking
-    const { error: step4Error } = await supabase
+    // Withdraw other offers for this booking
+    const { error: withdrawError } = await supabase
         .from('booking_offers')
         .update({ status: 'withdrawn' })
         .eq('booking_id', offer.booking_id)
         .neq('id', offerId)
 
-    if (step4Error) {
-        console.error('Failed to withdraw competing offers:', step4Error)
+    if (withdrawError) {
+        console.error('Failed to withdraw competing offers:', withdrawError)
     }
 
-    // 5. Create or get a thread for communication
+    // Create or get a thread for communication
     let { data: thread } = await supabase
         .from('threads')
         .select('id')
@@ -717,14 +657,12 @@ export async function confirmPrice(offerId: string) {
 
         if (threadError || !newThread) {
             console.error('Thread creation error:', threadError)
-            // Don't fail — core booking is confirmed
         } else {
             thread = newThread
         }
     }
 
     if (thread) {
-        // Add participants
         const { error: participantError } = await supabase
             .from('thread_participants')
             .upsert([
@@ -736,7 +674,6 @@ export async function confirmPrice(offerId: string) {
             console.error('Failed to add thread participants:', participantError)
         }
 
-        // Add system message
         const { error: messageError } = await supabase
             .from('messages')
             .insert({
@@ -751,16 +688,22 @@ export async function confirmPrice(offerId: string) {
         }
     }
 
-    // 6. Notify Referee
+    // Notify Coach that referee accepted
+    const { data: refereeProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single()
+
     await createNotification({
-        userId: offer.referee_id,
+        userId: offer.booking.coach_id,
         title: 'Booking Confirmed!',
-        message: `The coach has accepted your price. The booking for ${offer.booking.ground_name || offer.booking.location_postcode} is now confirmed.`,
+        message: `${refereeProfile?.full_name || 'A referee'} has accepted your offer for ${offer.booking.ground_name || offer.booking.location_postcode}.`,
         type: 'success',
         link: `/app/bookings/${offer.booking_id}`
     })
 
-    // 7. Auto-remove availability slot
+    // Auto-remove availability slot
     const bookingDate = offer.booking.match_date
     const bookingTime = offer.booking.kickoff_time
 
@@ -780,8 +723,16 @@ export async function confirmPrice(offerId: string) {
     revalidatePath(`/app/bookings/${offer.booking_id}`)
     revalidatePath('/app/messages')
     revalidatePath('/app/wallet')
+    revalidatePath('/app/offers')
 
     return { success: true, threadId: thread?.id }
+}
+
+// confirmPrice is no longer needed — referee acceptance now triggers
+// confirmation directly via acceptOffer(). Kept as a no-op for safety
+// in case any old UI code references it.
+export async function confirmPrice(_offerId: string) {
+    return { error: 'This action is no longer available. The referee now confirms the booking when accepting.' }
 }
 
 export async function declineOffer(offerId: string) {
@@ -1139,8 +1090,14 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
 
     if (error) return { error: error.message }
 
+    // 4b. DBS enforcement: U16 and under require verified DBS — filter out non-verified referees
+    const dbsRequired = requiresDBS(booking.age_group)
+    const filteredResults = dbsRequired
+        ? (results || []).filter((r: RefereeProfileQueryResult) => r.dbs_status === 'verified')
+        : (results || [])
+
     // 5. Format and sort by match score (distance used internally for scoring only, not exposed)
-    const formattedResults: RefereeSearchResult[] = ((results || []) as (RefereeProfileQueryResult & {
+    const formattedResults: RefereeSearchResult[] = (filteredResults as (RefereeProfileQueryResult & {
         reliability_score?: number
         total_matches_completed?: number
         average_rating?: number
@@ -1178,7 +1135,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     return { data: formattedResults }
 }
 
-export async function sendBookingRequest(bookingId: string, refereeId: string) {
+export async function sendBookingRequest(bookingId: string, refereeId: string, pricePounds: number) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -1189,10 +1146,18 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
         return { error: rateLimitError }
     }
 
+    // Validate price
+    const validationError = validate(offerPriceSchema, { pricePounds })
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    const pricePence = Math.round(pricePounds * 100)
+
     // Verify user owns this booking and it's in a valid state
     const { data: bookingCheck, error: bookingCheckError } = await supabase
         .from('bookings')
-        .select('coach_id, status, deleted_at')
+        .select('coach_id, status, deleted_at, age_group')
         .eq('id', bookingId)
         .is('deleted_at', null)
         .single()
@@ -1203,13 +1168,28 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
         return { error: 'Cannot send offers for this booking' }
     }
 
-    // 1. Create Offer
+    // DBS enforcement: U16 and under require a verified DBS check
+    if (requiresDBS(bookingCheck.age_group)) {
+        const { data: refereeProfile } = await supabase
+            .from('referee_profiles')
+            .select('dbs_status')
+            .eq('profile_id', refereeId)
+            .single()
+
+        if (!refereeProfile || refereeProfile.dbs_status !== 'verified') {
+            return { error: 'This referee does not have a verified DBS check, which is required for U16 and under matches.' }
+        }
+    }
+
+    // 1. Create Offer with price
     const { error: offerError } = await supabase
         .from('booking_offers')
         .insert({
             booking_id: bookingId,
             referee_id: refereeId,
             status: 'sent',
+            price_pence: pricePence,
+            currency: 'GBP',
         })
 
     if (offerError) {
@@ -1224,16 +1204,16 @@ export async function sendBookingRequest(bookingId: string, refereeId: string) {
         .eq('id', bookingId)
         .eq('status', 'pending')
 
-    // 3. Notify Referee
+    // 3. Notify Referee with price
     const { data: booking } = await supabase.from('bookings').select('match_date, ground_name, location_postcode').eq('id', bookingId).single()
 
     if (booking) {
         await createNotification({
             userId: refereeId,
-            title: 'New Booking Request',
-            message: `A coach has requested you for a match on ${booking.match_date} at ${booking.ground_name || booking.location_postcode}.`,
+            title: 'New Offer: £' + pricePounds.toFixed(2),
+            message: `A coach has offered £${pricePounds.toFixed(2)} for a match on ${booking.match_date} at ${booking.ground_name || booking.location_postcode}.`,
             type: 'info',
-            link: '/app/offers' // Redirect to new offers page
+            link: '/app/offers'
         })
     }
 

@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { cn, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { ConfirmDialog } from '@/components/ui/Modal'
-import { confirmPrice, cancelBooking } from '@/app/app/bookings/actions'
+import { cancelBooking } from '@/app/app/bookings/actions'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { Check, X } from 'lucide-react'
 
@@ -160,36 +160,11 @@ export function CoachAwaitingAction({ initialItems }: { initialItems: ActionItem
         })
     }, [subscribe, refetch])
 
-    // ── Accept price & confirm booking ──
-    const handleAccept = async (item: ActionItem) => {
-        setLoadingId(item.id)
-        try {
-            const result = await confirmPrice(item.id)
-            if (result.success) {
-                // Optimistically remove
-                setItems(prev => prev.filter(i => i.id !== item.id))
-                const threadId = result.threadId
-                setCelebration({
-                    icon: 'party-popper',
-                    title: 'Booking Confirmed!',
-                    subtitle: 'Your referee is locked in',
-                    onComplete: () => {
-                        if (threadId) {
-                            router.push(`/app/messages/${threadId}`)
-                        } else {
-                            refetch()
-                            router.refresh()
-                        }
-                    },
-                })
-            } else {
-                showToast({ message: result.error || 'Failed to confirm booking', type: 'error' })
-            }
-        } catch {
-            showToast({ message: 'Something went wrong. Please try again.', type: 'error' })
-        } finally {
-            setLoadingId(null)
-        }
+    // handleAccept removed — referees now confirm bookings directly when accepting.
+    // This widget no longer has actionable items in the new coach-sets-price flow.
+    const handleAccept = async (_item: ActionItem) => {
+        showToast({ message: 'Referees now confirm bookings directly when accepting.', type: 'info' })
+        void _item
     }
 
     // ── Cancel booking ──

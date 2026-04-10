@@ -21,6 +21,7 @@ export default function BookingMatchPage({ params }: Props) {
     const [results, setResults] = useState<RefereeSearchResult[]>([])
     const [selectedReferee, setSelectedReferee] = useState<RefereeSearchResult | null>(null)
     const [sentRequests, setSentRequests] = useState<string[]>([])
+    const [offerPrice, setOfferPrice] = useState('')
 
     useEffect(() => {
         const loadResults = async () => {
@@ -42,18 +43,23 @@ export default function BookingMatchPage({ params }: Props) {
     }, [id])
 
     const handleRequest = async (referee: RefereeSearchResult) => {
+        const priceNum = parseFloat(offerPrice)
+        if (isNaN(priceNum) || priceNum <= 0) {
+            setError('Please enter a valid offer price above')
+            return
+        }
+
         setIsSubmitting(true)
         setError('')
 
         try {
-            const result = await sendBookingRequest(id, referee.id)
+            const result = await sendBookingRequest(id, referee.id, priceNum)
             if (result.error) {
                 setError(result.error)
                 setIsSubmitting(false)
             } else {
                 setSentRequests(prev => [...prev, referee.id])
                 setIsSubmitting(false)
-                // We show a success state on the card rather than redirecting immediately
             }
         } catch {
             setError('Failed to send request')
@@ -96,6 +102,33 @@ export default function BookingMatchPage({ params }: Props) {
                         </div>
                     ) : results.length > 0 ? (
                         <div className="space-y-4">
+                            {/* Price input — applies to all offers */}
+                            <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-lg">💰</span>
+                                    <p className="text-sm font-semibold">Your offer price</p>
+                                </div>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">&pound;</span>
+                                    <input
+                                        type="number"
+                                        placeholder="0.00"
+                                        value={offerPrice}
+                                        onChange={(e) => {
+                                            setOfferPrice(e.target.value)
+                                            setError('')
+                                        }}
+                                        className="w-full pl-7 pr-3 py-3 bg-[var(--neutral-50)] border border-[var(--border-color)] rounded-xl text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                                        step="0.01"
+                                        min="1"
+                                        max="500"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-[var(--foreground-muted)]">
+                                    This price will be offered to all referees you send requests to. Include travel and expenses.
+                                </p>
+                            </div>
+
                             <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm">
                                 <p className="text-sm font-medium">
                                     We found <span className="text-[var(--color-primary)] font-bold">{results.length}</span> referees who match your requirements.
@@ -200,10 +233,10 @@ export default function BookingMatchPage({ params }: Props) {
                                     handleRequest(selectedReferee)
                                     setSelectedReferee(null)
                                 }}
-                                disabled={isSubmitting || sentRequests.includes(selectedReferee.id)}
+                                disabled={isSubmitting || sentRequests.includes(selectedReferee.id) || !offerPrice || parseFloat(offerPrice) <= 0}
                                 className="w-full py-4 bg-[var(--color-primary)] text-white rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                             >
-                                {sentRequests.includes(selectedReferee.id) ? 'Request Sent' : 'Send Booking Request'}
+                                {sentRequests.includes(selectedReferee.id) ? 'Request Sent' : offerPrice ? `Send Offer — £${parseFloat(offerPrice).toFixed(2)}` : 'Set a price first'}
                             </button>
                         </div>
                     </div>

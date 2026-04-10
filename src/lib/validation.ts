@@ -82,6 +82,12 @@ export const acceptOfferSchema = z.object({
         .max(500, 'Price cannot exceed £500'),
 })
 
+export const offerPriceSchema = z.object({
+    pricePounds: z.number()
+        .positive('Price must be positive')
+        .max(500, 'Price cannot exceed £500'),
+})
+
 // ── Message schemas ──────────────────────────────────────────────────────
 
 export const sendMessageSchema = z.object({
