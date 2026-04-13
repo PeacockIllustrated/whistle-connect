@@ -9,6 +9,17 @@ import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { requiresDBS } from '@/lib/constants'
 
+/** Fetch the current travel cost rate from platform settings */
+export async function getTravelRate(): Promise<number> {
+    const supabase = await createClient()
+    const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'travel_cost_per_km_pence')
+        .single()
+    return data ? parseInt(data.value, 10) : 28
+}
+
 /** Shape returned by Supabase when querying referee_profiles with a joined profile */
 interface RefereeProfileQueryResult {
     county: string
@@ -868,6 +879,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 level: r.level,
                 county: r.county,
                 travel_radius_km: r.travel_radius_km ?? 0,
+                distance_km: null,
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
                 dbs_status: r.dbs_status || 'not_provided',
@@ -1121,6 +1133,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
                 level: r.level,
                 county: r.county,
                 travel_radius_km: r.travel_radius_km ?? 0,
+                distance_km: distKm,
                 verified: r.verified,
                 fa_verification_status: r.fa_verification_status,
                 dbs_status: r.dbs_status || 'not_provided',
@@ -1135,7 +1148,12 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     return { data: formattedResults }
 }
 
-export async function sendBookingRequest(bookingId: string, refereeId: string, pricePounds: number) {
+export async function sendBookingRequest(
+    bookingId: string,
+    refereeId: string,
+    matchFeePounds: number,
+    refereeDistanceKm: number | null,
+) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -1146,13 +1164,25 @@ export async function sendBookingRequest(bookingId: string, refereeId: string, p
         return { error: rateLimitError }
     }
 
-    // Validate price
-    const validationError = validate(offerPriceSchema, { pricePounds })
+    // Validate match fee
+    const validationError = validate(offerPriceSchema, { pricePounds: matchFeePounds })
     if (validationError) {
         return { error: validationError }
     }
 
-    const pricePence = Math.round(pricePounds * 100)
+    const matchFeePence = Math.round(matchFeePounds * 100)
+
+    // Fetch travel cost rate from platform settings
+    const { data: travelSetting } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'travel_cost_per_km_pence')
+        .single()
+
+    const costPerKmPence = travelSetting ? parseInt(travelSetting.value, 10) : 28
+    const distanceKm = refereeDistanceKm && refereeDistanceKm > 0 ? refereeDistanceKm : 0
+    const travelCostPence = Math.round(distanceKm * costPerKmPence)
+    const totalPricePence = matchFeePence + travelCostPence
 
     // Verify user owns this booking and it's in a valid state
     const { data: bookingCheck, error: bookingCheckError } = await supabase
@@ -1181,14 +1211,17 @@ export async function sendBookingRequest(bookingId: string, refereeId: string, p
         }
     }
 
-    // 1. Create Offer with price
+    // 1. Create Offer with price breakdown
     const { error: offerError } = await supabase
         .from('booking_offers')
         .insert({
             booking_id: bookingId,
             referee_id: refereeId,
             status: 'sent',
-            price_pence: pricePence,
+            price_pence: totalPricePence,
+            match_fee_pence: matchFeePence,
+            travel_distance_km: distanceKm > 0 ? distanceKm : null,
+            travel_cost_pence: travelCostPence > 0 ? travelCostPence : null,
             currency: 'GBP',
         })
 
@@ -1204,14 +1237,15 @@ export async function sendBookingRequest(bookingId: string, refereeId: string, p
         .eq('id', bookingId)
         .eq('status', 'pending')
 
-    // 3. Notify Referee with price
+    // 3. Notify Referee with total price
+    const totalPounds = (totalPricePence / 100).toFixed(2)
     const { data: booking } = await supabase.from('bookings').select('match_date, ground_name, location_postcode').eq('id', bookingId).single()
 
     if (booking) {
         await createNotification({
             userId: refereeId,
-            title: 'New Offer: £' + pricePounds.toFixed(2),
-            message: `A coach has offered £${pricePounds.toFixed(2)} for a match on ${booking.match_date} at ${booking.ground_name || booking.location_postcode}.`,
+            title: 'New Offer: £' + totalPounds,
+            message: `A coach has offered £${totalPounds} for a match on ${booking.match_date} at ${booking.ground_name || booking.location_postcode}.`,
             type: 'info',
             link: '/app/offers'
         })
@@ -1221,7 +1255,7 @@ export async function sendBookingRequest(bookingId: string, refereeId: string, p
     revalidatePath(`/app/bookings/${bookingId}/match`)
     revalidatePath('/app/bookings')
 
-    return { success: true }
+    return { success: true, travelCostPence, totalPricePence }
 }
 
 // ── Ratings ────────────────────────────────────────────────────────────────

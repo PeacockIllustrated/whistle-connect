@@ -12,6 +12,9 @@ interface OfferWithBooking {
     id: string
     status: string
     price_pence: number | null
+    match_fee_pence: number | null
+    travel_cost_pence: number | null
+    travel_distance_km: number | null
     created_at: string
     booking: {
         id: string
@@ -117,6 +120,12 @@ export default async function OffersPage() {
                                     <h2 className="text-lg font-bold group-hover:text-[var(--color-primary)] transition-colors">
                                         {offer.booking.ground_name || offer.booking.location_postcode}
                                     </h2>
+                                    {offer.match_fee_pence != null && offer.travel_cost_pence != null && offer.travel_cost_pence > 0 && (
+                                        <p className="text-[10px] text-[var(--foreground-muted)] mt-0.5">
+                                            Fee £{(offer.match_fee_pence / 100).toFixed(2)} + Travel £{(offer.travel_cost_pence / 100).toFixed(2)}
+                                            {offer.travel_distance_km ? ` (${offer.travel_distance_km} km)` : ''}
+                                        </p>
+                                    )}
                                 </div>
                                 <StatusChip status="pending" size="sm" />
                             </div>

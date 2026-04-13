@@ -179,13 +179,26 @@ export function BookingActions({
                     </div>
                 )}
 
-                {/* Offered price — read-only (coach set this) */}
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-                    <p className="text-sm text-green-700 mb-1">Offered Fee</p>
-                    <p className="text-3xl font-bold text-green-700">&pound;{displayPrice.toFixed(2)}</p>
-                    <p className="text-xs text-green-600 mt-2">
-                        This is the coach&apos;s offered fee including travel and expenses.
-                    </p>
+                {/* Offered price with travel breakdown — read-only (coach set this) */}
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                    <p className="text-sm text-green-700 mb-2 text-center">Offered Fee</p>
+                    <p className="text-3xl font-bold text-green-700 text-center">&pound;{displayPrice.toFixed(2)}</p>
+
+                    {/* Show breakdown if travel data exists */}
+                    {userOffer.match_fee_pence != null && (
+                        <div className="mt-3 pt-3 border-t border-green-200 space-y-1 text-xs">
+                            <div className="flex justify-between text-green-700">
+                                <span>Match fee</span>
+                                <span>&pound;{(userOffer.match_fee_pence / 100).toFixed(2)}</span>
+                            </div>
+                            {userOffer.travel_cost_pence != null && userOffer.travel_cost_pence > 0 && (
+                                <div className="flex justify-between text-green-700">
+                                    <span>Travel{userOffer.travel_distance_km ? ` (${userOffer.travel_distance_km} km)` : ''}</span>
+                                    <span>&pound;{(userOffer.travel_cost_pence / 100).toFixed(2)}</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <Button
