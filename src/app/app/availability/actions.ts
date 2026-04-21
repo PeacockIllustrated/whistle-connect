@@ -85,6 +85,16 @@ export async function updateDateAvailability(date: string, slots: { start_time: 
         if (error) {
             return { error: error.message }
         }
+
+        // Saving any slot is an explicit statement of availability — mirror it
+        // onto the master toggle so the coach search actually surfaces the ref.
+        // Upsert guards against a missing referee_profiles row.
+        await supabase
+            .from('referee_profiles')
+            .upsert(
+                { profile_id: user.id, is_available: true },
+                { onConflict: 'profile_id', ignoreDuplicates: false }
+            )
     }
 
     revalidatePath('/app/availability')
@@ -120,10 +130,15 @@ export async function updateRefereeProfile(updates: { central_venue_opt_in?: boo
         return { error: 'Unauthorized' }
     }
 
+    // Upsert rather than update — if the referee_profiles row is missing
+    // (e.g. signup trigger never fired), a plain UPDATE silently affects
+    // zero rows and the toggle appears to save but doesn't. Upsert self-heals.
     const { error } = await supabase
         .from('referee_profiles')
-        .update(updates)
-        .eq('profile_id', user.id)
+        .upsert(
+            { profile_id: user.id, ...updates },
+            { onConflict: 'profile_id', ignoreDuplicates: false }
+        )
 
     if (error) {
         return { error: error.message }
@@ -141,8 +156,10 @@ export async function toggleAvailability(isAvailable: boolean) {
 
     const { error } = await supabase
         .from('referee_profiles')
-        .update({ is_available: isAvailable })
-        .eq('profile_id', user.id)
+        .upsert(
+            { profile_id: user.id, is_available: isAvailable },
+            { onConflict: 'profile_id', ignoreDuplicates: false }
+        )
 
     if (error) return { error: error.message }
 
@@ -163,8 +180,10 @@ export async function updateTravelRadius(radiusKm: number) {
 
     const { error } = await supabase
         .from('referee_profiles')
-        .update({ travel_radius_km: radiusKm })
-        .eq('profile_id', user.id)
+        .upsert(
+            { profile_id: user.id, travel_radius_km: radiusKm },
+            { onConflict: 'profile_id', ignoreDuplicates: false }
+        )
 
     if (error) return { error: error.message }
 
