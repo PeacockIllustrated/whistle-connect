@@ -1,0 +1,1363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whistle Connect — Inside The App · Team Info Pack</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:#1b2537; --navy-deep:#0f1720; --navy-mid:#151e2e; --navy-light:#1e2d42;
+  --red:#cd1719; --red-soft:#fde8e8;
+  --white:#FFFFFF; --cream:#F8FAFC;
+  --dark:#0F172A; --mid:#475569; --light:#94A3B8; --border:#E2E8F0;
+  --amber:#F59E0B; --green:#10B981; --cyan:#06B6D4; --purple:#7C3AED;
+}
+@page { size: 297mm 210mm; margin: 0; }
+body { font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; display:flex; flex-direction:column; align-items:center; background:#e5e7eb; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.page { width:297mm; height:210mm; position:relative; overflow:hidden; background:var(--white); page-break-after:always; page-break-inside:avoid; }
+@media screen { .page { margin-bottom:12px; box-shadow:0 2px 12px rgba(0,0,0,0.12); } }
+
+/* ==== Header/Footer ==== */
+.page-header { padding:8mm 22mm 0; display:flex; align-items:center; justify-content:space-between; height:22mm; }
+.page-header .section-label { font-size:7.5pt; font-weight:500; color:var(--light); letter-spacing:0.04em; }
+.header-line { height:2px; margin:2mm 22mm 0; background:linear-gradient(90deg, var(--red), rgba(205,23,25,0)); }
+.watermark-num { position:absolute; top:22mm; right:22mm; font-size:54pt; font-weight:900; color:var(--red); opacity:0.08; line-height:1; z-index:0; }
+.page-footer { position:absolute; bottom:8mm; left:22mm; right:22mm; border-top:1px solid var(--border); padding-top:3mm; display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:var(--light); }
+.content { padding:8mm 22mm 18mm; position:relative; z-index:1; }
+
+/* ==== Type ==== */
+.section-title { font-size:28pt; font-weight:800; color:var(--dark); line-height:1.1; margin-bottom:3mm; letter-spacing:-0.01em; }
+.section-kicker { font-size:7.5pt; font-weight:700; color:var(--red); letter-spacing:0.18em; text-transform:uppercase; margin-bottom:2mm; }
+.section-body { font-size:9.5pt; font-weight:400; color:var(--mid); line-height:1.65; max-width:95%; }
+.eyebrow { font-size:6.5pt; font-weight:700; letter-spacing:0.22em; color:var(--light); text-transform:uppercase; }
+
+/* ==== Tags / pills ==== */
+.tags { display:flex; gap:2mm; flex-wrap:wrap; margin-top:4mm; }
+.tag { display:inline-block; padding:1.2mm 3mm; font-size:6.5pt; font-weight:600; border-radius:1mm; background:var(--cream); color:var(--mid); border:1px solid var(--border); }
+.tag.red { background:var(--red-soft); color:var(--red); border-color:rgba(205,23,25,0.25); }
+.tag.navy { background:var(--navy); color:white; border-color:var(--navy); }
+
+/* ==== Benefits grid ==== */
+.benefits-grid { display:grid; gap:3mm; margin-top:4mm; }
+.benefits-grid.cols-2 { grid-template-columns:1fr 1fr; }
+.benefits-grid.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+.benefits-grid.cols-4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+.benefit-card { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3.5mm 4mm; }
+.benefit-card h4 { font-size:8.5pt; font-weight:700; color:var(--dark); margin-bottom:1mm; }
+.benefit-card p { font-size:7pt; color:var(--mid); line-height:1.45; }
+.benefit-card .num-badge { display:inline-block; width:6mm; height:6mm; border-radius:50%; background:var(--red); color:white; font-size:8pt; font-weight:800; text-align:center; line-height:6mm; margin-bottom:2mm; }
+
+/* ==== Callout ==== */
+.callout { background:var(--cream); border-left:3px solid var(--red); border-radius:0 2mm 2mm 0; padding:3.5mm 5mm; font-size:8.5pt; color:var(--mid); font-style:italic; line-height:1.55; margin-top:4mm; }
+
+/* ==== Navy box ==== */
+.navy-box { background:var(--navy); border-radius:2mm; padding:4mm 5mm; margin-top:4mm; }
+.navy-box h3 { font-size:13pt; font-weight:700; color:var(--white); margin-bottom:1.5mm; }
+.navy-box p { font-size:9pt; color:rgba(255,255,255,0.75); line-height:1.55; }
+
+/* ==== Bullets ==== */
+.bullet-list { list-style:none; margin-top:3mm; }
+.bullet-list li { position:relative; padding-left:4mm; font-size:8.5pt; color:var(--mid); line-height:1.55; margin-bottom:1.5mm; }
+.bullet-list li::before { content:''; position:absolute; left:0; top:1.8mm; width:2mm; height:2mm; border-radius:50%; background:var(--red); }
+
+.check-list { list-style:none; margin-top:3mm; }
+.check-list li { position:relative; padding-left:7mm; font-size:8.5pt; color:var(--mid); line-height:1.55; margin-bottom:2.2mm; }
+.check-list li::before { content:''; position:absolute; left:0; top:0.5mm; width:4mm; height:4mm; border-radius:1mm; background:var(--red); }
+.check-list li::after { content:''; position:absolute; left:1.2mm; top:1.8mm; width:1.5mm; height:0.8mm; border-left:1.5px solid white; border-bottom:1.5px solid white; transform:rotate(-45deg); }
+.check-list strong { color:var(--dark); font-weight:700; }
+
+/* ==== Stat cards (dark) ==== */
+.stat-card-dark { background:rgba(255,255,255,0.06); border-radius:2mm; padding:2.5mm 4mm; margin-top:2mm; display:flex; align-items:center; gap:4mm; }
+.stat-card-dark .stat-num { font-size:18pt; font-weight:900; color:var(--white); white-space:nowrap; line-height:1; flex-shrink:0; min-width:16mm; }
+.stat-card-dark .stat-desc { font-size:7.5pt; font-weight:400; color:rgba(255,255,255,0.55); line-height:1.35; }
+
+/* ==== Workflow pills ==== */
+.workflow { display:flex; align-items:center; gap:2mm; flex-wrap:wrap; white-space:nowrap; }
+.pill { display:inline-flex; align-items:center; padding:1mm 2.5mm; border-radius:4mm; font-size:6.5pt; font-weight:600; color:var(--white); }
+.pill.gray{background:#64748B} .pill.amber{background:var(--amber)} .pill.purple{background:var(--purple)} .pill.green{background:var(--green)} .pill.cyan{background:var(--cyan)} .pill.red{background:var(--red)} .pill.navy{background:var(--navy)}
+.pill.outline { background:transparent; color:var(--mid); border:1.5px solid var(--border); }
+.arrow { font-size:8pt; color:var(--light); }
+
+/* ==== Tech card with accent rail ==== */
+.tech-card { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3.5mm 4mm 3.5mm 6mm; position:relative; }
+.tech-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:2mm 0 0 2mm; background:var(--red); }
+.tech-card.accent-red::before { background:var(--red); }
+.tech-card.accent-amber::before { background:var(--amber); }
+.tech-card.accent-green::before { background:var(--green); }
+.tech-card.accent-cyan::before { background:var(--cyan); }
+.tech-card.accent-purple::before { background:var(--purple); }
+.tech-card.accent-navy::before { background:var(--navy); }
+.tech-card h4 { font-size:9pt; font-weight:700; color:var(--dark); margin-bottom:0.5mm; }
+.tech-card p { font-size:7pt; color:var(--mid); line-height:1.4; }
+
+/* ==== CTA stat ==== */
+.cta-stat { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:4mm 5mm; text-align:center; }
+.cta-stat .num { font-size:22pt; font-weight:800; color:var(--red); line-height:1; }
+.cta-stat .label { font-size:7.5pt; color:var(--mid); margin-top:1.5mm; }
+
+/* ==== Cover ==== */
+.cover { background: repeating-linear-gradient(30deg, transparent, transparent 24px, rgba(255,255,255,0.015) 24px, rgba(255,255,255,0.015) 25px), radial-gradient(ellipse at 65% 45%, rgba(30,45,66,0.6) 0%, transparent 50%), radial-gradient(ellipse at 20% 80%, rgba(21,30,46,0.5) 0%, transparent 45%), linear-gradient(155deg, #1e2d42 0%, #1b2537 35%, #151e2e 65%, #0f1720 100%); display:flex; }
+.cover-accent { position:absolute; bottom:0; left:0; width:45%; height:3px; background:linear-gradient(90deg, rgba(205,23,25,0.5), transparent); }
+
+/* ==== Phone mockup ==== */
+.phone { display:inline-block; }
+.phone-body { background:#1a1a1a; border-radius:6mm; padding:1.5mm; position:relative; box-shadow:0 2mm 10mm rgba(0,0,0,0.15), 0 0.5mm 3mm rgba(0,0,0,0.08); }
+.phone-notch { width:10mm; height:1.2mm; background:#1a1a1a; border-radius:0 0 2mm 2mm; margin:-0.5mm auto 1mm; position:relative; z-index:1; }
+.phone-screen { background:#000; border-radius:4.5mm; overflow:hidden; position:relative; }
+.phone-home { width:8mm; height:0.8mm; background:#444; border-radius:1mm; margin:1.2mm auto 0; }
+.phone.cover-size .phone-screen { width:50mm; height:100mm; }
+.phone.medium .phone-screen { width:36mm; height:72mm; }
+.phone.small .phone-screen { width:28mm; height:56mm; }
+
+/* ==== TOC rows ==== */
+.toc-row { display:flex; align-items:baseline; gap:4mm; padding:2mm 0; border-bottom:1px solid var(--border); }
+.toc-row:last-child { border-bottom:0; }
+.toc-num { font-size:10pt; font-weight:800; color:var(--red); min-width:8mm; font-family:'JetBrains Mono',monospace; }
+.toc-title { font-size:11pt; font-weight:600; color:var(--dark); flex-shrink:0; }
+.toc-desc { font-size:8pt; color:var(--light); flex:1; }
+.toc-page { font-size:9pt; font-weight:700; color:var(--mid); font-family:'JetBrains Mono',monospace; }
+
+/* ==== Persona card ==== */
+.persona-card { background:var(--cream); border:1px solid var(--border); border-radius:3mm; padding:5mm; display:flex; flex-direction:column; position:relative; overflow:hidden; height:100%; }
+.persona-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.persona-card.coach::before { background:var(--navy); }
+.persona-card.referee::before { background:var(--red); }
+.persona-card.admin::before { background:var(--amber); }
+.persona-card .ph-role { font-size:7pt; font-weight:700; color:var(--light); letter-spacing:0.22em; text-transform:uppercase; margin-bottom:2mm; }
+.persona-card .ph-name { font-size:18pt; font-weight:800; color:var(--dark); line-height:1.1; margin-bottom:2mm; }
+.persona-card .ph-desc { font-size:8pt; color:var(--mid); line-height:1.55; margin-bottom:3mm; }
+.persona-card .ph-section { font-size:6.5pt; font-weight:700; color:var(--light); letter-spacing:0.15em; text-transform:uppercase; margin-top:3mm; margin-bottom:1.5mm; }
+.persona-card ul { list-style:none; }
+.persona-card ul li { font-size:7.5pt; color:var(--mid); line-height:1.45; padding-left:3mm; position:relative; margin-bottom:0.8mm; }
+.persona-card ul li::before { content:'›'; position:absolute; left:0; color:var(--red); font-weight:700; }
+
+/* ==== Step train (numbered horizontal) ==== */
+.step-train { display:grid; gap:3mm; margin-top:4mm; }
+.step-train.cols-5 { grid-template-columns:repeat(5, 1fr); }
+.step-train.cols-6 { grid-template-columns:repeat(6, 1fr); }
+.step-tile { background:var(--white); border:1px solid var(--border); border-radius:2mm; padding:3.5mm; position:relative; }
+.step-tile .step-n { position:absolute; top:-3mm; left:3mm; width:6mm; height:6mm; border-radius:50%; background:var(--red); color:white; text-align:center; line-height:6mm; font-size:8pt; font-weight:800; }
+.step-tile h5 { font-size:8pt; font-weight:700; color:var(--dark); margin-top:3mm; margin-bottom:1mm; }
+.step-tile p { font-size:6.5pt; color:var(--mid); line-height:1.4; }
+
+/* ==== Money flow ==== */
+.money-flow { display:grid; grid-template-columns:1fr auto 1fr auto 1fr; gap:3mm; align-items:stretch; margin-top:4mm; }
+.money-node { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:4mm 5mm; text-align:center; }
+.money-node.navy { background:var(--navy); color:white; border-color:var(--navy); }
+.money-node.red { background:var(--red); color:white; border-color:var(--red); }
+.money-node .mn-label { font-size:6.5pt; font-weight:700; letter-spacing:0.15em; text-transform:uppercase; color:var(--light); margin-bottom:2mm; }
+.money-node.navy .mn-label, .money-node.red .mn-label { color:rgba(255,255,255,0.55); }
+.money-node .mn-title { font-size:11pt; font-weight:800; color:var(--dark); }
+.money-node.navy .mn-title, .money-node.red .mn-title { color:white; }
+.money-node .mn-sub { font-size:7pt; color:var(--mid); margin-top:1.5mm; line-height:1.4; }
+.money-node.navy .mn-sub, .money-node.red .mn-sub { color:rgba(255,255,255,0.65); }
+.flow-arrow { display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:14mm; }
+.flow-arrow .arr { font-size:14pt; color:var(--red); font-weight:900; line-height:1; }
+.flow-arrow .arr-label { font-size:6pt; font-weight:700; color:var(--mid); letter-spacing:0.08em; text-transform:uppercase; margin-top:1.5mm; text-align:center; line-height:1.3; }
+
+/* ==== Route map ==== */
+.route-map { display:grid; grid-template-columns:1fr 1fr 1fr; gap:3mm; margin-top:4mm; }
+.route-col { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:4mm; position:relative; overflow:hidden; }
+.route-col::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+.route-col.coach::before { background:var(--navy); }
+.route-col.referee::before { background:var(--red); }
+.route-col.admin::before { background:var(--amber); }
+.route-col.shared::before { background:var(--cyan); }
+.route-col h4 { font-size:9.5pt; font-weight:800; color:var(--dark); margin-top:1.5mm; margin-bottom:1mm; }
+.route-col h4 + p { font-size:6.5pt; color:var(--light); margin-bottom:3mm; }
+.route-col .route-grp { margin-bottom:2.5mm; }
+.route-col .route-grp:last-child { margin-bottom:0; }
+.route-col .rgrp-label { font-size:6pt; font-weight:700; color:var(--light); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:1mm; }
+.route-col .route-item { display:flex; gap:2mm; font-size:6.5pt; color:var(--mid); line-height:1.45; padding:0.5mm 0; }
+.route-col .route-item code { font-family:'JetBrains Mono',monospace; color:var(--dark); font-weight:600; min-width:28mm; flex-shrink:0; }
+.route-col .route-item .ri-desc { color:var(--mid); }
+
+/* ==== DB table grid ==== */
+.db-table-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:2.5mm; margin-top:4mm; }
+.db-card { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3mm 3.5mm; position:relative; overflow:hidden; }
+.db-card::before { content:''; position:absolute; top:0; bottom:0; left:0; width:3px; background:var(--navy); }
+.db-card.users::before { background:var(--cyan); }
+.db-card.bookings::before { background:var(--red); }
+.db-card.messaging::before { background:var(--purple); }
+.db-card.money::before { background:var(--green); }
+.db-card.ops::before { background:var(--amber); }
+.db-card h5 { font-family:'JetBrains Mono',monospace; font-size:7.5pt; font-weight:600; color:var(--dark); margin-bottom:1mm; }
+.db-card p { font-size:6.5pt; color:var(--mid); line-height:1.4; }
+
+/* ==== Divider ==== */
+.rule { height:1px; background:var(--border); margin:5mm 0; }
+
+/* ==== Contents styling helpers ==== */
+.part-label { display:inline-block; font-size:6pt; font-weight:800; letter-spacing:0.22em; color:var(--red); text-transform:uppercase; padding:1mm 2.5mm; border:1px solid var(--red); border-radius:1mm; margin-bottom:2mm; }
+
+/* ==== Back cover ==== */
+.back-hero { padding:28mm; display:flex; flex-direction:column; justify-content:center; height:100%; }
+.back-big { font-size:56pt; font-weight:900; color:white; line-height:1; letter-spacing:-0.03em; }
+
+/* ==== Notification fan-out diagram ==== */
+.fanout { display:grid; grid-template-columns:1fr 12mm 1fr; gap:4mm; align-items:center; margin-top:5mm; }
+.fanout-source { background:var(--navy); color:white; border-radius:2mm; padding:5mm; text-align:center; }
+.fanout-source h4 { font-size:10pt; font-weight:800; color:white; margin-bottom:1.5mm; }
+.fanout-source p { font-size:7pt; color:rgba(255,255,255,0.6); line-height:1.45; }
+.fanout-lines { position:relative; height:100%; }
+.fanout-lines::before, .fanout-lines::after, .fanout-lines span { position:absolute; left:0; right:0; border-top:1.5px dashed var(--red); top:50%; }
+.fanout-targets { display:grid; gap:2mm; }
+.fanout-target { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3mm 4mm; display:flex; align-items:center; gap:3mm; }
+.fanout-target .ft-icon { width:9mm; height:9mm; border-radius:2mm; background:var(--red); color:white; font-weight:800; font-size:8pt; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.fanout-target.a .ft-icon { background:var(--red); }
+.fanout-target.b .ft-icon { background:var(--navy); }
+.fanout-target.c .ft-icon { background:var(--amber); }
+.fanout-target.d .ft-icon { background:var(--purple); }
+.fanout-target h5 { font-size:8.5pt; font-weight:700; color:var(--dark); margin-bottom:0.5mm; }
+.fanout-target p { font-size:6.5pt; color:var(--mid); line-height:1.4; }
+
+/* ==== Lifecycle visual ==== */
+.lifecycle { display:flex; align-items:center; gap:0; margin-top:5mm; padding:4mm; background:var(--navy); border-radius:3mm; }
+.lc-stage { flex:1; text-align:center; padding:2mm; position:relative; }
+.lc-stage .lc-dot { width:5mm; height:5mm; border-radius:50%; background:var(--red); margin:0 auto 2mm; border:2px solid white; }
+.lc-stage h5 { font-size:8.5pt; font-weight:800; color:white; margin-bottom:1mm; }
+.lc-stage p { font-size:6pt; color:rgba(255,255,255,0.55); line-height:1.35; padding:0 1mm; }
+.lc-line { flex:0 0 auto; width:6mm; border-top:1.5px dashed rgba(255,255,255,0.3); align-self:center; }
+.lc-stage.final .lc-dot { background:var(--green); }
+.lc-stage.cancel .lc-dot { background:#64748B; }
+
+/* ==== Thread diagram ==== */
+.thread-diagram { display:grid; grid-template-columns:1fr 1fr; gap:4mm; margin-top:5mm; }
+.bubble { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3mm 4mm; font-size:7.5pt; color:var(--mid); line-height:1.45; position:relative; }
+.bubble.system { background:var(--navy); color:rgba(255,255,255,0.85); border-color:var(--navy); font-style:italic; }
+.bubble.coach::before { content:'Coach'; position:absolute; top:-2mm; left:3mm; background:var(--navy); color:white; font-size:6pt; font-weight:700; padding:0.5mm 2mm; border-radius:1mm; }
+.bubble.referee::before { content:'Referee'; position:absolute; top:-2mm; left:3mm; background:var(--red); color:white; font-size:6pt; font-weight:700; padding:0.5mm 2mm; border-radius:1mm; }
+.bubble.system::before { content:'System'; position:absolute; top:-2mm; left:3mm; background:var(--amber); color:white; font-size:6pt; font-weight:700; padding:0.5mm 2mm; border-radius:1mm; }
+
+/* ==== Filter funnel ==== */
+.funnel { display:grid; gap:2.5mm; margin-top:4mm; }
+.funnel-row { display:grid; grid-template-columns:9mm 1fr; gap:3mm; align-items:center; background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3mm 4mm; position:relative; }
+.funnel-row .fr-n { width:7mm; height:7mm; border-radius:50%; background:var(--navy); color:white; text-align:center; line-height:7mm; font-size:8pt; font-weight:800; }
+.funnel-row .fr-body h5 { font-size:9pt; font-weight:700; color:var(--dark); margin-bottom:0.8mm; }
+.funnel-row .fr-body p { font-size:7pt; color:var(--mid); line-height:1.45; }
+.funnel-row.critical { border-left:3px solid var(--red); }
+.funnel-row.critical .fr-n { background:var(--red); }
+
+/* ==== Columns helper ==== */
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:5mm; }
+.two-col-uneven { display:grid; grid-template-columns:1.2fr 0.8fr; gap:5mm; }
+
+/* ==== Admin stats grid ==== */
+.admin-dash { background:var(--cream); border:1px solid var(--border); border-radius:3mm; padding:5mm; }
+.admin-dash-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:2mm; }
+.admin-tile { background:white; border:1px solid var(--border); border-radius:2mm; padding:3mm; text-align:center; }
+.admin-tile .at-n { font-size:14pt; font-weight:800; color:var(--dark); line-height:1; }
+.admin-tile .at-l { font-size:6pt; color:var(--light); margin-top:1.5mm; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; }
+
+/* ==== Key-Value rows for non-obvious ==== */
+.kv-row { display:grid; grid-template-columns:60mm 1fr; gap:5mm; padding:3.5mm 0; border-bottom:1px solid var(--border); }
+.kv-row:last-child { border-bottom:0; }
+.kv-row .kv-k { font-size:9pt; font-weight:700; color:var(--dark); line-height:1.35; }
+.kv-row .kv-v { font-size:8pt; color:var(--mid); line-height:1.55; }
+
+/* ==== Cheat sheet ==== */
+.cheat-grid { display:grid; grid-template-columns:1fr 1fr; gap:3mm; margin-top:4mm; }
+.cheat-card { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:4mm 5mm; position:relative; overflow:hidden; }
+.cheat-card::before { content:''; position:absolute; top:0; left:0; bottom:0; width:3px; background:var(--red); }
+.cheat-card .cc-who { font-size:6.5pt; font-weight:700; letter-spacing:0.2em; color:var(--red); text-transform:uppercase; margin-bottom:1.5mm; }
+.cheat-card .cc-line { font-size:10.5pt; font-weight:600; color:var(--dark); line-height:1.4; }
+
+/* ==== Utility ==== */
+.mt-2 { margin-top:2mm; } .mt-4 { margin-top:4mm; } .mt-6 { margin-top:6mm; }
+.small-muted { font-size:7pt; color:var(--light); line-height:1.4; }
+</style>
+</head>
+<body>
+
+<!-- =================================================================== -->
+<!-- PAGE 1 · COVER                                                       -->
+<!-- =================================================================== -->
+<div class="page cover">
+  <div style="width:52%;display:flex;flex-direction:column;justify-content:center;padding-left:28mm;padding-right:8mm;">
+    <div>
+      <svg style="height:22mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32">
+        <g>
+          <g><path fill="#fff" d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path fill="#fff" d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path fill="#fff" d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path fill="#fff" d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path fill="#fff" d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path fill="#fff" d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path fill="#fff" d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path fill="#fff" d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path fill="#fff" d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path fill="#fff" d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path fill="#fff" d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path fill="#fff" d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path fill="#fff" d="M116.96,30.66s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path fill="#fff" d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g>
+          <path fill="#fff" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/>
+        </g>
+      </svg>
+    </div>
+    <div style="width:40mm;height:1.5px;background:rgba(255,255,255,0.15);margin-top:16mm;"></div>
+    <div style="font-size:7pt;font-weight:600;letter-spacing:0.3em;color:rgba(255,255,255,0.4);margin-top:5mm;">TEAM INFO PACK · v1.0</div>
+    <div style="font-size:42pt;font-weight:900;color:white;line-height:1.04;letter-spacing:-0.035em;margin-top:5mm;">Inside The App.<br>Every Route.<br>Every Flow.</div>
+    <div style="margin-top:7mm;">
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(255,255,255,0.55);line-height:1.8;">How Whistle Connect actually works.</span>
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(255,255,255,0.55);line-height:1.8;">The three personas, the booking lifecycle,</span>
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(255,255,255,0.55);line-height:1.8;">the money flow — in plain English.</span>
+    </div>
+    <div style="margin-top:10mm;display:flex;gap:3mm;">
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(255,255,255,0.18);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:rgba(255,255,255,0.6);">PRODUCT</span>
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(255,255,255,0.18);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:rgba(255,255,255,0.6);">OPS</span>
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(255,255,255,0.18);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:rgba(255,255,255,0.6);">GO-TO-MARKET</span>
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(205,23,25,0.4);background:rgba(205,23,25,0.12);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:#f87171;">INTERNAL</span>
+    </div>
+  </div>
+  <div style="width:48%;display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="position:absolute;opacity:0.04;z-index:0;">
+      <svg style="height:85mm;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36.96 43.37">
+        <path fill="#fff" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/>
+      </svg>
+    </div>
+    <div class="phone cover-size" style="position:relative;z-index:1;transform:rotate(-5deg);">
+      <div class="phone-body" style="box-shadow:0 8mm 35mm rgba(0,0,0,0.35),0 4mm 15mm rgba(0,0,0,0.3);">
+        <div class="phone-screen">
+          <img src="screenshot_coach_home.png" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;border:none;border-radius:4.5mm;">
+        </div>
+        <div class="phone-home"></div>
+      </div>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:10mm;left:28mm;right:22mm;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div>
+      <span style="display:block;font-size:7pt;color:rgba(255,255,255,0.25);line-height:1.5;">Whistle Connect Ltd. · Internal reference</span>
+      <span style="display:block;font-size:7pt;color:rgba(255,255,255,0.25);line-height:1.5;">whistleconnect.co.uk</span>
+    </div>
+    <div>
+      <svg style="height:10mm;opacity:0.2;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36.96 43.37">
+        <path fill="#fff" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/>
+      </svg>
+    </div>
+  </div>
+  <div class="cover-accent"></div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 2 · CONTENTS                                                    -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);letter-spacing:-0.01em;">Whistle Connect</div>
+    <span class="section-label">Team Info Pack · Contents</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">01</div>
+  <div class="content" style="padding-top:6mm;">
+    <div class="section-kicker">Contents</div>
+    <h1 class="section-title">What's inside this pack.</h1>
+    <p class="section-body" style="max-width:160mm;">A guided tour of Whistle Connect for product, ops, support, and go-to-market. Read it cover-to-cover before an onboarding session, or skim it to find the page you need mid-conversation. Every section is one page.</p>
+
+    <div class="two-col mt-6" style="gap:10mm;">
+      <div>
+        <div class="part-label">Part One · The shape of it</div>
+        <div class="toc-row"><span class="toc-num">03</span><span class="toc-title">The big picture</span><span class="toc-desc">What the app actually does, in four paragraphs.</span><span class="toc-page">pg 03</span></div>
+        <div class="toc-row"><span class="toc-num">04</span><span class="toc-title">The three personas</span><span class="toc-desc">Coach, Referee, Admin — who does what.</span><span class="toc-page">pg 04</span></div>
+        <div class="toc-row"><span class="toc-num">05</span><span class="toc-title">The coach's journey</span><span class="toc-desc">From first login to match paid.</span><span class="toc-page">pg 05</span></div>
+        <div class="toc-row"><span class="toc-num">06</span><span class="toc-title">The referee's journey</span><span class="toc-desc">Signup, availability, offer, payout.</span><span class="toc-page">pg 06</span></div>
+
+        <div class="part-label" style="margin-top:8mm;">Part Two · The workflows</div>
+        <div class="toc-row"><span class="toc-num">07</span><span class="toc-title">Booking lifecycle</span><span class="toc-desc">How a booking moves through states.</span><span class="toc-page">pg 07</span></div>
+        <div class="toc-row"><span class="toc-num">08</span><span class="toc-title">Offer lifecycle</span><span class="toc-desc">Sent, accepted, declined, withdrawn.</span><span class="toc-page">pg 08</span></div>
+        <div class="toc-row"><span class="toc-num">09</span><span class="toc-title">Matching logic</span><span class="toc-desc">Why a referee does (or doesn't) appear.</span><span class="toc-page">pg 09</span></div>
+        <div class="toc-row"><span class="toc-num">10</span><span class="toc-title">Visibility checklist</span><span class="toc-desc">A referee's self-diagnosis for "am I findable?"</span><span class="toc-page">pg 10</span></div>
+      </div>
+      <div>
+        <div class="part-label">Part Three · Connections &amp; money</div>
+        <div class="toc-row"><span class="toc-num">11</span><span class="toc-title">Messaging</span><span class="toc-desc">When threads are born, who's in them.</span><span class="toc-page">pg 11</span></div>
+        <div class="toc-row"><span class="toc-num">12</span><span class="toc-title">Notifications fan-out</span><span class="toc-desc">One event, three delivery channels.</span><span class="toc-page">pg 12</span></div>
+        <div class="toc-row"><span class="toc-num">13</span><span class="toc-title">Wallet &amp; escrow</span><span class="toc-desc">How money moves — top-up to payout.</span><span class="toc-page">pg 13</span></div>
+        <div class="toc-row"><span class="toc-num">14</span><span class="toc-title">Admin's view</span><span class="toc-desc">FA verification, disputes, platform settings.</span><span class="toc-page">pg 14</span></div>
+
+        <div class="part-label" style="margin-top:8mm;">Part Four · Reference</div>
+        <div class="toc-row"><span class="toc-num">15</span><span class="toc-title">App route map</span><span class="toc-desc">Every page, grouped by persona.</span><span class="toc-page">pg 15</span></div>
+        <div class="toc-row"><span class="toc-num">16</span><span class="toc-title">Database at a glance</span><span class="toc-desc">Every table, in one sentence each.</span><span class="toc-page">pg 16</span></div>
+        <div class="toc-row"><span class="toc-num">17</span><span class="toc-title">The non-obvious connections</span><span class="toc-desc">The glue nobody talks about, but should.</span><span class="toc-page">pg 17</span></div>
+        <div class="toc-row"><span class="toc-num">18</span><span class="toc-title">Talking points</span><span class="toc-desc">One-liners for any conversation.</span><span class="toc-page">pg 18</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>01</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 3 · THE BIG PICTURE                                             -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part One — The Shape Of It</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">03</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">The big picture</div>
+    <h1 class="section-title">One app. Two sides of the pitch.<br>Money safely in the middle.</h1>
+    <div class="two-col-uneven mt-4" style="gap:8mm;">
+      <div>
+        <p class="section-body" style="margin-bottom:3mm;">Whistle Connect is a booking platform that connects grassroots football coaches who need a referee with local, verified referees who are available. The app handles the four things that used to live in WhatsApp threads, texts, and phone calls: finding a ref, agreeing a price, paying them, and staying in touch on match day.</p>
+        <p class="section-body" style="margin-bottom:3mm;">A <strong style="color:var(--dark);">coach</strong> creates a booking for a fixture, searches nearby referees, and sends a priced offer. A <strong style="color:var(--dark);">referee</strong> reviews the offer in their inbox and either accepts or declines. The moment they accept, money is held in escrow, an assignment is locked in, and a private thread opens so both parties can sort the final details.</p>
+        <p class="section-body" style="margin-bottom:3mm;">After the match, either party marks it complete. Escrow is released into the referee's wallet. They withdraw to their bank when they like. An <strong style="color:var(--dark);">admin</strong> sits above all of this, verifying referees with the FA, handling disputes, and tuning platform settings.</p>
+        <p class="section-body">The whole design goal: no money moves between strangers without the platform in the middle, no fixture goes uncovered because a coach couldn't find the right person, no referee turns up to a match they thought was cancelled.</p>
+
+        <div class="callout">Coaches get referees found and confirmed in minutes. Referees get fair, guaranteed pay. Admin gets visibility and compliance. Nobody has to trust a stranger on a WhatsApp thread with their Saturday morning.</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:3mm;">
+        <div class="cta-stat"><div class="num">3</div><div class="label">personas in the app — coach, referee, admin</div></div>
+        <div class="cta-stat"><div class="num">5</div><div class="label">states every booking passes through</div></div>
+        <div class="cta-stat"><div class="num">7</div><div class="label">filters a referee must clear to appear in a search</div></div>
+        <div class="cta-stat"><div class="num">18</div><div class="label">database tables powering the experience</div></div>
+        <div class="navy-box" style="margin-top:auto;">
+          <h3>Read this first.</h3>
+          <p>Every later page assumes this one. If you remember nothing else: coach posts fixture, referee accepts, money held, match played, money released. That's the whole spine.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>03</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 4 · THE THREE PERSONAS                                          -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part One — The Three Personas</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">04</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Personas</div>
+    <h1 class="section-title">Three roles. One platform.</h1>
+    <p class="section-body">Every user on Whistle Connect is exactly one of these. The role is set at signup and controls which screens they see and which actions they can take. When debugging, "what role is this user?" is always the first question.</p>
+
+    <div class="benefits-grid cols-3 mt-6" style="gap:4mm;">
+      <div class="persona-card coach">
+        <div class="ph-role">Role 01</div>
+        <div class="ph-name">The Coach</div>
+        <div class="ph-desc">Organises matches and pays for referees. Typically a volunteer coach, club secretary, or fixture secretary. Budgets from a club or team wallet.</div>
+        <div class="ph-section">Home screen shows</div>
+        <ul>
+          <li>Upcoming bookings needing a ref</li>
+          <li>Offers waiting on acceptance</li>
+          <li>Recently completed matches</li>
+          <li>Wallet balance and escrow held</li>
+        </ul>
+        <div class="ph-section">Unique powers</div>
+        <ul>
+          <li>Create and edit bookings</li>
+          <li>Search and filter referees</li>
+          <li>Send priced offers</li>
+          <li>Trigger an SOS emergency broadcast</li>
+          <li>Top up and spend from the wallet</li>
+          <li>Raise a dispute before release</li>
+        </ul>
+      </div>
+
+      <div class="persona-card referee">
+        <div class="ph-role">Role 02</div>
+        <div class="ph-name">The Referee</div>
+        <div class="ph-desc">Officiates matches and gets paid per booking. Must be FA-verified to appear in searches; often needs a DBS check for youth games.</div>
+        <div class="ph-section">Home screen shows</div>
+        <ul>
+          <li>Upcoming confirmed assignments</li>
+          <li>Pending offers in their inbox</li>
+          <li>Match feed of nearby bookings</li>
+          <li>Earnings so far this season</li>
+        </ul>
+        <div class="ph-section">Unique powers</div>
+        <ul>
+          <li>Flip the master availability toggle</li>
+          <li>Set weekly and date-specific slots</li>
+          <li>Control travel radius and county</li>
+          <li>Opt in to central venue matches</li>
+          <li>Accept, decline, or counter offers</li>
+          <li>Withdraw earned balance to a bank</li>
+        </ul>
+      </div>
+
+      <div class="persona-card admin">
+        <div class="ph-role">Role 03</div>
+        <div class="ph-name">The Admin</div>
+        <div class="ph-desc">Keeps the platform honest. Verifies referees with the FA, resolves disputed payments, configures platform-wide settings.</div>
+        <div class="ph-section">Home screen shows</div>
+        <ul>
+          <li>Pending FA verification queue</li>
+          <li>Unverified referees still in signup</li>
+          <li>Bookings this month · SOS count</li>
+          <li>Overall user and activity stats</li>
+        </ul>
+        <div class="ph-section">Unique powers</div>
+        <ul>
+          <li>Approve or reject FA verifications</li>
+          <li>Ban or reinstate accounts</li>
+          <li>Resolve disputes and split funds</li>
+          <li>Set travel cost per km platform-wide</li>
+          <li>View all users on a moderation map</li>
+          <li>Impersonate for live support</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="callout" style="margin-top:5mm;"><strong style="color:var(--red);font-style:normal;">If this person can't do what they expect,</strong> nine times out of ten they're logged in as the wrong role. A "Test Coach" with role = coach cannot set availability. A "Test Referee" accidentally seeded as a coach will never appear in searches. Check the <code>profiles.role</code> column first.</div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>04</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 5 · THE COACH'S JOURNEY                                         -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part One — The Coach's Journey</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">05</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">User flow · Coach</div>
+    <h1 class="section-title">From fixture in the diary<br>to referee in the middle.</h1>
+    <p class="section-body" style="max-width:170mm;">Six steps, front to back. This is the spine of the product for 90% of sessions. Memorising it makes every support conversation, demo, and roadmap question easier.</p>
+
+    <div class="step-train cols-6 mt-6" style="margin-top:8mm;">
+      <div class="step-tile"><div class="step-n">1</div><h5>Create booking</h5><p>Coach fills date, kickoff, postcode, age group, format, budget. Postcode is geocoded to lat/long.</p></div>
+      <div class="step-tile"><div class="step-n">2</div><h5>Search referees</h5><p>System filters available refs by radius, county, availability, DBS, and central-venue opt-in.</p></div>
+      <div class="step-tile"><div class="step-n">3</div><h5>Send offers</h5><p>Coach proposes match fee. Travel cost added automatically. Offers sent to one or more refs.</p></div>
+      <div class="step-tile"><div class="step-n">4</div><h5>Acceptance</h5><p>First referee to accept wins. Escrow held. Competing offers auto-withdrawn. Thread opens.</p></div>
+      <div class="step-tile"><div class="step-n">5</div><h5>Match day</h5><p>Both sides chat in the thread. Kickoff happens. Either party marks the match complete.</p></div>
+      <div class="step-tile"><div class="step-n">6</div><h5>Payout</h5><p>Escrow released to referee. Coach's wallet reconciled. Transaction logged immutably.</p></div>
+    </div>
+
+    <div class="two-col mt-6" style="gap:6mm;margin-top:10mm;">
+      <div>
+        <h3 style="font-size:12pt;font-weight:700;color:var(--dark);margin-bottom:2mm;">When it goes sideways</h3>
+        <ul class="bullet-list">
+          <li><strong style="color:var(--dark);">No referees found.</strong> Most common cause is the coach's postcode didn't geocode, so the spatial search fell back to a county-name exact match that doesn't line up.</li>
+          <li><strong style="color:var(--dark);">Offer fails to send.</strong> Rate-limited (too many offers in a short window) or the coach's wallet hasn't got the balance to cover the potential escrow hold.</li>
+          <li><strong style="color:var(--dark);">Referee pulls out.</strong> Booking reverts to <em>pending</em>, escrow refunded, coach notified. Coach can re-search and re-offer without re-creating the booking.</li>
+          <li><strong style="color:var(--dark);">Match cancelled last minute.</strong> <em>Referee SOS</em> broadcast as a high-urgency push notification to every available ref in radius. First to express interest gets auto-assigned.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="navy-box" style="margin-top:0;">
+          <h3>The single rule to remember</h3>
+          <p>Money does not leave the coach's wallet until a referee accepts. Not when the booking is created. Not when the offer is sent. Only on acceptance. That's why a coach can have ten offers out with one fixture's worth of budget — whichever ref accepts first wins, and the rest silently close.</p>
+        </div>
+        <div class="callout" style="margin-top:4mm;">Offers are non-binding promises. Acceptance is the binding moment. Every cash movement is anchored there.</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>05</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 6 · THE REFEREE'S JOURNEY                                       -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part One — The Referee's Journey</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">06</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">User flow · Referee</div>
+    <h1 class="section-title">From signup to payday.</h1>
+
+    <div class="two-col-uneven mt-4" style="gap:8mm;">
+      <div>
+        <p class="section-body" style="margin-bottom:3mm;">A referee's job on the app is essentially to stay findable, respond to offers quickly, and get paid. The product is designed so a new ref can get useful within their first ten minutes: register, get FA-verified, set availability, toggle the big green switch, and wait for offers.</p>
+
+        <div class="step-train cols-5" style="margin-top:8mm;">
+          <div class="step-tile"><div class="step-n">1</div><h5>Register &amp; FA</h5><p>Pick role = Referee, enter FA number. Admin verifies via the FA; badge appears once approved.</p></div>
+          <div class="step-tile"><div class="step-n">2</div><h5>Set availability</h5><p>Weekly slots (e.g. Sat 9–5), or specific dates. Master toggle must be on.</p></div>
+          <div class="step-tile"><div class="step-n">3</div><h5>Get offered</h5><p>Offers appear in /app/offers with the match fee and travel cost clearly broken out.</p></div>
+          <div class="step-tile"><div class="step-n">4</div><h5>Accept / decline</h5><p>Acceptance is atomic — money held, assignment locked, thread opens, other offers withdrawn.</p></div>
+          <div class="step-tile"><div class="step-n">5</div><h5>Match &amp; payout</h5><p>Officiate. Mark complete. Escrow lands in wallet. Withdraw to bank via Stripe Connect.</p></div>
+        </div>
+
+        <div class="callout" style="margin-top:6mm;">The accept button can fail with <em>Insufficient funds</em> — that's not the referee's wallet, it's the coach's. The atomic acceptance needs the coach to have enough balance to cover match fee plus travel.</div>
+
+        <h3 style="font-size:11pt;font-weight:700;color:var(--dark);margin-top:6mm;margin-bottom:2mm;">The five-minute onboarding</h3>
+        <ol class="check-list">
+          <li><strong>Register</strong> with role = Referee. FA number goes in during signup.</li>
+          <li><strong>Wait for FA verification</strong> from admin — usually same-day.</li>
+          <li><strong>Set county and home postcode</strong> on the profile so coordinates get stored.</li>
+          <li><strong>Flip the master availability toggle</strong> to green.</li>
+          <li><strong>Add weekly slots</strong> for the days you typically officiate.</li>
+        </ol>
+      </div>
+      <div>
+        <div class="phone medium" style="margin:0 auto;display:block;">
+          <div class="phone-body">
+            <div class="phone-screen">
+              <img src="screenshot_ref_home.png" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;border:none;border-radius:4.5mm;">
+            </div>
+            <div class="phone-home"></div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:6.5pt;color:var(--light);margin-top:2mm;letter-spacing:0.1em;text-transform:uppercase;">Referee home · /app</div>
+
+        <div class="navy-box" style="margin-top:5mm;">
+          <h3>Why refs become invisible</h3>
+          <p>The master availability toggle defaults off on older accounts. That one switch has historically caused more "my ref isn't showing up" tickets than anything else combined. It's now on by default, red when off, and asks for confirmation before going off.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>06</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 7 · BOOKING LIFECYCLE                                           -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Two — Booking Lifecycle</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">07</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Workflow · Booking states</div>
+    <h1 class="section-title">Every booking rides one of two rails.</h1>
+    <p class="section-body" style="max-width:170mm;">A booking is born as a <em>pending</em> fixture and ends either <em>completed</em> or <em>cancelled</em>. Nothing skips states. Every status transition is logged and auditable. If you know the state, you know who's waiting on whom.</p>
+
+    <div class="lifecycle mt-6">
+      <div class="lc-stage"><div class="lc-dot"></div><h5>draft</h5><p>Coach saving a booking without posting it yet.</p></div>
+      <div class="lc-line"></div>
+      <div class="lc-stage"><div class="lc-dot"></div><h5>pending</h5><p>Live and searchable. Coach is looking for a ref.</p></div>
+      <div class="lc-line"></div>
+      <div class="lc-stage"><div class="lc-dot"></div><h5>offered</h5><p>At least one offer has been sent. Awaiting response.</p></div>
+      <div class="lc-line"></div>
+      <div class="lc-stage"><div class="lc-dot"></div><h5>confirmed</h5><p>Referee accepted. Money in escrow. Thread open.</p></div>
+      <div class="lc-line"></div>
+      <div class="lc-stage final"><div class="lc-dot"></div><h5>completed</h5><p>Match played. Escrow released to referee.</p></div>
+    </div>
+
+    <div style="text-align:center;margin-top:4mm;font-size:7pt;color:var(--light);letter-spacing:0.1em;text-transform:uppercase;">↓ or at any point ↓</div>
+    <div style="display:flex;justify-content:center;margin-top:2mm;">
+      <div class="lc-stage cancel" style="background:var(--navy);border-radius:3mm;padding:3mm 8mm;min-width:50mm;"><div class="lc-dot"></div><h5>cancelled</h5><p>Coach or ref pulled out. Escrow refunded if held.</p></div>
+    </div>
+
+    <div class="two-col mt-6" style="gap:6mm;">
+      <div class="tech-card accent-red">
+        <h4>The transitions that trigger money</h4>
+        <p><strong>offered → confirmed</strong> holds escrow out of the coach's balance.<br><strong>confirmed → completed</strong> releases escrow into the referee's balance.<br><strong>anything → cancelled</strong> returns any escrow to the coach.</p>
+      </div>
+      <div class="tech-card accent-navy">
+        <h4>The transitions that trigger notifications</h4>
+        <p>Every state change notifies the other party via in-app, web push, and (for mobile app users) native push. Cancellations always route through both channels because they're time-sensitive.</p>
+      </div>
+      <div class="tech-card accent-amber">
+        <h4>The transitions that affect the thread</h4>
+        <p>The thread only exists from <strong>confirmed</strong> onwards. A booking going <em>confirmed → cancelled</em> keeps the thread alive as a record; a <em>pending → cancelled</em> never had one in the first place.</p>
+      </div>
+      <div class="tech-card accent-green">
+        <h4>The transitions that touch availability</h4>
+        <p>When a referee accepts, their conflicting <em>date-specific</em> slot for that match date is automatically removed so they can't be double-booked. Weekly recurring slots are untouched.</p>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>07</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 8 · OFFER LIFECYCLE                                             -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Two — Offer Lifecycle</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">08</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Workflow · Offer states</div>
+    <h1 class="section-title">One booking. Many offers.<br>One winner.</h1>
+
+    <div class="two-col-uneven mt-4" style="gap:8mm;">
+      <div>
+        <p class="section-body" style="margin-bottom:3mm;">A booking usually has multiple offers out at once. Each one is its own tiny negotiation. The first referee to accept wins the assignment and every other offer is silently <em>withdrawn</em>. The referees who weren't quick enough get a polite in-app notice.</p>
+
+        <div class="workflow" style="margin-top:6mm;">
+          <span class="pill gray">draft</span>
+          <span class="arrow">→</span>
+          <span class="pill amber">sent</span>
+          <span class="arrow">→</span>
+          <span class="pill purple">accepted&nbsp;priced</span>
+          <span class="arrow">→</span>
+          <span class="pill green">accepted</span>
+        </div>
+        <div class="workflow" style="margin-top:3mm;">
+          <span class="pill amber">sent</span>
+          <span class="arrow">→</span>
+          <span class="pill red">declined</span>
+          <span style="width:6mm;"></span>
+          <span class="pill amber">sent</span>
+          <span class="arrow">→</span>
+          <span class="pill gray">withdrawn</span>
+        </div>
+
+        <ul class="bullet-list mt-6">
+          <li><strong style="color:var(--dark);">sent</strong> — the offer is live in the referee's inbox. Clock is ticking.</li>
+          <li><strong style="color:var(--dark);">accepted_priced</strong> — referee has confirmed the price; transient state during the atomic confirmation.</li>
+          <li><strong style="color:var(--dark);">accepted</strong> — terminal success. Booking moves to <em>confirmed</em>.</li>
+          <li><strong style="color:var(--dark);">declined</strong> — referee said no. Coach can re-offer elsewhere.</li>
+          <li><strong style="color:var(--dark);">withdrawn</strong> — another offer on the same booking won, or the coach cancelled.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="navy-box" style="margin-top:0;">
+          <h3>The atomic accept</h3>
+          <p>Clicking "Accept" does not just update one row. In one indivisible database transaction the system: updates the offer status, holds the escrow, creates the assignment, moves the booking to confirmed, withdraws every competing offer on that booking, creates a messaging thread with both participants, posts a system message, removes the ref's conflicting date-specific slot, and fires a notification to the coach. If any single step fails, none of them happen.</p>
+        </div>
+        <div class="callout" style="margin-top:4mm;">This is why "I accepted but nothing happened" is almost impossible in normal operation. Either it all happens, or none of it does and a clear error is shown.</div>
+        <div class="tech-card accent-red" style="margin-top:4mm;">
+          <h4>Fairness by design</h4>
+          <p>Competing offers don't require the referee to "refuse" them — they close automatically. A ref never has to feel guilty or leave someone hanging.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>08</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 9 · MATCHING LOGIC — THE SEVEN FILTERS                          -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Two — Matching Logic</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">09</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">The seven filters</div>
+    <h1 class="section-title">Why a referee appears<br>(or doesn't) in a search.</h1>
+    <p class="section-body" style="max-width:175mm;">A coach's search is a funnel. A referee has to pass every single filter to make the list. Miss one and they're invisible — no error, no warning, just absent. This page is the support team's cheat sheet for "my ref isn't showing up."</p>
+
+    <div class="funnel mt-6">
+      <div class="funnel-row critical"><div class="fr-n">1</div><div class="fr-body"><h5>The referee has a <code style="font-family:'JetBrains Mono',monospace;font-size:8pt;background:var(--cream);padding:0 1mm;border-radius:0.5mm;">referee_profiles</code> row.</h5><p>No row = invisible. Normally created automatically on signup; occasionally missing if the signup trigger failed. The fix is to backfill the row.</p></div></div>
+      <div class="funnel-row"><div class="fr-n">2</div><div class="fr-body"><h5>Master availability toggle is on.</h5><p>The big green/red switch on /app/availability. Defaults on now. Being off wipes them from every search regardless of everything else.</p></div></div>
+      <div class="funnel-row"><div class="fr-n">3</div><div class="fr-body"><h5>Availability window covers the kickoff.</h5><p>A date-specific or weekly slot that brackets the match time. If they only set 14:30–16:30 and kickoff is 14:00, they fail this — unless the master toggle rescues them.</p></div></div>
+      <div class="funnel-row"><div class="fr-n">4</div><div class="fr-body"><h5>Location fits the booking.</h5><p>Spatial: within 50 km of the booking's postcode. Or fallback: county name matches exactly. A ref with no stored lat/long silently drops out of spatial searches and has to rely on the county fallback.</p></div></div>
+      <div class="funnel-row"><div class="fr-n">5</div><div class="fr-body"><h5>No clashing confirmed booking that day.</h5><p>A ref already assigned to a confirmed match on the same date is excluded. They can't be double-booked.</p></div></div>
+      <div class="funnel-row"><div class="fr-n">6</div><div class="fr-body"><h5>Passes the DBS rule.</h5><p>If the booking's age group is U16 or younger, <code style="font-family:'JetBrains Mono',monospace;font-size:8pt;background:var(--cream);padding:0 1mm;border-radius:0.5mm;">dbs_status = 'verified'</code> is required. Otherwise ignored.</p></div></div>
+      <div class="funnel-row"><div class="fr-n">7</div><div class="fr-body"><h5>Passes the central-venue rule.</h5><p>If the booking is type <em>central</em> (a multi-game central-venue event), the referee must have ticked <em>Central Venue Opt-In</em>. Individual bookings ignore this flag.</p></div></div>
+    </div>
+
+    <div class="callout" style="margin-top:5mm;">Admin "verified" is <strong style="color:var(--red);font-style:normal;">not</strong> a filter on the search. Being FA-verified only unlocks the green badge shown to coaches; it doesn't affect visibility. We've seen tickets where ops assumes verification = visibility and loses half a day chasing the wrong thing.</div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>09</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 10 · VISIBILITY CHECKLIST                                       -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Two — Referee's Self-Check</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">10</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Am I findable?</div>
+    <h1 class="section-title">The referee's eight-step<br>visibility checklist.</h1>
+
+    <div class="two-col-uneven mt-4" style="gap:8mm;">
+      <div>
+        <p class="section-body" style="margin-bottom:4mm;">If a ref calls support saying "no one's booking me," this is the script. Walk through it with them in order. By step three or four, you'll usually have found it.</p>
+        <ol class="check-list">
+          <li><strong>Master toggle is green.</strong> Top of /app/availability. Red means you're invisible. Also sets the tab colour for instant recognition.</li>
+          <li><strong>County is picked</strong> from the dropdown in profile. This powers the fallback search when coordinates are unavailable.</li>
+          <li><strong>Home postcode is saved.</strong> Geocoding turns this into lat/long automatically. Without it, spatial searches can't place you.</li>
+          <li><strong>Travel radius is set</strong> (default 15 km, max 50). Anything beyond this and you won't see the booking in your match feed.</li>
+          <li><strong>Slots cover when you can officiate</strong> — either weekly recurring (e.g. Saturdays 10–18) or a specific date, or both.</li>
+          <li><strong>Central venue opt-in is ticked</strong> if you want those multi-game central events in your search results.</li>
+          <li><strong>FA verification is approved.</strong> Shows as a badge. Admin does this after you register. Doesn't block search, but it builds trust.</li>
+          <li><strong>DBS status is verified</strong> if you want to officiate youth matches. Required for U16 and under.</li>
+        </ol>
+      </div>
+      <div>
+        <div class="phone medium" style="margin:0 auto;display:block;">
+          <div class="phone-body">
+            <div class="phone-screen">
+              <img src="screenshot_ref_availability.png" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;border:none;border-radius:4.5mm;">
+            </div>
+            <div class="phone-home"></div>
+          </div>
+        </div>
+        <div style="text-align:center;font-size:6.5pt;color:var(--light);margin-top:2mm;letter-spacing:0.1em;text-transform:uppercase;">Availability screen · /app/availability</div>
+
+        <div class="navy-box" style="margin-top:5mm;">
+          <h3>The most common miss</h3>
+          <p>By a wide margin: step one. The master toggle was off. Either never turned on, or accidentally switched off and left. That's why the app now defaults it on, paints it red when off, and asks for confirmation before going off.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>10</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 11 · MESSAGING                                                  -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Three — Messaging Model</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">11</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Messaging</div>
+    <h1 class="section-title">A thread is a record of a<br>confirmed booking.</h1>
+    <p class="section-body" style="max-width:175mm;">There is no general chat. No friend lists. No DMs. Every thread is tied to exactly one confirmed booking, has exactly two participants (coach + referee), and is born the moment the referee accepts the offer.</p>
+
+    <div class="two-col mt-6" style="gap:8mm;">
+      <div>
+        <h3 style="font-size:11pt;font-weight:700;color:var(--dark);margin-bottom:2mm;">What a thread looks like</h3>
+        <div class="thread-diagram" style="grid-template-columns:1fr;gap:6mm;margin-top:4mm;">
+          <div class="bubble system" style="margin-top:3mm;">Booking confirmed. Use chat to finalise details. Kickoff 14:00 at Marsden FC — Saturday 27th April.</div>
+          <div class="bubble coach" style="margin-top:3mm;">Thanks for taking this! Changing rooms are down the side of the clubhouse. Reach me on 07xxx if anything comes up.</div>
+          <div class="bubble referee" style="margin-top:3mm;">No problem — I'll be there 30 mins before. Can you confirm it's 9v9, U12?</div>
+          <div class="bubble coach" style="margin-top:3mm;">Yes, 9v9 U12, two halves of 30. See you there.</div>
+        </div>
+        <p class="small-muted mt-4">Messages are of kind <em>user</em> or <em>system</em>. System messages are auto-generated (like the confirmation) and styled distinctly so there's no confusion about who "said" what.</p>
+      </div>
+      <div>
+        <h3 style="font-size:11pt;font-weight:700;color:var(--dark);margin-bottom:2mm;">The visibility rules</h3>
+        <ul class="bullet-list">
+          <li><strong style="color:var(--dark);">Only the two participants</strong> can read a thread. Coach sees their threads, referee sees theirs, admin does not read private threads.</li>
+          <li><strong style="color:var(--dark);">Unread badges</strong> come from each participant's <em>last read at</em> timestamp. When you open the thread, it bumps. Anything after that is "unread."</li>
+          <li><strong style="color:var(--dark);">Threads outlive cancellations.</strong> Once born, a thread stays visible for audit even if the booking later cancels.</li>
+          <li><strong style="color:var(--dark);">Messages survive account deletion.</strong> Deleted users show as anonymised, but historical messages persist for FA audit compliance.</li>
+        </ul>
+
+        <div class="callout" style="margin-top:4mm;">Seeing a thread in your inbox is a strong signal: a booking has been confirmed. If you're seeing threads but no confirmed bookings in reports, something is wrong with the status reporting, not with the messaging.</div>
+
+        <div class="tech-card accent-navy mt-4">
+          <h4>Why no general chat</h4>
+          <p>Scope discipline. Messaging exists for match-day coordination, not social networking. Every thread has a clear business purpose; every thread is auditable. This keeps support, safeguarding, and moderation simple.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>11</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 12 · NOTIFICATIONS FAN-OUT                                      -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Three — Notifications</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">12</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Notifications</div>
+    <h1 class="section-title">One event. Four channels.<br>One user sees exactly one.</h1>
+    <p class="section-body" style="max-width:175mm;">Every important action — a new offer, an accept, a cancel, a new message — triggers a single notification event. That event fans out to multiple channels based on what the user has enabled. The user experiences it as one gentle nudge, not four.</p>
+
+    <div class="fanout">
+      <div class="fanout-source">
+        <h4>One event fires.</h4>
+        <p>e.g. "Booking accepted" or "New message in thread" from a server action or database trigger.</p>
+      </div>
+      <div class="fanout-lines"><span></span></div>
+      <div class="fanout-targets">
+        <div class="fanout-target a">
+          <div class="ft-icon">IN</div>
+          <div><h5>In-app notification</h5><p>A row in the notifications table. Shown in the bell/sidebar whenever the user is on the site.</p></div>
+        </div>
+        <div class="fanout-target b">
+          <div class="ft-icon">WEB</div>
+          <div><h5>Web push</h5><p>VAPID-signed browser notification. Works even when the tab is closed if the user has granted permission.</p></div>
+        </div>
+        <div class="fanout-target c">
+          <div class="ft-icon">APP</div>
+          <div><h5>Native push (Capacitor)</h5><p>Firebase Cloud Messaging to the iOS/Android app. Phone vibrates, app badge updates.</p></div>
+        </div>
+        <div class="fanout-target d">
+          <div class="ft-icon">SOS</div>
+          <div><h5>High-priority push</h5><p>SOS bookings use the "high" urgency flag so devices bypass Do Not Disturb and ring through.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="benefits-grid cols-3 mt-6">
+      <div class="tech-card accent-red">
+        <h4>When notifications fire</h4>
+        <p>Offer sent · offer declined · offer accepted · booking cancelled · new message · match completed · availability auto-removed · SOS broadcast</p>
+      </div>
+      <div class="tech-card accent-navy">
+        <h4>Where subscriptions live</h4>
+        <p>The <em>push_subscriptions</em> table holds each user's web and Firebase tokens. Registered on first app launch when permission is granted.</p>
+      </div>
+      <div class="tech-card accent-amber">
+        <h4>Emails too</h4>
+        <p>Signup confirmation, password reset, and invite emails run through Supabase Auth templates — not the in-app notification pipeline.</p>
+      </div>
+    </div>
+
+    <div class="callout mt-4">If a user says "I'm not getting notifications," ask which channel they expected. Web push needs explicit browser permission. Native push needs the mobile app installed. In-app needs them on the site. These are three separate things to troubleshoot.</div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>12</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 13 · WALLET & ESCROW MONEY FLOW                                 -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Three — Wallet &amp; Escrow</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">13</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Money flow</div>
+    <h1 class="section-title">Money flows left to right,<br>and never in a hurry.</h1>
+    <p class="section-body" style="max-width:175mm;">Every user has one wallet with two pots: <strong>balance</strong> (available to spend or withdraw) and <strong>escrow</strong> (held against a confirmed booking). Money moves between pots and between users, always via the platform, always with an immutable audit row.</p>
+
+    <div class="money-flow" style="margin-top:8mm;">
+      <div class="money-node">
+        <div class="mn-label">Step 1 · Top-up</div>
+        <div class="mn-title">Coach wallet</div>
+        <div class="mn-sub">Stripe Checkout. Coach adds balance. Logged as <em>top_up</em>.</div>
+      </div>
+      <div class="flow-arrow"><div class="arr">→</div><div class="arr-label">On referee accept</div></div>
+      <div class="money-node navy">
+        <div class="mn-label">Step 2 · Escrow</div>
+        <div class="mn-title">Held in escrow</div>
+        <div class="mn-sub">Match fee + travel. Locked until match completes or cancels.</div>
+      </div>
+      <div class="flow-arrow"><div class="arr">→</div><div class="arr-label">On match complete</div></div>
+      <div class="money-node red">
+        <div class="mn-label">Step 3 · Release</div>
+        <div class="mn-title">Referee wallet</div>
+        <div class="mn-sub">Balance increases. Withdraws to bank via Stripe Connect.</div>
+      </div>
+    </div>
+
+    <div class="benefits-grid cols-4 mt-6">
+      <div class="tech-card accent-green">
+        <h4>Match fee</h4>
+        <p>Coach's own number. Whatever they've agreed with the ref or what their county standard is.</p>
+      </div>
+      <div class="tech-card accent-amber">
+        <h4>Travel cost</h4>
+        <p>Distance in km × admin rate (default 28p/km). Added transparently to every offer.</p>
+      </div>
+      <div class="tech-card accent-red">
+        <h4>Escrow hold</h4>
+        <p>Happens the moment the ref accepts. Fails cleanly if the coach is short, with no partial state.</p>
+      </div>
+      <div class="tech-card accent-navy">
+        <h4>Disputes</h4>
+        <p>Either party can raise one before release. Admin resolves and decides how to split.</p>
+      </div>
+    </div>
+
+    <div class="navy-box" style="margin-top:5mm;">
+      <h3>The ledger is immutable.</h3>
+      <p>Every movement — top-up, escrow hold, escrow release, withdrawal, refund — is a row in <em>wallet_transactions</em> with a type and a direction (credit or debit). Nothing is ever edited or deleted. This is what makes reconciliation, auditing, and dispute resolution tractable.</p>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>13</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 14 · ADMIN'S VIEW                                               -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Three — The Admin View</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">14</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Admin</div>
+    <h1 class="section-title">The platform's safety net.</h1>
+
+    <div class="two-col-uneven mt-4" style="gap:8mm;">
+      <div>
+        <p class="section-body" style="margin-bottom:3mm;">Admin's core job is making sure the referees on the platform are real, the payments move cleanly, and the bad actors don't stay. Everything else — maps, reports, settings — is instrumentation.</p>
+
+        <h3 style="font-size:11pt;font-weight:700;color:var(--dark);margin-top:4mm;margin-bottom:2mm;">FA verification — the daily job</h3>
+        <ol class="check-list">
+          <li><strong>Queue opens</strong> at /app/admin/verification with referees awaiting check.</li>
+          <li><strong>Admin runs the external FA lookup</strong> using the referee's FA number and county.</li>
+          <li><strong>FA returns verified or rejected</strong>; admin clicks the matching button.</li>
+          <li><strong>Referee's profile badge updates</strong> instantly; they get an in-app + email notice.</li>
+        </ol>
+
+        <h3 style="font-size:11pt;font-weight:700;color:var(--dark);margin-top:5mm;margin-bottom:2mm;">Other admin controls</h3>
+        <ul class="bullet-list">
+          <li><strong style="color:var(--dark);">Dispute resolution.</strong> Open disputes queue shows contested bookings; admin reads both sides and resolves in favour of coach, referee, or a split.</li>
+          <li><strong style="color:var(--dark);">Account moderation.</strong> Ban, reinstate, or impersonate for live support. Impersonation is logged.</li>
+          <li><strong style="color:var(--dark);">Platform settings.</strong> Travel rate per km, notification defaults, rate limits — all tuneable from one page.</li>
+          <li><strong style="color:var(--dark);">Moderation map.</strong> All users plotted. Useful for spotting unusual patterns or impersonation attempts.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="admin-dash">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3mm;">
+            <div style="font-size:9pt;font-weight:800;color:var(--dark);">Admin dashboard</div>
+            <div style="font-size:6pt;color:var(--light);letter-spacing:0.1em;text-transform:uppercase;">Today</div>
+          </div>
+          <div class="admin-dash-grid">
+            <div class="admin-tile"><div class="at-n">1,284</div><div class="at-l">Total users</div></div>
+            <div class="admin-tile"><div class="at-n">612</div><div class="at-l">Referees</div></div>
+            <div class="admin-tile"><div class="at-n">667</div><div class="at-l">Coaches</div></div>
+            <div class="admin-tile"><div class="at-n">18</div><div class="at-l">Pending FA</div></div>
+          </div>
+          <div class="admin-dash-grid mt-2" style="margin-top:2mm;">
+            <div class="admin-tile"><div class="at-n">472</div><div class="at-l">Bookings · month</div></div>
+            <div class="admin-tile"><div class="at-n">9</div><div class="at-l">SOS this month</div></div>
+            <div class="admin-tile"><div class="at-n">3</div><div class="at-l">Open disputes</div></div>
+            <div class="admin-tile"><div class="at-n">97%</div><div class="at-l">Completion rate</div></div>
+          </div>
+          <div style="margin-top:3mm;padding:3mm;background:white;border:1px solid var(--border);border-radius:1.5mm;">
+            <div style="font-size:7pt;font-weight:700;color:var(--light);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:2mm;">Pending FA verification</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:1.5mm 0;border-bottom:1px solid var(--border);"><span style="font-size:7pt;font-weight:600;color:var(--dark);">James Taylor</span><span style="font-size:6pt;padding:0.5mm 2mm;background:#FEF3C7;color:#92400E;border-radius:0.5mm;font-weight:600;">Awaiting FA</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:1.5mm 0;border-bottom:1px solid var(--border);"><span style="font-size:7pt;font-weight:600;color:var(--dark);">Priya Ashton</span><span style="font-size:6pt;padding:0.5mm 2mm;background:#FEF3C7;color:#92400E;border-radius:0.5mm;font-weight:600;">Awaiting FA</span></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:1.5mm 0;"><span style="font-size:7pt;font-weight:600;color:var(--dark);">Tom Okafor</span><span style="font-size:6pt;padding:0.5mm 2mm;background:#FEF3C7;color:#92400E;border-radius:0.5mm;font-weight:600;">Awaiting FA</span></div>
+          </div>
+        </div>
+        <div class="callout" style="margin-top:4mm;">Admin reads private booking threads only when a dispute is raised, and only on the bookings explicitly flagged. Safeguarding-first.</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>14</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 15 · APP ROUTE MAP                                              -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Four — App Route Map</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">15</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Every screen, grouped</div>
+    <h1 class="section-title">The whole app, on one page.</h1>
+    <p class="section-body" style="max-width:175mm;">Every user-facing route in the app, sorted by who uses it. Public routes need no login. Auth routes handle signup and sign-in. Protected routes live under <code style="font-family:'JetBrains Mono',monospace;font-size:8pt;background:var(--cream);padding:0 1mm;border-radius:0.5mm;">/app/*</code> and are gated by role.</p>
+
+    <div class="route-map">
+      <div class="route-col coach">
+        <h4>Coach</h4>
+        <p>Posts fixtures, finds refs, pays them.</p>
+        <div class="route-grp">
+          <div class="rgrp-label">Home &amp; bookings</div>
+          <div class="route-item"><code>/app</code><span class="ri-desc">Dashboard</span></div>
+          <div class="route-item"><code>/app/bookings</code><span class="ri-desc">List view</span></div>
+          <div class="route-item"><code>/app/bookings/new</code><span class="ri-desc">Create fixture</span></div>
+          <div class="route-item"><code>/app/bookings/sos</code><span class="ri-desc">Emergency broadcast</span></div>
+          <div class="route-item"><code>/app/bookings/[id]</code><span class="ri-desc">Single booking</span></div>
+          <div class="route-item"><code>/app/bookings/[id]/edit</code><span class="ri-desc">Edit</span></div>
+          <div class="route-item"><code>/app/bookings/[id]/export</code><span class="ri-desc">PDF / iCal</span></div>
+        </div>
+        <div class="route-grp">
+          <div class="rgrp-label">Club &amp; pool</div>
+          <div class="route-item"><code>/app/club</code><span class="ri-desc">Club home</span></div>
+          <div class="route-item"><code>/app/club/pool</code><span class="ri-desc">Shared wallet</span></div>
+        </div>
+      </div>
+
+      <div class="route-col referee">
+        <h4>Referee</h4>
+        <p>Sets availability, accepts, officiates, gets paid.</p>
+        <div class="route-grp">
+          <div class="rgrp-label">Availability &amp; offers</div>
+          <div class="route-item"><code>/app/availability</code><span class="ri-desc">Master toggle + slots</span></div>
+          <div class="route-item"><code>/app/offers</code><span class="ri-desc">Inbox</span></div>
+          <div class="route-item"><code>/app/feed</code><span class="ri-desc">Nearby bookings</span></div>
+        </div>
+        <div class="route-grp">
+          <div class="rgrp-label">Assignments &amp; money</div>
+          <div class="route-item"><code>/app/bookings</code><span class="ri-desc">My assignments</span></div>
+          <div class="route-item"><code>/app/earnings</code><span class="ri-desc">Season earnings</span></div>
+          <div class="route-item"><code>/app/bookings/[id]/match</code><span class="ri-desc">Mark complete</span></div>
+        </div>
+        <div class="route-grp">
+          <div class="rgrp-label">Verification</div>
+          <div class="route-item"><code>/fa-verify</code><span class="ri-desc">FA verification flow</span></div>
+        </div>
+      </div>
+
+      <div class="route-col admin">
+        <h4>Admin</h4>
+        <p>Verifies, moderates, configures.</p>
+        <div class="route-grp">
+          <div class="rgrp-label">Verification &amp; moderation</div>
+          <div class="route-item"><code>/app/admin</code><span class="ri-desc">Admin home</span></div>
+          <div class="route-item"><code>/app/admin/verification</code><span class="ri-desc">FA queue</span></div>
+          <div class="route-item"><code>/app/admin/referees</code><span class="ri-desc">All referees</span></div>
+          <div class="route-item"><code>/app/admin/referees/[id]</code><span class="ri-desc">Single ref</span></div>
+          <div class="route-item"><code>/app/admin/coaches</code><span class="ri-desc">All coaches</span></div>
+        </div>
+        <div class="route-grp">
+          <div class="rgrp-label">Controls</div>
+          <div class="route-item"><code>/app/admin/settings</code><span class="ri-desc">Platform tuneables</span></div>
+          <div class="route-item"><code>/app/admin/map</code><span class="ri-desc">Moderation map</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="route-map mt-6">
+      <div class="route-col shared" style="grid-column:span 3;">
+        <h4>Shared by all signed-in users</h4>
+        <p>Every persona gets these routes; role controls what they see inside.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:3mm;">
+          <div>
+            <div class="rgrp-label">Messaging</div>
+            <div class="route-item"><code>/app/messages</code><span class="ri-desc">Thread list</span></div>
+            <div class="route-item"><code>/app/messages/[id]</code><span class="ri-desc">Single thread</span></div>
+          </div>
+          <div>
+            <div class="rgrp-label">Money</div>
+            <div class="route-item"><code>/app/wallet</code><span class="ri-desc">Balance</span></div>
+            <div class="route-item"><code>/app/wallet/top-up</code><span class="ri-desc">Stripe Checkout</span></div>
+            <div class="route-item"><code>/app/wallet/withdraw</code><span class="ri-desc">Payout</span></div>
+          </div>
+          <div>
+            <div class="rgrp-label">Profile &amp; map</div>
+            <div class="route-item"><code>/app/profile</code><span class="ri-desc">Edit me</span></div>
+            <div class="route-item"><code>/app/map</code><span class="ri-desc">Spatial view</span></div>
+            <div class="route-item"><code>/app/disputes</code><span class="ri-desc">Disputed bookings</span></div>
+          </div>
+          <div>
+            <div class="rgrp-label">Auth &amp; public</div>
+            <div class="route-item"><code>/auth/login</code><span class="ri-desc">Sign in</span></div>
+            <div class="route-item"><code>/auth/register</code><span class="ri-desc">Sign up</span></div>
+            <div class="route-item"><code>/</code><span class="ri-desc">Landing</span></div>
+            <div class="route-item"><code>/privacy /terms</code><span class="ri-desc">Legal</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>15</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 16 · DATABASE AT A GLANCE                                       -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Four — Database At A Glance</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">16</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">Reference · Tables</div>
+    <h1 class="section-title">Every table. One sentence each.</h1>
+    <p class="section-body" style="max-width:175mm;">When you hear a table name in a standup or on a ticket, you'll know what it is. Colour-coded by concern: people, bookings, messaging, money, operations.</p>
+
+    <div class="db-table-grid">
+      <div class="db-card users"><h5>profiles</h5><p>The core user account — name, role (coach/ref/admin), avatar, postcode, coordinates.</p></div>
+      <div class="db-card users"><h5>referee_profiles</h5><p>Extra data that only matters for referees — FA ID, level, DBS, travel radius, the master available toggle.</p></div>
+      <div class="db-card users"><h5>referee_availability</h5><p>Recurring weekly slots — which days and times a ref is generally free.</p></div>
+      <div class="db-card users"><h5>referee_date_availability</h5><p>One-off slots for specific dates. Overrides or supplements the weekly pattern.</p></div>
+      <div class="db-card bookings"><h5>bookings</h5><p>A fixture the coach needs officiated — date, time, location, age group, format, status.</p></div>
+      <div class="db-card bookings"><h5>booking_offers</h5><p>A priced proposal from coach to ref. Tracks whether it was accepted, declined, or withdrawn.</p></div>
+      <div class="db-card bookings"><h5>booking_assignments</h5><p>The confirmed pairing. One per booking. Created the moment a ref accepts.</p></div>
+      <div class="db-card messaging"><h5>threads</h5><p>The chat container. One thread per confirmed booking. Two participants.</p></div>
+      <div class="db-card messaging"><h5>thread_participants</h5><p>Who's in a thread, plus their last-read timestamp for unread counts.</p></div>
+      <div class="db-card messaging"><h5>messages</h5><p>Individual chat messages. Kind is either <em>user</em> (typed) or <em>system</em> (auto).</p></div>
+      <div class="db-card messaging"><h5>notifications</h5><p>The bell-icon feed. Rows per user with a type, title, link, read-at.</p></div>
+      <div class="db-card messaging"><h5>push_subscriptions</h5><p>Web push and Firebase tokens. Lets the server reach the device.</p></div>
+      <div class="db-card money"><h5>wallets</h5><p>Per-user balance and escrow pots, plus Stripe customer &amp; Connect IDs.</p></div>
+      <div class="db-card money"><h5>wallet_transactions</h5><p>Immutable ledger. Every movement with type, direction, amount, reference.</p></div>
+      <div class="db-card money"><h5>travel_expenses</h5><p>Per-booking travel breakdown — distance, rate, computed cost.</p></div>
+      <div class="db-card money"><h5>disputes</h5><p>Contested bookings awaiting admin resolution.</p></div>
+      <div class="db-card ops"><h5>fa_verification_requests</h5><p>The queue of referees waiting for FA confirmation.</p></div>
+      <div class="db-card ops"><h5>platform_settings</h5><p>Admin-tunable key/value pairs — e.g. travel cost per km.</p></div>
+      <div class="db-card ops"><h5>club_pools</h5><p>Shared club-level wallets for teams pooling their referee budget.</p></div>
+      <div class="db-card ops"><h5>club_pool_members</h5><p>Who can draw from a club pool and in what capacity.</p></div>
+      <div class="db-card ops"><h5>audit_log</h5><p>Immutable record of admin actions — verifications, bans, dispute resolutions.</p></div>
+    </div>
+
+    <div style="display:flex;gap:3mm;margin-top:6mm;font-size:6.5pt;color:var(--light);align-items:center;">
+      <span style="font-weight:700;letter-spacing:0.12em;text-transform:uppercase;">Colour key:</span>
+      <span style="display:inline-flex;align-items:center;gap:1.5mm;"><span style="width:3mm;height:3mm;background:var(--cyan);border-radius:0.5mm;"></span>People</span>
+      <span style="display:inline-flex;align-items:center;gap:1.5mm;"><span style="width:3mm;height:3mm;background:var(--red);border-radius:0.5mm;"></span>Bookings</span>
+      <span style="display:inline-flex;align-items:center;gap:1.5mm;"><span style="width:3mm;height:3mm;background:var(--purple);border-radius:0.5mm;"></span>Messaging</span>
+      <span style="display:inline-flex;align-items:center;gap:1.5mm;"><span style="width:3mm;height:3mm;background:var(--green);border-radius:0.5mm;"></span>Money</span>
+      <span style="display:inline-flex;align-items:center;gap:1.5mm;"><span style="width:3mm;height:3mm;background:var(--amber);border-radius:0.5mm;"></span>Operations</span>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>16</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 17 · THE NON-OBVIOUS CONNECTIONS                                -->
+<!-- =================================================================== -->
+<div class="page">
+  <div class="page-header">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);">Whistle Connect</div>
+    <span class="section-label">Part Four — The Non-Obvious Connections</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">17</div>
+  <div class="content" style="padding-top:4mm;">
+    <div class="section-kicker">The glue nobody talks about</div>
+    <h1 class="section-title">Seven things that will save<br>you half a day of debugging.</h1>
+
+    <div class="mt-6">
+      <div class="kv-row">
+        <div class="kv-k">Geocoding is the glue.</div>
+        <div class="kv-v">Postcodes are turned into lat/long on both bookings and profiles. Without coordinates on either side, the spatial search silently falls back to county-name exact match. That's case-sensitive and fragile. When matching feels broken, check coordinates first.</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">Threads are born from payment acceptance.</div>
+        <div class="kv-v">No thread exists until a referee accepts. So seeing a thread in your inbox is a strong positive signal: the booking <em>did</em> confirm. If the status dashboard disagrees, trust the threads.</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">Acceptance is one atomic action.</div>
+        <div class="kv-v">Money hold, assignment creation, status change, competing-offer withdrawal, thread creation, slot cleanup, and coach notification all happen inside one database transaction. It all commits or none of it does. You never see half-finished state.</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">Escrow is held on accept, not on offer.</div>
+        <div class="kv-v">A coach who sends five offers is not locking up 5× the cash. Only the accepted offer holds money. This is why acceptance can fail with <em>Insufficient funds</em> when the offer itself sent fine — the balance check is at the acceptance moment.</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">SOS uses a different push priority.</div>
+        <div class="kv-v">Regular notifications fire at "normal" urgency. SOS broadcasts use "high" so devices bypass Do Not Disturb and actually ring. Don't be surprised if a user reports "my app notifications are silent except SOS."</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">Auto-slot-cleanup is per-date only.</div>
+        <div class="kv-v">When a ref accepts, their conflicting date-specific slot for that match date is auto-deleted. Their weekly recurring pattern is not touched. A ref who sets weekly Saturdays 10–18 will keep showing as available for every other Saturday.</div>
+      </div>
+      <div class="kv-row">
+        <div class="kv-k">"Verified" ≠ "Findable".</div>
+        <div class="kv-v">Admin verification shows the badge to coaches, but it is <strong style="color:var(--red);">not</strong> a filter on search results. A ref can be verified and still invisible because their master availability toggle is off. Don't confuse the two.</div>
+      </div>
+    </div>
+
+    <div class="callout mt-6">When a support ticket comes in, walk through these seven in order. Nine times out of ten, the answer is on this page.</div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk · Internal</span>
+    <span>17</span>
+  </div>
+</div>
+
+<!-- =================================================================== -->
+<!-- PAGE 18 · TALKING POINTS (BACK)                                      -->
+<!-- =================================================================== -->
+<div class="page cover">
+  <div style="width:100%;padding:22mm 28mm;display:flex;flex-direction:column;justify-content:space-between;">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10mm;">
+        <svg style="height:11mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32">
+          <g>
+            <g><path fill="#fff" d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path fill="#fff" d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path fill="#fff" d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path fill="#fff" d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path fill="#fff" d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path fill="#fff" d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path fill="#fff" d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/></g>
+            <path fill="#fff" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/>
+          </g>
+        </svg>
+        <span style="font-size:7pt;color:rgba(255,255,255,0.4);letter-spacing:0.25em;">TALKING POINTS · CHEAT SHEET</span>
+      </div>
+
+      <h1 style="font-size:42pt;font-weight:900;color:white;line-height:1.04;letter-spacing:-0.035em;max-width:220mm;">One-liners that will<br>serve you in any room.</h1>
+      <p style="font-size:11pt;color:rgba(255,255,255,0.55);margin-top:4mm;max-width:220mm;line-height:1.55;">Memorise these. They're the shortest correct answer to the most common questions you'll be asked by a coach, a referee, a journalist, a county FA, or a curious uncle at Christmas.</p>
+
+      <div class="cheat-grid" style="margin-top:8mm;">
+        <div class="cheat-card">
+          <div class="cc-who">The coach flow</div>
+          <div class="cc-line">Create → search → offer → get accepted → chat → play → mark complete → pay out.</div>
+        </div>
+        <div class="cheat-card">
+          <div class="cc-who">The referee flow</div>
+          <div class="cc-line">Toggle on → set slots → accept offer → chat → play → get paid → withdraw.</div>
+        </div>
+        <div class="cheat-card">
+          <div class="cc-who">The money promise</div>
+          <div class="cc-line">Money never moves between strangers — it flows through a platform wallet with an escrow lock.</div>
+        </div>
+        <div class="cheat-card">
+          <div class="cc-who">The support cheat</div>
+          <div class="cc-line">Nine out of ten "my ref isn't showing up" tickets are the master availability toggle being off.</div>
+        </div>
+        <div class="cheat-card">
+          <div class="cc-who">The safeguarding line</div>
+          <div class="cc-line">Threads are auditable, DBS is enforced on youth matches, and admins see only disputed conversations.</div>
+        </div>
+        <div class="cheat-card">
+          <div class="cc-who">The efficiency line</div>
+          <div class="cc-line">A fixture that used to take ten WhatsApp messages now takes one search and one tap.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:12mm;">
+      <div>
+        <div style="font-size:7pt;color:rgba(255,255,255,0.3);letter-spacing:0.22em;text-transform:uppercase;">Questions?</div>
+        <div style="font-size:11pt;color:rgba(255,255,255,0.75);font-weight:500;margin-top:2mm;">Ask your team lead — or open the source of truth: the CLAUDE.md in the repo root.</div>
+        <div style="font-size:9pt;color:rgba(255,255,255,0.35);margin-top:6mm;">hello@whistleconnect.co.uk · whistleconnect.co.uk</div>
+      </div>
+      <div style="text-align:right;">
+        <span style="display:block;font-size:6pt;color:rgba(255,255,255,0.3);letter-spacing:0.22em;text-transform:uppercase;">Whistle Connect Ltd.</span>
+        <span style="display:block;font-size:6pt;color:rgba(255,255,255,0.3);letter-spacing:0.22em;text-transform:uppercase;margin-top:1mm;">Team Info Pack · v1.0 · Internal</span>
+      </div>
+    </div>
+  </div>
+  <div class="cover-accent"></div>
+</div>
+
+</body>
+</html>

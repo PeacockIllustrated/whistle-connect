@@ -1,0 +1,1855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Whistle Connect — The Visual Guide · v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#1b2537; --navy-2:#151e2e; --navy-3:#1e2d42; --ink:#0f1720;
+  --red:#cd1719; --red-deep:#a51214; --coral:#e8494b;
+  --amber:#F59E0B; --gold:#F4C430;
+  --green:#10B981; --teal:#14B8A6; --cyan:#22D3EE;
+  --purple:#8B5CF6; --indigo:#6366F1;
+  --paper:#F8FAFC; --paper-2:#F1F5F9; --cream:#FFFFFF;
+  --white:#fff; --dark:#0F172A; --mid:#475569; --light:#94A3B8; --line:#E2E8F0;
+}
+@page{size:297mm 210mm;margin:0}
+body{font-family:'Inter',sans-serif;display:flex;flex-direction:column;align-items:center;background:#c2bcb0;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page{width:297mm;height:210mm;position:relative;overflow:hidden;background:var(--paper);page-break-after:always;page-break-inside:avoid}
+.page.dark{background:var(--navy);color:var(--paper)}
+.page.ink{background:repeating-linear-gradient(30deg, transparent, transparent 24px, rgba(255,255,255,0.015) 24px, rgba(255,255,255,0.015) 25px), radial-gradient(ellipse at 65% 45%, rgba(30,45,66,0.6) 0%, transparent 50%), radial-gradient(ellipse at 20% 80%, rgba(21,30,46,0.5) 0%, transparent 45%), linear-gradient(155deg, #1e2d42 0%, #1b2537 35%, #151e2e 65%, #0f1720 100%);color:var(--paper)}
+@media screen{.page{margin-bottom:14px;box-shadow:0 4px 24px rgba(0,0,0,0.18)}}
+
+/* Type */
+.mono{font-family:'JetBrains Mono',monospace}
+.display{font-family:'Inter',sans-serif;font-weight:900;line-height:0.95;letter-spacing:-0.035em}
+.h-huge{font-size:96pt;line-height:0.88;font-weight:900;letter-spacing:-0.045em}
+.h-big{font-size:58pt;line-height:0.92;font-weight:900;letter-spacing:-0.035em}
+.h-mid{font-size:32pt;line-height:1.0;font-weight:800;letter-spacing:-0.02em}
+.h-sm{font-size:16pt;line-height:1.15;font-weight:800;letter-spacing:-0.01em}
+.lab{font-size:7pt;font-weight:700;letter-spacing:0.28em;text-transform:uppercase}
+.lab-sm{font-size:6pt;font-weight:700;letter-spacing:0.22em;text-transform:uppercase}
+.body{font-size:10pt;line-height:1.6;color:var(--mid)}
+.body.dark{color:rgba(248,250,252,0.7)}
+.micro{font-size:7.5pt;line-height:1.5;color:var(--mid)}
+.micro.dark{color:rgba(248,250,252,0.55)}
+
+/* Grid */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8mm}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6mm}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:5mm}
+
+/* Page chrome */
+.pg-top{position:absolute;top:10mm;left:14mm;right:14mm;display:flex;justify-content:space-between;align-items:center;z-index:5}
+.pg-bot{position:absolute;bottom:10mm;left:14mm;right:14mm;display:flex;justify-content:space-between;align-items:center;font-size:7pt;color:var(--light);z-index:5}
+.pg-bot.dark{color:rgba(248,250,252,0.45)}
+.pg-num{font-family:'JetBrains Mono',monospace;font-weight:700}
+.pg-name{font-size:8pt;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;color:var(--mid)}
+.pg-name.dark{color:rgba(248,250,252,0.55)}
+
+/* Ruler */
+.ruler{position:absolute;top:18mm;left:14mm;right:14mm;height:1px;background:var(--line);z-index:4}
+.ruler.dark{background:rgba(248,250,252,0.12)}
+.ruler-red{position:absolute;top:18mm;left:14mm;width:28mm;height:2px;background:var(--red);z-index:5}
+
+/* Stage (main content area) */
+.stage{position:absolute;top:28mm;bottom:20mm;left:14mm;right:14mm;overflow:hidden}
+
+/* Index number bullet */
+.xnum{display:inline-block;font-family:'JetBrains Mono',monospace;font-weight:700;font-size:9pt;color:var(--red);letter-spacing:0.1em}
+
+/* Diagram node */
+.node{border:1.5px solid var(--dark);background:var(--paper);padding:3mm 5mm;border-radius:1.5mm;font-size:9pt;font-weight:700;color:var(--dark);display:inline-flex;align-items:center;gap:2mm}
+.node.solid-navy{background:var(--navy);color:var(--paper);border-color:var(--navy)}
+.node.solid-red{background:var(--red);color:white;border-color:var(--red)}
+.node.solid-amber{background:var(--amber);color:var(--dark);border-color:var(--amber)}
+.node.solid-green{background:var(--green);color:white;border-color:var(--green)}
+.node.solid-purple{background:var(--purple);color:white;border-color:var(--purple)}
+.node.ghost{background:transparent;color:var(--mid);border-style:dashed}
+
+.pill-tag{display:inline-block;padding:1mm 3mm;border:1px solid currentColor;border-radius:10mm;font-size:7pt;font-weight:700;letter-spacing:0.1em;text-transform:uppercase}
+</style>
+</head>
+<body>
+
+<!-- PAGE 1 · COVER -->
+<div class="page ink" style="display:flex;padding:0">
+  <!-- subtle horizontal pitch-grid texture -->
+  <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg, transparent 0, transparent 38px, rgba(248,250,252,0.022) 38px, rgba(248,250,252,0.022) 39px);pointer-events:none;z-index:0"></div>
+
+  <!-- LEFT — wordmark, headline, tagline -->
+  <div style="width:54%;display:flex;flex-direction:column;justify-content:center;padding:22mm 10mm 22mm 28mm;position:relative;z-index:2">
+
+    <!-- big wordmark -->
+    <div>
+      <svg style="height:26mm;width:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32">
+        <g>
+          <g><path fill="#F8FAFC" d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path fill="#F8FAFC" d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path fill="#F8FAFC" d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path fill="#F8FAFC" d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path fill="#F8FAFC" d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path fill="#F8FAFC" d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path fill="#F8FAFC" d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path fill="#F8FAFC" d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path fill="#F8FAFC" d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path fill="#F8FAFC" d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path fill="#F8FAFC" d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path fill="#F8FAFC" d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path fill="#F8FAFC" d="M116.96,30.66s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path fill="#F8FAFC" d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g>
+          <path fill="#F8FAFC" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- separator rule -->
+    <div style="width:40mm;height:1.5px;background:rgba(248,250,252,0.15);margin-top:14mm"></div>
+
+    <!-- kicker -->
+    <div style="font-size:7pt;font-weight:700;letter-spacing:0.3em;color:rgba(248,250,252,0.4);margin-top:5mm">A FIELD GUIDE FOR THE WHOLE TEAM</div>
+
+    <!-- big display headline -->
+    <div class="display" style="font-size:74pt;color:var(--paper);letter-spacing:-0.04em;margin-top:5mm">Inside<br>the app.<span style="color:var(--red)">.</span></div>
+
+    <!-- taglines (stacked muted lines, matches FA brochure pattern) -->
+    <div style="margin-top:6mm">
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(248,250,252,0.55);line-height:1.8">Every flow. Every screen. Every table.</span>
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(248,250,252,0.55);line-height:1.8">Drawn, not described.</span>
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(248,250,252,0.55);line-height:1.8">So anyone on the team can talk about it fluently.</span>
+    </div>
+
+    <!-- tag pills -->
+    <div style="margin-top:10mm;display:flex;gap:2.5mm">
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(248,250,252,0.18);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:rgba(248,250,252,0.6)">PRODUCT</span>
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(248,250,252,0.18);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:rgba(248,250,252,0.6)">OPS</span>
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(248,250,252,0.18);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:rgba(248,250,252,0.6)">GO-TO-MARKET</span>
+      <span style="display:inline-block;padding:1.2mm 3.5mm;border:1px solid rgba(205,23,25,0.4);background:rgba(205,23,25,0.14);border-radius:1mm;font-size:6.5pt;font-weight:600;letter-spacing:0.15em;color:#f87171">INTERNAL</span>
+    </div>
+  </div>
+
+  <!-- RIGHT — phone mockup on top of ghost whistle SVG -->
+  <div style="width:46%;display:flex;align-items:center;justify-content:center;position:relative;z-index:1">
+    <!-- Ghost whistle -->
+    <div style="position:absolute;opacity:0.045;z-index:0">
+      <svg style="height:150mm;width:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36.96 43.37">
+        <path fill="#F8FAFC" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/>
+      </svg>
+    </div>
+    <!-- Soft red glow -->
+    <div style="position:absolute;width:70mm;height:70mm;border-radius:50%;background:radial-gradient(circle,rgba(205,23,25,0.22) 0%,rgba(205,23,25,0) 70%);z-index:0"></div>
+
+    <!-- Phone -->
+    <div style="position:relative;z-index:2;transform:rotate(-5deg);background:#1a1a1a;border-radius:7mm;padding:1.8mm;box-shadow:0 10mm 40mm rgba(0,0,0,0.45),0 4mm 15mm rgba(0,0,0,0.35)">
+      <div style="background:#000;border-radius:5.5mm;overflow:hidden;width:54mm;height:108mm">
+        <img src="screenshot_coach_home.png" style="width:100%;height:100%;object-fit:cover;object-position:top;display:block;border:none;border-radius:5.5mm">
+      </div>
+      <div style="width:8mm;height:0.9mm;background:#444;border-radius:1mm;margin:1.4mm auto 0"></div>
+    </div>
+  </div>
+
+  <!-- bottom-left meta strip -->
+  <div style="position:absolute;bottom:12mm;left:28mm;right:28mm;display:flex;justify-content:space-between;align-items:flex-end;z-index:3">
+    <div>
+      <div style="font-size:6.5pt;font-weight:700;letter-spacing:0.25em;color:rgba(248,250,252,0.3)">THE VISUAL GUIDE</div>
+      <div style="font-size:7pt;color:rgba(248,250,252,0.3);margin-top:1.5mm;letter-spacing:0.05em">Whistle Connect Ltd · Internal reference · whistleconnect.co.uk</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:6.5pt;font-weight:700;letter-spacing:0.25em;color:rgba(248,250,252,0.3)">EDITION</div>
+      <div style="font-family:'Inter',sans-serif;font-weight:900;font-size:28pt;line-height:1;color:var(--paper);margin-top:2mm;letter-spacing:-0.04em">02</div>
+    </div>
+  </div>
+
+  <!-- signature red accent stripe at bottom-left (matches FA brochure) -->
+  <div style="position:absolute;bottom:0;left:0;width:45%;height:3px;background:linear-gradient(90deg, rgba(205,23,25,0.6), rgba(205,23,25,0));z-index:4"></div>
+
+  <!-- top-right corner mark -->
+  <div style="position:absolute;top:10mm;right:14mm;z-index:3">
+    <span class="lab" style="color:rgba(248,250,252,0.4)">The Visual Guide · Edition 02</span>
+  </div>
+</div>
+
+<!-- PAGE 2 · CONTENTS · as a map -->
+<div class="page">
+  <div class="pg-top">
+    <span class="pg-name">The Visual Guide</span>
+    <span class="lab" style="color:var(--red)">— Contents</span>
+  </div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 02</span><span class="pg-num">02</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:260mm 1fr;gap:8mm;height:100%">
+      <div>
+        <div class="lab" style="color:var(--red);margin-bottom:3mm">Where to go</div>
+        <div class="display" style="font-size:54pt">A map of this book.</div>
+        <p class="body" style="margin-top:4mm;max-width:180mm">Seventeen pages, grouped into four legs of a single journey. Read left-to-right if it's your first time. Jump around once you know the shape. Each page answers one question with one picture.</p>
+
+        <svg viewBox="0 0 1200 340" style="width:100%;margin-top:10mm" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="dot" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="8" markerHeight="8"><circle cx="5" cy="5" r="4" fill="#cd1719"/></marker>
+          </defs>
+          <!-- winding path -->
+          <path d="M 40 170 C 200 60, 300 280, 460 170 S 720 60, 880 170 S 1140 280, 1160 170" stroke="#1b2537" stroke-width="1.5" fill="none" stroke-dasharray="2 4"/>
+          <!-- stops -->
+          <g font-family="Inter" font-size="10" font-weight="700" text-anchor="middle">
+            <g transform="translate(80,170)">
+              <circle r="20" fill="#cd1719"/><text y="4" fill="white">01</text>
+              <text y="60" fill="#1b2537">The shape</text><text y="75" font-weight="400" fill="#475569" font-size="8">03 · 04 · 05</text>
+            </g>
+            <g transform="translate(370,170)">
+              <circle r="20" fill="#1b2537"/><text y="4" fill="white">02</text>
+              <text y="60" fill="#1b2537">The workflows</text><text y="75" font-weight="400" fill="#475569" font-size="8">06 · 07 · 08 · 09</text>
+            </g>
+            <g transform="translate(700,170)">
+              <circle r="20" fill="#F59E0B"/><text y="4" fill="#1b2537">03</text>
+              <text y="60" fill="#1b2537">The connections</text><text y="75" font-weight="400" fill="#475569" font-size="8">10 · 11 · 12 · 13</text>
+            </g>
+            <g transform="translate(1080,170)">
+              <circle r="20" fill="#10B981"/><text y="4" fill="white">04</text>
+              <text y="60" fill="#1b2537">The reference</text><text y="75" font-weight="400" fill="#475569" font-size="8">14 · 15 · 16 · 17 · 18 · 19</text>
+            </g>
+          </g>
+        </svg>
+
+        <div class="grid-4" style="margin-top:16mm">
+          <div><div class="lab-sm" style="color:var(--red)">Leg 01 — The Shape</div>
+            <div style="margin-top:2mm"><span class="mono" style="color:var(--red);font-weight:700">03</span> &nbsp; What it is<br><span class="mono" style="color:var(--red);font-weight:700">04</span> &nbsp; The three personas<br><span class="mono" style="color:var(--red);font-weight:700">05</span> &nbsp; Two journeys, one platform</div></div>
+          <div><div class="lab-sm" style="color:var(--dark)">Leg 02 — Workflows</div>
+            <div style="margin-top:2mm"><span class="mono" style="color:var(--dark);font-weight:700">06</span> &nbsp; Booking state machine<br><span class="mono" style="color:var(--dark);font-weight:700">07</span> &nbsp; Offer state machine<br><span class="mono" style="color:var(--dark);font-weight:700">08</span> &nbsp; The matching funnel<br><span class="mono" style="color:var(--dark);font-weight:700">09</span> &nbsp; Visibility gauge</div></div>
+          <div><div class="lab-sm" style="color:var(--amber)">Leg 03 — Connections</div>
+            <div style="margin-top:2mm"><span class="mono" style="color:#b45309;font-weight:700">10</span> &nbsp; Messaging sequence<br><span class="mono" style="color:#b45309;font-weight:700">11</span> &nbsp; Notification fan-out<br><span class="mono" style="color:#b45309;font-weight:700">12</span> &nbsp; Money flow<br><span class="mono" style="color:#b45309;font-weight:700">13</span> &nbsp; Admin's control room</div></div>
+          <div><div class="lab-sm" style="color:var(--green)">Leg 04 — Reference</div>
+            <div style="margin-top:2mm"><span class="mono" style="color:var(--green);font-weight:700">14</span> &nbsp; Sitemap<br><span class="mono" style="color:var(--green);font-weight:700">15</span> &nbsp; Data schema<br><span class="mono" style="color:var(--green);font-weight:700">16</span> &nbsp; Hidden wiring<br><span class="mono" style="color:var(--green);font-weight:700">17</span> &nbsp; Still to do<br><span class="mono" style="color:var(--green);font-weight:700">18</span> &nbsp; Cost of reach<br><span class="mono" style="color:var(--green);font-weight:700">19</span> &nbsp; Glossary &amp; talking points</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 3 · WHAT IT IS — one-diagram overview -->
+<div class="page">
+  <div class="pg-top">
+    <span class="pg-name">01 · The Shape</span>
+    <span class="lab" style="color:var(--red)">— The whole app, one diagram</span>
+  </div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 03</span><span class="pg-num">03</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:100mm 1fr;gap:8mm;height:100%">
+      <div>
+        <div class="lab" style="color:var(--red);margin-bottom:3mm">The app in one breath</div>
+        <div class="display" style="font-size:42pt">Three people.<br>One platform.<br>A match gets reffed.</div>
+        <p class="body" style="margin-top:6mm">A coach posts a fixture. The platform finds nearby available referees. The coach offers one of them a price. They accept. Money is held. The match is played. Money is released. That's the spine.</p>
+        <div style="margin-top:6mm;padding:4mm;background:var(--navy);color:var(--paper);border-radius:2mm">
+          <div class="lab-sm" style="color:rgba(248,250,252,0.55)">The whole loop</div>
+          <div style="font-size:12pt;font-weight:700;margin-top:2mm;line-height:1.35">post → find → offer → accept → play → release</div>
+        </div>
+      </div>
+
+      <!-- the diagram -->
+      <svg viewBox="0 0 900 540" style="width:100%;height:100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1b2537"/></marker>
+          <marker id="ar-red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#cd1719"/></marker>
+        </defs>
+
+        <!-- Coach -->
+        <g transform="translate(60,80)">
+          <rect width="160" height="80" rx="6" fill="#1b2537"/>
+          <text x="80" y="32" text-anchor="middle" fill="white" font-family="Inter" font-size="10" font-weight="700" letter-spacing="3">COACH</text>
+          <text x="80" y="54" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter" font-size="8">has a fixture.</text>
+          <text x="80" y="68" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter" font-size="8">needs a referee.</text>
+        </g>
+
+        <!-- Referee -->
+        <g transform="translate(680,80)">
+          <rect width="160" height="80" rx="6" fill="#cd1719"/>
+          <text x="80" y="32" text-anchor="middle" fill="white" font-family="Inter" font-size="10" font-weight="700" letter-spacing="3">REFEREE</text>
+          <text x="80" y="54" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-family="Inter" font-size="8">is available.</text>
+          <text x="80" y="68" text-anchor="middle" fill="rgba(255,255,255,0.75)" font-family="Inter" font-size="8">wants a whistle.</text>
+        </g>
+
+        <!-- Platform ring -->
+        <g transform="translate(240,200)">
+          <rect width="420" height="140" rx="10" fill="#F59E0B" fill-opacity="0.08" stroke="#F59E0B" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="210" y="24" text-anchor="middle" fill="#b45309" font-family="Inter" font-size="8" font-weight="700" letter-spacing="3">THE PLATFORM</text>
+
+          <!-- Booking -->
+          <g transform="translate(30,44)">
+            <rect width="100" height="70" rx="5" fill="white" stroke="#1b2537" stroke-width="1.5"/>
+            <text x="50" y="26" text-anchor="middle" fill="#1b2537" font-family="Inter" font-size="9" font-weight="800">Booking</text>
+            <text x="50" y="42" text-anchor="middle" fill="#475569" font-family="Inter" font-size="7">date · place</text>
+            <text x="50" y="56" text-anchor="middle" fill="#475569" font-family="Inter" font-size="7">status</text>
+          </g>
+
+          <!-- Offer -->
+          <g transform="translate(160,44)">
+            <rect width="100" height="70" rx="5" fill="white" stroke="#1b2537" stroke-width="1.5"/>
+            <text x="50" y="26" text-anchor="middle" fill="#1b2537" font-family="Inter" font-size="9" font-weight="800">Offer</text>
+            <text x="50" y="42" text-anchor="middle" fill="#475569" font-family="Inter" font-size="7">match fee</text>
+            <text x="50" y="56" text-anchor="middle" fill="#475569" font-family="Inter" font-size="7">+ travel</text>
+          </g>
+
+          <!-- Assignment / Thread -->
+          <g transform="translate(290,44)">
+            <rect width="100" height="70" rx="5" fill="#10B981" stroke="#1b2537" stroke-width="1.5"/>
+            <text x="50" y="26" text-anchor="middle" fill="white" font-family="Inter" font-size="9" font-weight="800">Assignment</text>
+            <text x="50" y="42" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Inter" font-size="7">+ thread</text>
+            <text x="50" y="56" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Inter" font-size="7">+ escrow</text>
+          </g>
+
+          <!-- inner arrows -->
+          <line x1="130" y1="79" x2="160" y2="79" stroke="#1b2537" stroke-width="1.2" marker-end="url(#ar)"/>
+          <line x1="260" y1="79" x2="290" y2="79" stroke="#1b2537" stroke-width="1.2" marker-end="url(#ar)"/>
+        </g>
+
+        <!-- Coach -> Booking -->
+        <path d="M 140 160 C 140 200, 260 210, 285 244" stroke="#1b2537" stroke-width="1.5" fill="none" marker-end="url(#ar)"/>
+        <text x="160" y="210" fill="#1b2537" font-family="Inter" font-size="8" font-weight="600">posts</text>
+
+        <!-- Offer -> Referee -->
+        <path d="M 470 244 C 600 210, 680 200, 760 160" stroke="#cd1719" stroke-width="1.5" fill="none" marker-end="url(#ar-red)"/>
+        <text x="700" y="210" fill="#cd1719" font-family="Inter" font-size="8" font-weight="600">offered to</text>
+
+        <!-- Referee -> Assignment -->
+        <path d="M 760 160 C 720 260, 650 305, 620 314" stroke="#cd1719" stroke-width="1.5" fill="none" marker-end="url(#ar-red)"/>
+        <text x="720" y="260" fill="#cd1719" font-family="Inter" font-size="8" font-weight="600">accepts</text>
+
+        <!-- Match -->
+        <g transform="translate(150,400)">
+          <rect width="600" height="70" rx="6" fill="#1b2537"/>
+          <text x="300" y="22" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter" font-size="7" font-weight="700" letter-spacing="3">MATCH DAY</text>
+          <text x="300" y="44" text-anchor="middle" fill="white" font-family="Inter" font-size="11" font-weight="700">Kickoff happens · match marked complete</text>
+          <text x="300" y="60" text-anchor="middle" fill="rgba(255,255,255,0.55)" font-family="Inter" font-size="8">Escrow released → Referee's wallet</text>
+        </g>
+
+        <!-- ↓ -->
+        <path d="M 450 340 L 450 400" stroke="#1b2537" stroke-width="1.5" marker-end="url(#ar)"/>
+
+        <!-- tiny legend -->
+        <g transform="translate(60,510)" font-family="Inter" font-size="7" fill="#475569">
+          <circle cx="0" cy="0" r="3" fill="#1b2537"/><text x="8" y="3">Coach actions</text>
+          <g transform="translate(90,0)"><circle cx="0" cy="0" r="3" fill="#cd1719"/><text x="8" y="3">Referee actions</text></g>
+          <g transform="translate(200,0)"><rect x="-4" y="-4" width="8" height="8" fill="#F59E0B" fill-opacity="0.2" stroke="#F59E0B"/><text x="8" y="3">Platform owned</text></g>
+          <g transform="translate(320,0)"><rect x="-4" y="-4" width="8" height="8" fill="#10B981"/><text x="8" y="3">Commit point</text></g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 4 · PERSONAS · as overlapping circles -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">01 · The Shape</span><span class="lab" style="color:var(--red)">— The three personas</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 04</span><span class="pg-num">04</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10mm;height:100%">
+      <div>
+        <div class="lab" style="color:var(--red)">Who uses it</div>
+        <div class="display" style="font-size:36pt;margin-top:2mm">Three roles.<br>Different screens.<br>Some overlap.</div>
+        <p class="body" style="margin-top:4mm;font-size:9pt">Every user is one of these three — set at signup. The role decides which pages they can open and which buttons they can press. Where the circles overlap, the feature is shared: messages, a wallet, a profile, a map. Where they don't, it's exclusive.</p>
+
+        <div style="margin-top:5mm;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3mm">
+          <div><div class="lab-sm" style="color:var(--navy)">01 COACH</div><div style="font-size:8.5pt;font-weight:700;margin-top:1mm;color:var(--dark);line-height:1.35">Organises fixtures, pays referees.</div><div class="micro" style="margin-top:1mm;font-size:7pt">Create bookings. Send offers. Trigger SOS.</div></div>
+          <div><div class="lab-sm" style="color:var(--red)">02 REFEREE</div><div style="font-size:8.5pt;font-weight:700;margin-top:1mm;color:var(--dark);line-height:1.35">Officiates matches, gets paid.</div><div class="micro" style="margin-top:1mm;font-size:7pt">Set availability. Accept offers. Withdraw.</div></div>
+          <div><div class="lab-sm" style="color:var(--amber)">03 ADMIN</div><div style="font-size:8.5pt;font-weight:700;margin-top:1mm;color:var(--dark);line-height:1.35">Keeps the platform honest.</div><div class="micro" style="margin-top:1mm;font-size:7pt">Verify FA. Resolve disputes. Tune.</div></div>
+        </div>
+
+        <div style="margin-top:5mm;padding:3.5mm 4.5mm;background:white;border-left:3px solid var(--red);border-radius:0 2mm 2mm 0">
+          <div class="lab-sm" style="color:var(--red)">Rule of thumb</div>
+          <div style="font-size:9pt;color:var(--dark);margin-top:1mm;line-height:1.45">When a user can't do what they expect, check <span class="mono" style="background:var(--paper-2);padding:0 1mm">profiles.role</span> first. Role mismatches are the #1 cause of "it's broken" that isn't.</div>
+        </div>
+      </div>
+
+      <!-- Venn diagram -->
+      <svg viewBox="0 0 520 540" style="width:100%;height:100%" xmlns="http://www.w3.org/2000/svg">
+        <!-- Coach circle -->
+        <circle cx="190" cy="200" r="160" fill="#1b2537" fill-opacity="0.85"/>
+        <!-- Referee circle -->
+        <circle cx="330" cy="200" r="160" fill="#cd1719" fill-opacity="0.85"/>
+        <!-- Admin circle -->
+        <circle cx="260" cy="340" r="160" fill="#F59E0B" fill-opacity="0.85"/>
+
+        <!-- labels -->
+        <g font-family="Inter" font-size="11" font-weight="800" fill="white" text-anchor="middle">
+          <text x="110" y="130">Coach</text>
+          <text x="110" y="148" font-size="7" font-weight="500" fill="rgba(255,255,255,0.7)" letter-spacing="2">BOOK · SEARCH · PAY</text>
+          <text x="410" y="130">Referee</text>
+          <text x="410" y="148" font-size="7" font-weight="500" fill="rgba(255,255,255,0.7)" letter-spacing="2">AVAIL · ACCEPT · EARN</text>
+          <text x="260" y="470" fill="#1b2537">Admin</text>
+          <text x="260" y="488" font-size="7" font-weight="500" fill="rgba(10,22,40,0.7)" letter-spacing="2">VERIFY · RESOLVE · TUNE</text>
+        </g>
+
+        <!-- intersections -->
+        <g font-family="Inter" font-size="7" font-weight="700" fill="white" text-anchor="middle">
+          <text x="260" y="170">bookings read</text>
+          <text x="260" y="182">messages</text>
+        </g>
+        <g font-family="Inter" font-size="7" font-weight="700" fill="white" text-anchor="middle">
+          <text x="200" y="290">dispute side</text>
+          <text x="200" y="302">(coach view)</text>
+        </g>
+        <g font-family="Inter" font-size="7" font-weight="700" fill="white" text-anchor="middle">
+          <text x="320" y="290">dispute side</text>
+          <text x="320" y="302">(ref view)</text>
+        </g>
+        <!-- true centre (all three) -->
+        <g font-family="Inter" font-size="7.5" font-weight="800" fill="white" text-anchor="middle">
+          <text x="260" y="248">profile · wallet</text>
+          <text x="260" y="260">/app/map · settings</text>
+        </g>
+
+        <!-- outer halo -->
+        <circle cx="260" cy="270" r="235" fill="none" stroke="#1b2537" stroke-opacity="0.08" stroke-dasharray="2 3"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 5 · PARALLEL JOURNEYS -->
+<div class="page dark">
+  <div class="pg-top"><span class="pg-name dark">01 · The Shape</span><span class="lab" style="color:rgba(248,250,252,0.4)">— Two journeys, one moment</span></div>
+  <div class="ruler dark"></div><div class="ruler-red"></div>
+  <div class="pg-bot dark"><span class="mono">WC · V2 · 05</span><span class="pg-num">05</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:rgba(248,250,252,0.4)">Side by side</div>
+    <div class="display" style="font-size:34pt;color:var(--paper);margin-top:2mm">Two people meet at <span style="color:var(--red)">accept</span>.</div>
+    <p class="body dark" style="margin-top:2mm;max-width:220mm;font-size:9pt">The coach's journey and the referee's journey run on parallel rails. They cross once — at the moment the ref taps accept. Everything before is parallel, everything after is shared.</p>
+
+    <svg viewBox="0 0 1200 380" style="width:100%;height:85mm;margin-top:3mm" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#F8FAFC"/></marker>
+      </defs>
+
+      <!-- Coach rail -->
+      <g>
+        <text x="10" y="40" font-family="Inter" font-size="8" font-weight="700" fill="rgba(248,250,252,0.45)" letter-spacing="3">COACH</text>
+        <line x1="10" y1="90" x2="1180" y2="90" stroke="rgba(248,250,252,0.15)" stroke-width="1" stroke-dasharray="2 3"/>
+        <!-- stops -->
+        <g font-family="Inter" font-size="9" font-weight="700" text-anchor="middle" fill="white">
+          <g transform="translate(80,90)"><circle r="16" fill="#1b2537" stroke="white" stroke-width="1.5"/><text y="4" fill="white" font-size="9">1</text><text y="-28" fill="rgba(248,250,252,0.85)">Post fixture</text></g>
+          <g transform="translate(240,90)"><circle r="16" fill="#1b2537" stroke="white" stroke-width="1.5"/><text y="4" fill="white">2</text><text y="-28" fill="rgba(248,250,252,0.85)">Search refs</text></g>
+          <g transform="translate(400,90)"><circle r="16" fill="#1b2537" stroke="white" stroke-width="1.5"/><text y="4" fill="white">3</text><text y="-28" fill="rgba(248,250,252,0.85)">Send offers</text></g>
+          <g transform="translate(600,90)"><circle r="22" fill="#cd1719" stroke="white" stroke-width="2"/><text y="4" fill="white" font-size="10">✓</text><text y="-36" fill="#e8494b" font-weight="800">ACCEPT</text></g>
+          <g transform="translate(800,90)"><circle r="16" fill="#1b2537" stroke="white" stroke-width="1.5"/><text y="4" fill="white">4</text><text y="-28" fill="rgba(248,250,252,0.85)">Chat · match day</text></g>
+          <g transform="translate(1000,90)"><circle r="16" fill="#1b2537" stroke="white" stroke-width="1.5"/><text y="4" fill="white">5</text><text y="-28" fill="rgba(248,250,252,0.85)">Mark complete</text></g>
+          <g transform="translate(1140,90)"><circle r="16" fill="#10B981" stroke="white" stroke-width="1.5"/><text y="4" fill="white">£</text><text y="-28" fill="rgba(248,250,252,0.85)">Payout</text></g>
+        </g>
+      </g>
+
+      <!-- Vertical meeting column -->
+      <g>
+        <line x1="600" y1="90" x2="600" y2="290" stroke="#cd1719" stroke-width="2"/>
+        <text x="612" y="190" font-family="Inter" font-size="7" font-weight="700" fill="#e8494b" letter-spacing="2">THE SINGLE</text>
+        <text x="612" y="202" font-family="Inter" font-size="7" font-weight="700" fill="#e8494b" letter-spacing="2">ATOMIC MOMENT</text>
+        <text x="612" y="220" font-family="Inter" font-size="6.5" fill="rgba(248,250,252,0.55)">Escrow held</text>
+        <text x="612" y="232" font-family="Inter" font-size="6.5" fill="rgba(248,250,252,0.55)">Assignment created</text>
+        <text x="612" y="244" font-family="Inter" font-size="6.5" fill="rgba(248,250,252,0.55)">Thread opened</text>
+        <text x="612" y="256" font-family="Inter" font-size="6.5" fill="rgba(248,250,252,0.55)">Competing offers withdrawn</text>
+        <text x="612" y="268" font-family="Inter" font-size="6.5" fill="rgba(248,250,252,0.55)">Slot auto-cleaned</text>
+      </g>
+
+      <!-- Referee rail -->
+      <g>
+        <text x="10" y="330" font-family="Inter" font-size="8" font-weight="700" fill="rgba(248,250,252,0.45)" letter-spacing="3">REFEREE</text>
+        <line x1="10" y1="290" x2="1180" y2="290" stroke="rgba(248,250,252,0.15)" stroke-width="1" stroke-dasharray="2 3"/>
+        <g font-family="Inter" font-size="9" font-weight="700" text-anchor="middle" fill="white">
+          <g transform="translate(80,290)"><circle r="16" fill="#cd1719" stroke="white" stroke-width="1.5"/><text y="4" fill="white">1</text><text y="38" fill="rgba(248,250,252,0.85)">Register &amp; FA</text></g>
+          <g transform="translate(240,290)"><circle r="16" fill="#cd1719" stroke="white" stroke-width="1.5"/><text y="4" fill="white">2</text><text y="38" fill="rgba(248,250,252,0.85)">Set availability</text></g>
+          <g transform="translate(400,290)"><circle r="16" fill="#cd1719" stroke="white" stroke-width="1.5"/><text y="4" fill="white">3</text><text y="38" fill="rgba(248,250,252,0.85)">Review offer</text></g>
+          <g transform="translate(600,290)"><circle r="22" fill="#cd1719" stroke="white" stroke-width="2"/><text y="4" fill="white" font-size="10">✓</text><text y="46" fill="#e8494b" font-weight="800">ACCEPT</text></g>
+          <g transform="translate(800,290)"><circle r="16" fill="#cd1719" stroke="white" stroke-width="1.5"/><text y="4" fill="white">4</text><text y="38" fill="rgba(248,250,252,0.85)">Officiate</text></g>
+          <g transform="translate(1000,290)"><circle r="16" fill="#cd1719" stroke="white" stroke-width="1.5"/><text y="4" fill="white">5</text><text y="38" fill="rgba(248,250,252,0.85)">Earn</text></g>
+          <g transform="translate(1140,290)"><circle r="16" fill="#10B981" stroke="white" stroke-width="1.5"/><text y="4" fill="white">£</text><text y="38" fill="rgba(248,250,252,0.85)">Withdraw</text></g>
+        </g>
+      </g>
+
+      <!-- connecting line across all stops on each rail -->
+      <line x1="80" y1="90" x2="1140" y2="90" stroke="rgba(248,250,252,0.25)" stroke-width="1"/>
+      <line x1="80" y1="290" x2="1140" y2="290" stroke="rgba(248,250,252,0.25)" stroke-width="1"/>
+    </svg>
+
+    <div class="grid-3" style="margin-top:5mm">
+      <div><div class="lab-sm" style="color:#e8494b">Before accept</div><div class="body dark" style="margin-top:1.5mm;font-size:8pt;line-height:1.45">Independent. Coach is hunting, ref is waiting. No money moved. No commitment.</div></div>
+      <div><div class="lab-sm" style="color:#e8494b">At accept</div><div class="body dark" style="margin-top:1.5mm;font-size:8pt;line-height:1.45">Everything happens at once, atomically. Half-states are impossible.</div></div>
+      <div><div class="lab-sm" style="color:#e8494b">After accept</div><div class="body dark" style="margin-top:1.5mm;font-size:8pt;line-height:1.45">Shared. Both parties have a thread, a commitment, and a kickoff to get to.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 6 · BOOKING STATE MACHINE -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">02 · Workflows</span><span class="lab" style="color:var(--red)">— The booking state machine</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 06</span><span class="pg-num">06</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:110mm 1fr;gap:8mm;height:100%">
+      <div>
+        <div class="lab" style="color:var(--red)">A booking's life</div>
+        <div class="display" style="font-size:44pt;margin-top:2mm">Five states.<br>One cancel<br>branch.</div>
+        <p class="body" style="margin-top:5mm">A booking is a single row in the database that moves through five states in order. Each arrow is a specific action taken by a specific person. Knowing the state tells you exactly who's waiting on whom.</p>
+
+        <div style="margin-top:6mm">
+          <div class="lab-sm" style="color:var(--dark)">Read the arrows</div>
+          <div class="grid-2" style="margin-top:2mm;gap:3mm">
+            <div style="font-size:8pt"><span class="mono" style="color:var(--navy);font-weight:700">→</span> solid = forward<br><span class="mono" style="color:var(--red);font-weight:700">↓</span> red = terminal<br><span class="mono" style="color:var(--mid);font-weight:700">- -</span> dashed = cancel</div>
+            <div style="font-size:8pt"><span class="mono" style="color:var(--green);font-weight:700">£</span> money moves<br><span class="mono" style="color:var(--purple);font-weight:700">💬</span> thread opens<br><span class="mono" style="color:var(--amber);font-weight:700">⚡</span> notifications</div>
+          </div>
+        </div>
+      </div>
+
+      <svg viewBox="0 0 700 540" style="width:100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1b2537"/></marker>
+          <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94A3B8"/></marker>
+          <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#cd1719"/></marker>
+        </defs>
+
+        <!-- states (circles) -->
+        <g>
+          <g transform="translate(100,80)">
+            <circle r="50" fill="white" stroke="#1b2537" stroke-width="2"/>
+            <text y="-2" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700" fill="#1b2537">draft</text>
+            <text y="14" text-anchor="middle" font-family="Inter" font-size="7" fill="#475569">not posted yet</text>
+          </g>
+          <g transform="translate(340,80)">
+            <circle r="54" fill="#F59E0B" stroke="#F59E0B" stroke-width="2"/>
+            <text y="-2" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="700" fill="white">pending</text>
+            <text y="16" text-anchor="middle" font-family="Inter" font-size="7" fill="rgba(255,255,255,0.9)">looking for ref</text>
+          </g>
+          <g transform="translate(580,80)">
+            <circle r="54" fill="#8B5CF6" stroke="#8B5CF6" stroke-width="2"/>
+            <text y="-2" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="700" fill="white">offered</text>
+            <text y="16" text-anchor="middle" font-family="Inter" font-size="7" fill="rgba(255,255,255,0.9)">waiting on ref</text>
+          </g>
+          <g transform="translate(580,300)">
+            <circle r="58" fill="#10B981" stroke="#10B981" stroke-width="2"/>
+            <text y="-4" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="700" fill="white">confirmed</text>
+            <text y="12" text-anchor="middle" font-family="Inter" font-size="7" fill="rgba(255,255,255,0.9)">ref has accepted</text>
+            <text y="24" text-anchor="middle" font-family="Inter" font-size="6.5" fill="rgba(255,255,255,0.8)">£ held · thread open</text>
+          </g>
+          <g transform="translate(340,300)">
+            <circle r="58" fill="#1b2537" stroke="#1b2537" stroke-width="2"/>
+            <text y="-4" text-anchor="middle" font-family="JetBrains Mono" font-size="12" font-weight="700" fill="white">completed</text>
+            <text y="12" text-anchor="middle" font-family="Inter" font-size="7" fill="rgba(255,255,255,0.9)">match played</text>
+            <text y="24" text-anchor="middle" font-family="Inter" font-size="6.5" fill="rgba(255,255,255,0.8)">£ released</text>
+          </g>
+          <g transform="translate(100,300)">
+            <circle r="52" fill="white" stroke="#cd1719" stroke-width="2" stroke-dasharray="4 3"/>
+            <text y="-2" text-anchor="middle" font-family="JetBrains Mono" font-size="11" font-weight="700" fill="#cd1719">cancelled</text>
+            <text y="14" text-anchor="middle" font-family="Inter" font-size="7" fill="#cd1719">pulled out</text>
+          </g>
+        </g>
+
+        <!-- arrows forward -->
+        <g font-family="Inter" font-size="7.5" font-weight="700" fill="#1b2537" text-anchor="middle">
+          <line x1="155" y1="80" x2="280" y2="80" stroke="#1b2537" stroke-width="1.5" marker-end="url(#a1)"/><text x="217" y="72">coach publishes</text>
+          <line x1="400" y1="80" x2="520" y2="80" stroke="#1b2537" stroke-width="1.5" marker-end="url(#a1)"/><text x="460" y="72">first offer sent</text>
+          <line x1="580" y1="140" x2="580" y2="240" stroke="#1b2537" stroke-width="1.5" marker-end="url(#a1)"/><text x="590" y="192" text-anchor="start" fill="#10B981">£ ref accepts</text>
+          <line x1="520" y1="300" x2="400" y2="300" stroke="#1b2537" stroke-width="1.5" marker-end="url(#a1)"/><text x="460" y="292">match complete</text>
+        </g>
+
+        <!-- cancel arrows (dashed) -->
+        <g font-family="Inter" font-size="7" fill="#cd1719" text-anchor="middle">
+          <line x1="340" y1="140" x2="148" y2="255" stroke="#cd1719" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#a3)"/>
+          <line x1="580" y1="140" x2="148" y2="262" stroke="#cd1719" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#a3)"/>
+          <line x1="525" y1="338" x2="152" y2="320" stroke="#cd1719" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#a3)"/>
+          <text x="300" y="228">any state can cancel</text>
+        </g>
+
+        <!-- legend blocks -->
+        <g transform="translate(40,440)">
+          <rect width="620" height="64" rx="4" fill="#1b2537"/>
+          <text x="14" y="20" font-family="Inter" font-size="7" font-weight="700" letter-spacing="2" fill="rgba(248,250,252,0.6)">SIDE EFFECTS</text>
+          <g font-family="Inter" font-size="8" fill="rgba(248,250,252,0.9)">
+            <text x="14" y="40">pending → offered · notify ref</text>
+            <text x="14" y="54">offered → confirmed · hold escrow · create assignment · open thread · withdraw siblings · clean slot · notify coach</text>
+            <text x="340" y="40">confirmed → completed · release escrow · notify both</text>
+            <text x="340" y="54">any → cancelled · refund escrow · notify the other party</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 7 · OFFER STATE MACHINE -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">02 · Workflows</span><span class="lab" style="color:var(--red)">— An offer's life</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 07</span><span class="pg-num">07</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:var(--red)">An offer's life</div>
+    <div class="display" style="font-size:34pt;margin-top:2mm">Many offers out. One winner. The rest close on their own.</div>
+    <p class="body" style="margin-top:2mm;max-width:230mm;font-size:9pt">A coach can send the same booking out to multiple refs at once. The first ref to accept wins. Every other offer for that booking gets quietly marked <span class="mono" style="color:#94A3B8;font-weight:600">withdrawn</span> — nobody has to say no. It's a race, but a polite one.</p>
+
+    <svg viewBox="0 0 1200 360" style="width:100%;height:80mm;margin-top:3mm" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="oa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1b2537"/></marker>
+        <marker id="og" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#10B981"/></marker>
+        <marker id="ox" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#cd1719"/></marker>
+      </defs>
+
+      <!-- states -->
+      <g font-family="Inter" font-weight="800" text-anchor="middle">
+        <g transform="translate(100,180)">
+          <rect x="-60" y="-28" width="120" height="56" rx="28" fill="white" stroke="#94A3B8" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <text y="-2" font-family="JetBrains Mono" font-size="11" fill="#475569">draft</text>
+          <text y="14" font-family="Inter" font-size="7" font-weight="500" fill="#94A3B8">composing</text>
+        </g>
+
+        <g transform="translate(360,180)">
+          <rect x="-60" y="-28" width="120" height="56" rx="28" fill="#F59E0B"/>
+          <text y="-2" font-family="JetBrains Mono" font-size="11" fill="white">sent</text>
+          <text y="14" font-family="Inter" font-size="7" font-weight="500" fill="rgba(255,255,255,0.85)">in ref's inbox</text>
+        </g>
+
+        <g transform="translate(620,100)">
+          <rect x="-70" y="-28" width="140" height="56" rx="28" fill="#8B5CF6"/>
+          <text y="-2" font-family="JetBrains Mono" font-size="10" fill="white">accepted_priced</text>
+          <text y="14" font-family="Inter" font-size="7" font-weight="500" fill="rgba(255,255,255,0.85)">transient · inside txn</text>
+        </g>
+
+        <g transform="translate(900,100)">
+          <rect x="-65" y="-32" width="130" height="64" rx="32" fill="#10B981"/>
+          <text y="-4" font-family="JetBrains Mono" font-size="11" fill="white">accepted</text>
+          <text y="14" font-family="Inter" font-size="7" font-weight="500" fill="rgba(255,255,255,0.85)">this ref won</text>
+        </g>
+
+        <g transform="translate(620,260)">
+          <rect x="-65" y="-28" width="130" height="56" rx="28" fill="#cd1719"/>
+          <text y="-2" font-family="JetBrains Mono" font-size="11" fill="white">declined</text>
+          <text y="14" font-family="Inter" font-size="7" font-weight="500" fill="rgba(255,255,255,0.85)">ref said no</text>
+        </g>
+
+        <g transform="translate(900,260)">
+          <rect x="-65" y="-28" width="130" height="56" rx="28" fill="#1b2537"/>
+          <text y="-2" font-family="JetBrains Mono" font-size="11" fill="white">withdrawn</text>
+          <text y="14" font-family="Inter" font-size="7" font-weight="500" fill="rgba(255,255,255,0.85)">someone else won</text>
+        </g>
+      </g>
+
+      <!-- transitions -->
+      <g font-family="Inter" font-size="8" font-weight="600" fill="#1b2537" text-anchor="middle">
+        <line x1="163" y1="180" x2="294" y2="180" stroke="#1b2537" stroke-width="1.5" marker-end="url(#oa)"/><text x="228" y="173">coach sends</text>
+
+        <path d="M 420 168 C 500 150, 540 130, 550 110" stroke="#10B981" stroke-width="1.8" fill="none" marker-end="url(#og)"/>
+        <text x="490" y="128" fill="#10B981" font-weight="700">ref taps accept</text>
+
+        <line x1="690" y1="100" x2="835" y2="100" stroke="#10B981" stroke-width="1.8" marker-end="url(#og)"/>
+        <text x="762" y="92" fill="#10B981" font-weight="700">commit · atomic</text>
+
+        <path d="M 420 192 C 500 220, 540 240, 550 258" stroke="#cd1719" stroke-width="1.5" fill="none" marker-end="url(#ox)"/>
+        <text x="470" y="255" fill="#cd1719">ref declines</text>
+
+        <!-- withdraw arc: from sent -> withdrawn -->
+        <path d="M 360 208 C 400 340, 760 340, 838 288" stroke="#94A3B8" stroke-width="1.3" fill="none" stroke-dasharray="4 3"/>
+        <text x="600" y="338" fill="#64748B" font-style="italic">another offer won</text>
+
+        <!-- cascade note -->
+        <text x="900" y="190" text-anchor="middle" fill="#10B981" font-weight="700">↓ triggers ↓</text>
+        <text x="900" y="200" text-anchor="middle" fill="#475569" font-size="7">competing offers auto-withdraw</text>
+      </g>
+    </svg>
+
+    <div class="grid-3" style="margin-top:4mm">
+      <div style="padding:3mm 4mm;background:white;border-left:3px solid var(--purple);border-radius:0 2mm 2mm 0">
+        <div class="lab-sm" style="color:var(--purple)">accepted_priced</div>
+        <div class="micro" style="margin-top:1mm;font-size:7pt;line-height:1.45">A transient state only ever seen inside a database transaction. If you see it at rest, alert engineering.</div>
+      </div>
+      <div style="padding:3mm 4mm;background:white;border-left:3px solid var(--green);border-radius:0 2mm 2mm 0">
+        <div class="lab-sm" style="color:var(--green)">accepted</div>
+        <div class="micro" style="margin-top:1mm;font-size:7pt;line-height:1.45">Terminal success. Booking flips to <span class="mono">confirmed</span>, escrow holds, thread opens.</div>
+      </div>
+      <div style="padding:3mm 4mm;background:white;border-left:3px solid #94A3B8;border-radius:0 2mm 2mm 0">
+        <div class="lab-sm" style="color:#64748B">withdrawn</div>
+        <div class="micro" style="margin-top:1mm;font-size:7pt;line-height:1.45">Silent, polite closure. Ref doesn't act. App marks it gone with a "went to another ref" note.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 8 · THE MATCHING FUNNEL -->
+<div class="page dark">
+  <div class="pg-top"><span class="pg-name dark">02 · Workflows</span><span class="lab" style="color:rgba(248,250,252,0.4)">— The matching funnel</span></div>
+  <div class="ruler dark"></div><div class="ruler-red"></div>
+  <div class="pg-bot dark"><span class="mono">WC · V2 · 08</span><span class="pg-num">08</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:130mm 1fr;gap:10mm;height:100%">
+      <div>
+        <div class="lab" style="color:rgba(248,250,252,0.4)">Why a ref appears (or doesn't)</div>
+        <div class="display" style="font-size:46pt;color:var(--paper);margin-top:2mm">Seven filters.<br>All seven must<br>say <span style="color:var(--red)">yes</span>.</div>
+        <p class="body dark" style="margin-top:5mm">Every referee is pushed through these filters, in this order. Miss even one and they drop out silently. This is the page to keep open when a ticket comes in.</p>
+
+        <div style="margin-top:8mm;padding:4mm 5mm;background:rgba(205,23,25,0.14);border-left:3px solid var(--red);border-radius:0 2mm 2mm 0">
+          <div class="lab-sm" style="color:var(--coral)">⚠ The classic trap</div>
+          <div style="font-size:9pt;color:var(--paper);margin-top:2mm;line-height:1.5">Admin verification is <strong>not</strong> a filter. A FA-verified ref can still be invisible because their master availability toggle is off.</div>
+        </div>
+
+        <div style="margin-top:6mm">
+          <div class="lab-sm" style="color:var(--paper)">Starting pool</div>
+          <div style="font-family:'Inter',sans-serif;font-size:44pt;font-weight:800;color:var(--paper);line-height:1">~30,000</div>
+          <div class="micro dark">registered referees across the UK</div>
+        </div>
+        <div style="margin-top:3mm">
+          <div class="lab-sm" style="color:#e8494b">After all seven filters</div>
+          <div style="font-family:'Inter',sans-serif;font-size:44pt;font-weight:800;color:var(--red);line-height:1">3 – 12</div>
+          <div class="micro dark">shown to the coach for a typical match</div>
+        </div>
+      </div>
+
+      <!-- The funnel -->
+      <svg viewBox="0 0 520 560" style="width:100%;height:100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="fnl" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0" stop-color="#cd1719" stop-opacity="0.3"/>
+            <stop offset="1" stop-color="#cd1719" stop-opacity="0.95"/>
+          </linearGradient>
+        </defs>
+        <!-- funnel body -->
+        <polygon points="40,30 480,30 380,520 140,520" fill="url(#fnl)" stroke="#cd1719" stroke-opacity="0.4" stroke-width="1"/>
+
+        <!-- rings (dashes) marking each filter -->
+        <g font-family="Inter" fill="#F8FAFC" text-anchor="middle">
+          <line x1="48" y1="90" x2="472" y2="90" stroke="rgba(248,250,252,0.25)" stroke-dasharray="3 3"/>
+          <text x="260" y="76" font-size="9" font-weight="800">1 · has a referee_profiles row</text>
+          <text x="260" y="104" font-size="6.5" fill="rgba(248,250,252,0.5)" font-style="italic">without a row, invisible — no exceptions</text>
+
+          <line x1="56" y1="160" x2="464" y2="160" stroke="rgba(248,250,252,0.25)" stroke-dasharray="3 3"/>
+          <text x="260" y="146" font-size="9" font-weight="800">2 · master availability toggle is ON</text>
+          <text x="260" y="174" font-size="6.5" fill="rgba(248,250,252,0.5)" font-style="italic">the big green/red switch at /app/availability</text>
+
+          <line x1="70" y1="230" x2="450" y2="230" stroke="rgba(248,250,252,0.25)" stroke-dasharray="3 3"/>
+          <text x="260" y="216" font-size="9" font-weight="800">3 · availability window covers kickoff</text>
+          <text x="260" y="244" font-size="6.5" fill="rgba(248,250,252,0.5)" font-style="italic">date slot OR weekly slot, start ≤ kickoff ≤ end</text>
+
+          <line x1="88" y1="300" x2="432" y2="300" stroke="rgba(248,250,252,0.25)" stroke-dasharray="3 3"/>
+          <text x="260" y="286" font-size="9" font-weight="800">4 · location fits (spatial or county)</text>
+          <text x="260" y="314" font-size="6.5" fill="rgba(248,250,252,0.5)" font-style="italic">within 50km, or same county as the booking</text>
+
+          <line x1="108" y1="370" x2="412" y2="370" stroke="rgba(248,250,252,0.25)" stroke-dasharray="3 3"/>
+          <text x="260" y="356" font-size="9" font-weight="800">5 · no clashing confirmed booking</text>
+          <text x="260" y="384" font-size="6.5" fill="rgba(248,250,252,0.5)" font-style="italic">not double-booked that day</text>
+
+          <line x1="128" y1="440" x2="392" y2="440" stroke="rgba(248,250,252,0.25)" stroke-dasharray="3 3"/>
+          <text x="260" y="426" font-size="9" font-weight="800">6 · DBS rule (U16 matches only)</text>
+          <text x="260" y="454" font-size="6.5" fill="rgba(248,250,252,0.5)" font-style="italic">if young players: dbs_status = verified</text>
+
+          <line x1="148" y1="510" x2="372" y2="510" stroke="rgba(248,250,252,0.25)" stroke-dasharray="3 3"/>
+          <text x="260" y="496" font-size="9" font-weight="800">7 · central-venue opt-in (if applicable)</text>
+          <text x="260" y="524" font-size="6.5" fill="rgba(248,250,252,0.5)" font-style="italic">only checked when booking_type = central</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 9 · VISIBILITY GAUGE -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">02 · Workflows</span><span class="lab" style="color:var(--red)">— Am I findable? (referee)</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 09</span><span class="pg-num">09</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:1fr 130mm;gap:10mm;height:100%">
+      <div>
+        <div class="lab" style="color:var(--red)">A self-check dashboard</div>
+        <div class="display" style="font-size:46pt;margin-top:2mm">The referee's<br>findability gauge.</div>
+        <p class="body" style="margin-top:5mm">If a ref says "nobody's booking me", sit down with them and walk this gauge top to bottom. By the time you hit three or four, you'll have found the culprit. The colour of each dial tells you, at a glance, whether that check passes.</p>
+
+        <div style="margin-top:10mm;padding:5mm;background:white;border-radius:2mm;border:1px solid var(--line)">
+          <div class="lab-sm" style="color:var(--red)">Most common miss</div>
+          <div style="font-size:12pt;font-weight:700;color:var(--dark);margin-top:2mm;line-height:1.3">The master toggle was off.</div>
+          <div class="micro" style="margin-top:2mm">By a wide margin, historically the number-one cause of "where are all the bookings?" It's now green by default, turns red when off, and asks for confirmation before going off.</div>
+        </div>
+      </div>
+
+      <!-- The gauge panel -->
+      <div>
+        <svg viewBox="0 0 520 560" style="width:100%" xmlns="http://www.w3.org/2000/svg">
+          <!-- panel -->
+          <rect width="520" height="560" rx="8" fill="#1b2537"/>
+          <text x="20" y="32" font-family="Inter" font-size="7" font-weight="700" letter-spacing="3" fill="rgba(248,250,252,0.5)">FINDABILITY · LIVE GAUGE</text>
+          <text x="20" y="60" font-family="Inter" font-size="28" font-weight="800" fill="#F8FAFC">8 / 8</text>
+          <text x="100" y="60" font-family="Inter" font-size="9" fill="rgba(248,250,252,0.5)">checks passing</text>
+
+          <!-- big progress ring -->
+          <g transform="translate(420,60)">
+            <circle r="40" fill="none" stroke="rgba(248,250,252,0.1)" stroke-width="6"/>
+            <circle r="40" fill="none" stroke="#10B981" stroke-width="6" stroke-dasharray="251 251" transform="rotate(-90)"/>
+            <text text-anchor="middle" y="4" font-family="Inter" font-size="18" font-weight="800" fill="#10B981">100%</text>
+          </g>
+
+          <!-- checklist as dials -->
+          <g transform="translate(20,130)" font-family="Inter">
+            <!-- rows -->
+            <g transform="translate(0,0)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">Master toggle ON</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">green switch at top of /app/availability</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+            <g transform="translate(0,50)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">County set</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">dropdown — powers the fallback search</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+            <g transform="translate(0,100)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">Home postcode saved</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">geocoded to lat / long automatically</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+            <g transform="translate(0,150)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">Travel radius set</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">default 15 km · max 50 km</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+            <g transform="translate(0,200)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">Slots cover when you can officiate</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">weekly recurring or specific dates</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+            <g transform="translate(0,250)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">Central-venue opt-in</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">optional · unlocks multi-game bookings</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+            <g transform="translate(0,300)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">FA verified (badge visible)</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">approved by admin · shows to coaches</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+            <g transform="translate(0,350)"><rect width="480" height="42" rx="4" fill="rgba(16,185,129,0.1)"/><circle cx="20" cy="21" r="9" fill="#10B981"/><path d="M 15 21 L 18 24 L 25 17" stroke="white" stroke-width="1.8" fill="none" stroke-linecap="round"/><text x="44" y="18" font-size="9" font-weight="800" fill="#F8FAFC">DBS verified (for youth)</text><text x="44" y="32" font-size="7" fill="rgba(248,250,252,0.5)">required for U16 and under</text><text x="470" y="25" text-anchor="end" font-size="7" font-weight="700" fill="#10B981">PASS</text></g>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 10 · MESSAGING SEQUENCE DIAGRAM -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">03 · Connections</span><span class="lab" style="color:var(--red)">— Messaging, as a sequence</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 10</span><span class="pg-num">10</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:var(--red)">How they talk</div>
+    <div class="display" style="font-size:46pt;margin-top:2mm">A thread is born<br>the moment the ref<br>taps <span style="color:var(--red)">accept</span>.</div>
+    <p class="body" style="margin-top:5mm;max-width:180mm">There's no general chat. Every thread is tied to one confirmed booking with exactly two participants. Time flows downward. Coloured bars show who speaks when. The system bar posts a single message at birth and then watches.</p>
+
+    <svg viewBox="0 0 1200 450" style="width:100%;margin-top:6mm" xmlns="http://www.w3.org/2000/svg">
+      <!-- actors -->
+      <g font-family="Inter" font-size="9" font-weight="800" text-anchor="middle">
+        <rect x="80" y="10" width="140" height="38" rx="4" fill="#1b2537"/><text x="150" y="34" fill="white" letter-spacing="3">COACH</text>
+        <rect x="530" y="10" width="140" height="38" rx="4" fill="#F59E0B"/><text x="600" y="34" fill="white" letter-spacing="3">SYSTEM</text>
+        <rect x="980" y="10" width="140" height="38" rx="4" fill="#cd1719"/><text x="1050" y="34" fill="white" letter-spacing="3">REFEREE</text>
+      </g>
+      <!-- lifelines -->
+      <line x1="150" y1="48" x2="150" y2="440" stroke="#1b2537" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="600" y1="48" x2="600" y2="440" stroke="#F59E0B" stroke-width="1" stroke-dasharray="3 4"/>
+      <line x1="1050" y1="48" x2="1050" y2="440" stroke="#cd1719" stroke-width="1" stroke-dasharray="3 4"/>
+
+      <!-- time axis -->
+      <text x="30" y="75" font-family="Inter" font-size="7" font-weight="700" fill="#475569" letter-spacing="2">T+0</text>
+      <text x="30" y="160" font-family="Inter" font-size="7" font-weight="700" fill="#475569" letter-spacing="2">T+1m</text>
+      <text x="30" y="260" font-family="Inter" font-size="7" font-weight="700" fill="#475569" letter-spacing="2">T+1d</text>
+      <text x="30" y="360" font-family="Inter" font-size="7" font-weight="700" fill="#475569" letter-spacing="2">T+match</text>
+
+      <defs><marker id="mar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/></marker></defs>
+
+      <!-- Interactions -->
+      <!-- ref accepts offer (precursor) -->
+      <g font-family="Inter" font-size="8" fill="#475569">
+        <line x1="1050" y1="70" x2="603" y2="70" stroke="#cd1719" stroke-width="1.3" marker-end="url(#mar)"/>
+        <text x="820" y="64" text-anchor="middle" fill="#cd1719" font-weight="700">accept offer</text>
+        <rect x="540" y="82" width="120" height="40" rx="3" fill="#F59E0B" fill-opacity="0.18" stroke="#F59E0B"/>
+        <text x="600" y="100" text-anchor="middle" font-size="7" fill="#b45309" font-weight="700">spawn thread</text>
+        <text x="600" y="114" text-anchor="middle" font-size="6.5" fill="#78350F">add participants</text>
+      </g>
+
+      <!-- system message out -->
+      <g font-family="Inter" font-size="7.5">
+        <line x1="597" y1="150" x2="154" y2="150" stroke="#F59E0B" stroke-width="1.3" marker-end="url(#mar)"/>
+        <line x1="603" y1="150" x2="1046" y2="150" stroke="#F59E0B" stroke-width="1.3" marker-end="url(#mar)"/>
+        <text x="380" y="144" text-anchor="middle" fill="#b45309" font-weight="700" font-style="italic">"Booking confirmed. Use chat to finalise."</text>
+        <text x="820" y="144" text-anchor="middle" fill="#b45309" font-weight="700" font-style="italic">"Booking confirmed. Use chat to finalise."</text>
+      </g>
+
+      <!-- coach message -->
+      <g font-family="Inter" font-size="8">
+        <line x1="154" y1="210" x2="1046" y2="210" stroke="#1b2537" stroke-width="1.3" marker-end="url(#mar)"/>
+        <text x="600" y="202" text-anchor="middle" fill="#1b2537" font-weight="700">"Changing rooms are down the side of the clubhouse."</text>
+      </g>
+
+      <!-- ref replies -->
+      <g font-family="Inter" font-size="8">
+        <line x1="1046" y1="250" x2="154" y2="250" stroke="#cd1719" stroke-width="1.3" marker-end="url(#mar)"/>
+        <text x="600" y="242" text-anchor="middle" fill="#cd1719" font-weight="700">"I'll be there 30 mins before. Is it 9v9 U12?"</text>
+      </g>
+
+      <!-- coach confirms -->
+      <g font-family="Inter" font-size="8">
+        <line x1="154" y1="290" x2="1046" y2="290" stroke="#1b2537" stroke-width="1.3" marker-end="url(#mar)"/>
+        <text x="600" y="282" text-anchor="middle" fill="#1b2537" font-weight="700">"Yes, 9v9 U12, two halves of 30."</text>
+      </g>
+
+      <!-- match complete -->
+      <g font-family="Inter" font-size="8">
+        <rect x="540" y="350" width="120" height="40" rx="3" fill="#10B981" fill-opacity="0.18" stroke="#10B981"/>
+        <text x="600" y="368" text-anchor="middle" font-size="7" fill="#065F46" font-weight="700">match complete</text>
+        <text x="600" y="382" text-anchor="middle" font-size="6.5" fill="#065F46">escrow released</text>
+        <line x1="597" y1="410" x2="154" y2="410" stroke="#10B981" stroke-width="1.3" marker-end="url(#mar)"/>
+        <line x1="603" y1="410" x2="1046" y2="410" stroke="#10B981" stroke-width="1.3" marker-end="url(#mar)"/>
+        <text x="380" y="404" text-anchor="middle" fill="#065F46" font-weight="700" font-style="italic">"Match completed. £ released."</text>
+        <text x="820" y="404" text-anchor="middle" fill="#065F46" font-weight="700" font-style="italic">"Match completed. £ paid in."</text>
+      </g>
+    </svg>
+
+    <div class="grid-4" style="margin-top:6mm">
+      <div><div class="lab-sm" style="color:var(--dark)">Participants</div><div class="micro" style="margin-top:1mm">Exactly two — coach + ref. Admin doesn't read unless a dispute is opened.</div></div>
+      <div><div class="lab-sm" style="color:var(--dark)">System messages</div><div class="micro" style="margin-top:1mm">Auto-posted on birth and on state changes. Distinct styling prevents confusion.</div></div>
+      <div><div class="lab-sm" style="color:var(--dark)">Unread tracking</div><div class="micro" style="margin-top:1mm">Per-participant last-read timestamp drives the bell badge count.</div></div>
+      <div><div class="lab-sm" style="color:var(--dark)">Longevity</div><div class="micro" style="margin-top:1mm">Threads outlive cancellations. Kept for FA audit compliance.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 11 · NOTIFICATION FAN-OUT (radial) -->
+<div class="page dark">
+  <div class="pg-top"><span class="pg-name dark">03 · Connections</span><span class="lab" style="color:rgba(248,250,252,0.4)">— Notification fan-out</span></div>
+  <div class="ruler dark"></div><div class="ruler-red"></div>
+  <div class="pg-bot dark"><span class="mono">WC · V2 · 11</span><span class="pg-num">11</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:140mm 1fr;gap:10mm;height:100%">
+      <div>
+        <div class="lab" style="color:rgba(248,250,252,0.4)">One event, many channels</div>
+        <div class="display" style="font-size:44pt;color:var(--paper);margin-top:2mm">A single event<br>reaches a user<br>however they'll listen.</div>
+        <p class="body dark" style="margin-top:5mm">Every meaningful action — an offer sent, an accept, a new message — fires one server event. That event fans out to whichever channels the user has enabled. They experience one nudge, not four.</p>
+
+        <div style="margin-top:10mm">
+          <div class="lab-sm" style="color:rgba(248,250,252,0.4)">When a user says "I'm not getting notifications…"</div>
+          <div style="font-size:9pt;color:var(--paper);margin-top:2mm;line-height:1.55">…first ask <strong style="color:#e8494b">which channel</strong> they expected. Web push needs browser permission. Native push needs the mobile app installed. In-app needs them on the site. These are three separate troubleshoots.</div>
+        </div>
+
+        <div class="grid-2" style="margin-top:8mm;gap:3mm">
+          <div><div class="lab-sm" style="color:#e8494b">Triggers fire on</div><div class="micro dark" style="margin-top:1mm">offer sent · accepted · declined · cancelled · new message · match complete · SOS broadcast</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">Subscriptions stored in</div><div class="micro dark" style="margin-top:1mm">push_subscriptions · VAPID for web · Firebase tokens for native</div></div>
+        </div>
+      </div>
+
+      <!-- Radial fan-out -->
+      <svg viewBox="0 0 500 540" style="width:100%" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="pulse" cx="50%" cy="50%"><stop offset="0%" stop-color="#cd1719" stop-opacity="0.6"/><stop offset="100%" stop-color="#cd1719" stop-opacity="0"/></radialGradient>
+        </defs>
+        <!-- pulse glow -->
+        <circle cx="250" cy="270" r="220" fill="url(#pulse)" opacity="0.5"/>
+        <!-- outer orbit -->
+        <circle cx="250" cy="270" r="180" fill="none" stroke="rgba(248,250,252,0.15)" stroke-dasharray="2 4"/>
+
+        <!-- centre event -->
+        <circle cx="250" cy="270" r="54" fill="#cd1719"/>
+        <text x="250" y="264" text-anchor="middle" font-family="Inter" font-size="7" font-weight="700" letter-spacing="2" fill="white">EVENT</text>
+        <text x="250" y="280" text-anchor="middle" font-family="Inter" font-size="14" font-weight="800" fill="white">fires once</text>
+
+        <!-- rays -->
+        <g stroke="#cd1719" stroke-width="1.5">
+          <line x1="204" y1="240" x2="80" y2="130"/>
+          <line x1="296" y1="240" x2="420" y2="130"/>
+          <line x1="204" y1="300" x2="80" y2="410"/>
+          <line x1="296" y1="300" x2="420" y2="410"/>
+        </g>
+
+        <!-- channels -->
+        <g font-family="Inter" text-anchor="middle">
+          <g transform="translate(80,130)">
+            <circle r="38" fill="#F8FAFC" stroke="#F8FAFC"/>
+            <text y="-6" font-size="7" font-weight="700" letter-spacing="1.5" fill="#1b2537">IN-APP</text>
+            <text y="8" font-size="6" fill="#475569">bell icon</text>
+            <text y="18" font-size="6" fill="#475569">notifications table</text>
+          </g>
+          <g transform="translate(420,130)">
+            <circle r="38" fill="#F8FAFC"/>
+            <text y="-6" font-size="7" font-weight="700" letter-spacing="1.5" fill="#1b2537">WEB PUSH</text>
+            <text y="8" font-size="6" fill="#475569">browser</text>
+            <text y="18" font-size="6" fill="#475569">VAPID-signed</text>
+          </g>
+          <g transform="translate(80,410)">
+            <circle r="38" fill="#F8FAFC"/>
+            <text y="-6" font-size="7" font-weight="700" letter-spacing="1.5" fill="#1b2537">NATIVE</text>
+            <text y="8" font-size="6" fill="#475569">iOS / Android</text>
+            <text y="18" font-size="6" fill="#475569">Firebase FCM</text>
+          </g>
+          <g transform="translate(420,410)">
+            <circle r="42" fill="#F59E0B"/>
+            <text y="-6" font-size="7" font-weight="700" letter-spacing="1.5" fill="white">SOS MODE</text>
+            <text y="8" font-size="6" fill="rgba(255,255,255,0.85)">high urgency</text>
+            <text y="18" font-size="6" fill="rgba(255,255,255,0.85)">bypasses DND</text>
+          </g>
+        </g>
+
+        <!-- email note -->
+        <g transform="translate(250,510)" font-family="Inter" text-anchor="middle">
+          <rect x="-110" y="-14" width="220" height="28" rx="14" fill="none" stroke="rgba(248,250,252,0.3)" stroke-dasharray="3 3"/>
+          <text y="4" font-size="8" font-weight="600" fill="rgba(248,250,252,0.75)">plus email (Supabase Auth) for signup &amp; reset</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 12 · MONEY FLOW (pots diagram) -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">03 · Connections</span><span class="lab" style="color:var(--red)">— The money flow</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 12</span><span class="pg-num">12</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:var(--red)">How money moves</div>
+    <div class="display" style="font-size:34pt;margin-top:2mm">Three pots. One direction. One ledger.</div>
+    <p class="body" style="margin-top:2mm;max-width:230mm;font-size:9pt">Every user's wallet is two pots: <strong>balance</strong> (spendable) and <strong>escrow</strong> (locked). Money moves left to right — coach wallet, through a shared escrow while the match is live, out to the referee's wallet on completion. Every movement writes an immutable row to the ledger.</p>
+
+    <svg viewBox="0 0 1200 410" style="width:100%;height:95mm;margin-top:3mm" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="pa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="10" markerHeight="10" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#10B981"/></marker>
+        <pattern id="stripes" width="8" height="8" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="8" stroke="#F59E0B" stroke-width="4" opacity="0.5"/></pattern>
+      </defs>
+
+      <!-- Coach pot -->
+      <g transform="translate(40,40)">
+        <text x="130" y="-8" font-family="Inter" font-size="7" font-weight="700" letter-spacing="2.5" text-anchor="middle" fill="#475569">COACH WALLET</text>
+        <!-- jar -->
+        <path d="M 20 40 L 240 40 L 240 240 Q 240 260, 220 260 L 40 260 Q 20 260, 20 240 Z" fill="white" stroke="#1b2537" stroke-width="2"/>
+        <!-- neck -->
+        <rect x="70" y="20" width="120" height="24" fill="white" stroke="#1b2537" stroke-width="2"/>
+        <rect x="70" y="24" width="120" height="6" fill="#1b2537"/>
+        <!-- fill -->
+        <rect x="22" y="100" width="216" height="158" fill="#10B981" fill-opacity="0.75"/>
+        <text x="130" y="190" text-anchor="middle" font-family="Inter" font-size="32" font-weight="900" fill="white">£140</text>
+        <text x="130" y="210" text-anchor="middle" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.85)">balance</text>
+      </g>
+
+      <!-- arrow 1 -->
+      <g transform="translate(320,180)">
+        <line x1="0" y1="0" x2="110" y2="0" stroke="#10B981" stroke-width="2" marker-end="url(#pa)"/>
+        <text x="55" y="-10" text-anchor="middle" font-family="Inter" font-size="8" font-weight="700" fill="#1b2537">on ref accept</text>
+        <text x="55" y="14" text-anchor="middle" font-family="Inter" font-size="7" fill="#475569">£40 + £12 travel</text>
+      </g>
+
+      <!-- Escrow pot -->
+      <g transform="translate(480,40)">
+        <text x="130" y="-8" font-family="Inter" font-size="7" font-weight="700" letter-spacing="2.5" text-anchor="middle" fill="#b45309">ESCROW (LOCKED)</text>
+        <!-- jar -->
+        <path d="M 20 40 L 240 40 L 240 240 Q 240 260, 220 260 L 40 260 Q 20 260, 20 240 Z" fill="white" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="70" y="20" width="120" height="24" fill="white" stroke="#F59E0B" stroke-width="2"/>
+        <!-- padlock on neck -->
+        <rect x="116" y="8" width="28" height="16" rx="3" fill="none" stroke="#F59E0B" stroke-width="2"/>
+        <rect x="110" y="16" width="40" height="18" rx="3" fill="#F59E0B"/>
+        <circle cx="130" cy="26" r="2.5" fill="white"/>
+        <!-- stripe fill -->
+        <rect x="22" y="140" width="216" height="118" fill="url(#stripes)"/>
+        <rect x="22" y="140" width="216" height="118" fill="#F59E0B" fill-opacity="0.15"/>
+        <text x="130" y="200" text-anchor="middle" font-family="Inter" font-size="32" font-weight="900" fill="#b45309">£52</text>
+        <text x="130" y="220" text-anchor="middle" font-family="Inter" font-size="8" fill="#b45309">held against booking</text>
+      </g>
+
+      <!-- arrow 2 -->
+      <g transform="translate(760,180)">
+        <line x1="0" y1="0" x2="110" y2="0" stroke="#10B981" stroke-width="2" marker-end="url(#pa)"/>
+        <text x="55" y="-10" text-anchor="middle" font-family="Inter" font-size="8" font-weight="700" fill="#1b2537">match complete</text>
+        <text x="55" y="14" text-anchor="middle" font-family="Inter" font-size="7" fill="#475569">release to ref</text>
+      </g>
+
+      <!-- Referee pot -->
+      <g transform="translate(920,40)">
+        <text x="130" y="-8" font-family="Inter" font-size="7" font-weight="700" letter-spacing="2.5" text-anchor="middle" fill="#cd1719">REFEREE WALLET</text>
+        <path d="M 20 40 L 240 40 L 240 240 Q 240 260, 220 260 L 40 260 Q 20 260, 20 240 Z" fill="white" stroke="#cd1719" stroke-width="2"/>
+        <rect x="70" y="20" width="120" height="24" fill="white" stroke="#cd1719" stroke-width="2"/>
+        <rect x="70" y="24" width="120" height="6" fill="#cd1719"/>
+        <rect x="22" y="160" width="216" height="98" fill="#cd1719" fill-opacity="0.75"/>
+        <text x="130" y="210" text-anchor="middle" font-family="Inter" font-size="32" font-weight="900" fill="white">£52</text>
+        <text x="130" y="230" text-anchor="middle" font-family="Inter" font-size="8" fill="rgba(255,255,255,0.85)">earned · withdrawable</text>
+      </g>
+
+      <!-- ledger bar -->
+      <g transform="translate(40,330)">
+        <rect width="1120" height="60" rx="4" fill="#1b2537"/>
+        <text x="20" y="22" font-family="Inter" font-size="7" font-weight="700" letter-spacing="2" fill="rgba(248,250,252,0.6)">IMMUTABLE LEDGER · wallet_transactions</text>
+        <g font-family="JetBrains Mono" font-size="7.5" fill="#F8FAFC">
+          <text x="20" y="46">top_up   +£140   coach</text>
+          <text x="220" y="46">escrow_hold   -£52   coach</text>
+          <text x="450" y="46">escrow_hold   +£52   escrow</text>
+          <text x="680" y="46">escrow_release   -£52   escrow</text>
+          <text x="920" y="46">escrow_release   +£52   ref</text>
+        </g>
+      </g>
+    </svg>
+
+    <div class="grid-4" style="margin-top:3mm;gap:4mm">
+      <div><div class="lab-sm" style="color:var(--dark)">Match fee</div><div class="micro" style="margin-top:1mm;font-size:7pt;line-height:1.4">Coach's proposed number. Usually county standard.</div></div>
+      <div><div class="lab-sm" style="color:var(--amber)">Travel</div><div class="micro" style="margin-top:1mm;font-size:7pt;line-height:1.4">Distance × admin rate (default 28p/km). Transparent on every offer.</div></div>
+      <div><div class="lab-sm" style="color:var(--red)">Dispute window</div><div class="micro" style="margin-top:1mm;font-size:7pt;line-height:1.4">Either party can raise before release; admin resolves the split.</div></div>
+      <div><div class="lab-sm" style="color:var(--green)">Payout</div><div class="micro" style="margin-top:1mm;font-size:7pt;line-height:1.4">Ref withdraws via Stripe Connect to their bank.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 13 · ADMIN CONTROL ROOM -->
+<div class="page dark">
+  <div class="pg-top"><span class="pg-name dark">03 · Connections</span><span class="lab" style="color:rgba(248,250,252,0.4)">— Admin's control room</span></div>
+  <div class="ruler dark"></div><div class="ruler-red"></div>
+  <div class="pg-bot dark"><span class="mono">WC · V2 · 13</span><span class="pg-num">13</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:rgba(248,250,252,0.4)">The platform's safety net</div>
+    <div class="display" style="font-size:32pt;color:var(--paper);margin-top:2mm">Verify. Resolve. Tune.</div>
+    <p class="body dark" style="margin-top:2mm;max-width:230mm;font-size:9pt">Admin's job is keeping the referees real, the payments clean, and the bad actors out. Queues on the left, map in the middle, dials on the right.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1.2fr 1fr;gap:4mm;margin-top:4mm">
+      <!-- Queues (left) -->
+      <div>
+        <div class="lab-sm" style="color:rgba(248,250,252,0.5);margin-bottom:2mm">INBOUND QUEUES</div>
+        <div style="background:#151e2e;border-radius:2mm;padding:3mm 4mm;margin-bottom:2mm;border-left:3px solid #F59E0B">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">FA verification</div>
+            <div style="font-family:'Inter',sans-serif;font-size:17pt;font-weight:800;color:#F59E0B;line-height:1">18</div>
+          </div>
+          <div class="micro dark" style="margin-top:1mm;font-size:6.5pt;line-height:1.4">Referees awaiting external FA check.</div>
+        </div>
+        <div style="background:#151e2e;border-radius:2mm;padding:3mm 4mm;margin-bottom:2mm;border-left:3px solid #cd1719">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Open disputes</div>
+            <div style="font-family:'Inter',sans-serif;font-size:17pt;font-weight:800;color:#cd1719;line-height:1">3</div>
+          </div>
+          <div class="micro dark" style="margin-top:1mm;font-size:6.5pt;line-height:1.4">Coach or ref contested the release.</div>
+        </div>
+        <div style="background:#151e2e;border-radius:2mm;padding:3mm 4mm;border-left:3px solid #8B5CF6">
+          <div style="display:flex;justify-content:space-between;align-items:baseline">
+            <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Flagged accounts</div>
+            <div style="font-family:'Inter',sans-serif;font-size:17pt;font-weight:800;color:#8B5CF6;line-height:1">1</div>
+          </div>
+          <div class="micro dark" style="margin-top:1mm;font-size:6.5pt;line-height:1.4">Behaviour reports needing review.</div>
+        </div>
+      </div>
+
+      <!-- Middle: live map-ish visual -->
+      <div>
+        <div class="lab-sm" style="color:rgba(248,250,252,0.5);margin-bottom:2mm">THE LIVE PLATFORM</div>
+        <div style="background:#151e2e;border-radius:2mm;padding:4mm;height:108mm;position:relative;overflow:hidden">
+          <svg viewBox="0 0 360 380" style="width:100%;height:100%" preserveAspectRatio="xMidYMid meet">
+            <!-- stylised UK outline -->
+            <path d="M 180 40 C 230 50, 280 90, 270 150 C 260 210, 290 270, 260 320 C 230 360, 170 350, 140 330 C 110 310, 90 270, 100 230 C 80 210, 90 160, 120 120 C 140 80, 160 60, 180 40 Z" fill="rgba(248,250,252,0.05)" stroke="rgba(248,250,252,0.2)" stroke-dasharray="2 3"/>
+            <!-- clustered activity dots -->
+            <g>
+              <circle cx="170" cy="100" r="8" fill="#cd1719" opacity="0.7"/><circle cx="170" cy="100" r="14" fill="#cd1719" opacity="0.2"/>
+              <circle cx="200" cy="170" r="6" fill="#10B981" opacity="0.7"/>
+              <circle cx="150" cy="180" r="4" fill="#F59E0B" opacity="0.8"/>
+              <circle cx="230" cy="220" r="10" fill="#cd1719" opacity="0.7"/><circle cx="230" cy="220" r="18" fill="#cd1719" opacity="0.15"/>
+              <circle cx="180" cy="250" r="5" fill="#10B981" opacity="0.7"/>
+              <circle cx="150" cy="270" r="3" fill="#F59E0B" opacity="0.7"/>
+              <circle cx="210" cy="300" r="7" fill="#10B981" opacity="0.7"/>
+            </g>
+          </svg>
+          <div style="position:absolute;left:5mm;bottom:5mm;right:5mm;display:flex;justify-content:space-between;font-family:Inter;font-size:6pt;letter-spacing:0.12em;color:rgba(248,250,252,0.5)">
+            <span><span style="display:inline-block;width:2mm;height:2mm;background:#cd1719;border-radius:50%;margin-right:1.5mm"></span>PENDING · 24</span>
+            <span><span style="display:inline-block;width:2mm;height:2mm;background:#10B981;border-radius:50%;margin-right:1.5mm"></span>CONFIRMED · 61</span>
+            <span><span style="display:inline-block;width:2mm;height:2mm;background:#F59E0B;border-radius:50%;margin-right:1.5mm"></span>SOS · 2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dials (right) -->
+      <div>
+        <div class="lab-sm" style="color:rgba(248,250,252,0.5);margin-bottom:2mm">CONTROLS</div>
+        <div style="background:#151e2e;border-radius:2mm;padding:3mm 4mm;margin-bottom:2mm">
+          <div class="lab-sm" style="color:#e8494b">TRAVEL RATE</div>
+          <div style="font-family:'Inter',sans-serif;font-size:20pt;font-weight:800;color:var(--paper);margin-top:1mm">28<span style="font-size:9pt;color:rgba(248,250,252,0.5)">p/km</span></div>
+          <div style="height:2.5px;background:rgba(248,250,252,0.1);margin-top:2mm;border-radius:2px"><div style="width:56%;height:2.5px;background:#e8494b;border-radius:2px"></div></div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:6.5pt;line-height:1.4">Set in /app/admin/settings</div>
+        </div>
+        <div style="background:#151e2e;border-radius:2mm;padding:3mm 4mm;margin-bottom:2mm">
+          <div class="lab-sm" style="color:#e8494b">RATE LIMIT</div>
+          <div style="font-family:'Inter',sans-serif;font-size:20pt;font-weight:800;color:var(--paper);margin-top:1mm">20<span style="font-size:9pt;color:rgba(248,250,252,0.5)"> /hr/coach</span></div>
+          <div style="height:2.5px;background:rgba(248,250,252,0.1);margin-top:2mm;border-radius:2px"><div style="width:40%;height:2.5px;background:#e8494b;border-radius:2px"></div></div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:6.5pt;line-height:1.4">Throttles offer spamming</div>
+        </div>
+        <div style="background:#151e2e;border-radius:2mm;padding:3mm 4mm">
+          <div class="lab-sm" style="color:#e8494b">COMPLETION</div>
+          <div style="font-family:'Inter',sans-serif;font-size:20pt;font-weight:800;color:#10B981;margin-top:1mm">97%</div>
+          <div style="height:2.5px;background:rgba(248,250,252,0.1);margin-top:2mm;border-radius:2px"><div style="width:97%;height:2.5px;background:#10B981;border-radius:2px"></div></div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:6.5pt;line-height:1.4">Admin's north star metric</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 14 · SITEMAP (tree) -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">04 · Reference</span><span class="lab" style="color:var(--red)">— Sitemap</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 14</span><span class="pg-num">14</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:var(--red)">Every screen, drawn</div>
+    <div class="display" style="font-size:44pt;margin-top:2mm">The whole app, as a tree.</div>
+    <p class="body" style="margin-top:3mm;max-width:195mm">Every URL users can reach, organised by persona. Branch colour shows who gets there by default. Leaves without a colour prefix are shared — everyone with the right permissions can open them.</p>
+
+    <svg viewBox="0 0 1220 500" style="width:100%;margin-top:6mm" xmlns="http://www.w3.org/2000/svg">
+      <!-- Root -->
+      <g transform="translate(590,20)">
+        <rect x="-70" y="0" width="140" height="36" rx="18" fill="#1b2537"/>
+        <text x="0" y="22" text-anchor="middle" font-family="Inter" font-size="9" font-weight="800" fill="white" letter-spacing="2">whistleconnect.co.uk</text>
+      </g>
+
+      <!-- Primary branches -->
+      <g stroke="#94A3B8" stroke-width="1" fill="none">
+        <path d="M 600 56 L 600 90 L 200 90 L 200 110"/>
+        <path d="M 600 56 L 600 90 L 430 90 L 430 110"/>
+        <path d="M 600 56 L 600 90 L 600 110"/>
+        <path d="M 600 56 L 600 90 L 770 90 L 770 110"/>
+        <path d="M 600 56 L 600 90 L 1010 90 L 1010 110"/>
+      </g>
+
+      <!-- Branch labels -->
+      <g font-family="Inter" font-size="8" font-weight="800" text-anchor="middle">
+        <g transform="translate(200,120)"><rect x="-46" y="0" width="92" height="28" rx="14" fill="#F8FAFC" stroke="#1b2537"/><text y="18" fill="#1b2537">PUBLIC</text></g>
+        <g transform="translate(430,120)"><rect x="-46" y="0" width="92" height="28" rx="14" fill="#F8FAFC" stroke="#1b2537"/><text y="18" fill="#1b2537">AUTH</text></g>
+        <g transform="translate(600,120)"><rect x="-62" y="0" width="124" height="28" rx="14" fill="#1b2537"/><text y="18" fill="white">/app · COACH</text></g>
+        <g transform="translate(770,120)"><rect x="-62" y="0" width="124" height="28" rx="14" fill="#cd1719"/><text y="18" fill="white">/app · REFEREE</text></g>
+        <g transform="translate(1010,120)"><rect x="-62" y="0" width="124" height="28" rx="14" fill="#F59E0B"/><text y="18" fill="white">/app · ADMIN</text></g>
+      </g>
+
+      <!-- Public leaves -->
+      <g font-family="JetBrains Mono" font-size="7.5" text-anchor="middle" fill="#1b2537">
+        <line x1="200" y1="148" x2="200" y2="170" stroke="#94A3B8"/>
+        <g transform="translate(200,170)">
+          <text y="12">/</text><text y="26">/privacy</text><text y="40">/terms</text><text y="54">/offline</text><text y="68">/fa-verify</text>
+        </g>
+      </g>
+      <!-- Auth leaves -->
+      <g font-family="JetBrains Mono" font-size="7.5" text-anchor="middle" fill="#1b2537">
+        <line x1="430" y1="148" x2="430" y2="170" stroke="#94A3B8"/>
+        <g transform="translate(430,170)">
+          <text y="12">/auth/login</text><text y="26">/auth/register</text><text y="40">/auth/callback</text><text y="54">/auth/reset</text>
+        </g>
+      </g>
+
+      <!-- Coach leaves -->
+      <g font-family="JetBrains Mono" font-size="7.5" text-anchor="middle" fill="#1b2537">
+        <line x1="600" y1="148" x2="600" y2="170" stroke="#1b2537"/>
+        <g transform="translate(600,170)">
+          <text y="12" font-weight="700">/app</text>
+          <text y="26">/app/bookings</text>
+          <text y="40">/app/bookings/new</text>
+          <text y="54">/app/bookings/sos</text>
+          <text y="68">/app/bookings/[id]</text>
+          <text y="82">/app/bookings/[id]/edit</text>
+          <text y="96">/app/bookings/[id]/export</text>
+          <text y="110">/app/club</text>
+          <text y="124">/app/club/pool</text>
+        </g>
+      </g>
+
+      <!-- Referee leaves -->
+      <g font-family="JetBrains Mono" font-size="7.5" text-anchor="middle" fill="#1b2537">
+        <line x1="770" y1="148" x2="770" y2="170" stroke="#cd1719"/>
+        <g transform="translate(770,170)">
+          <text y="12" font-weight="700">/app</text>
+          <text y="26">/app/availability</text>
+          <text y="40">/app/offers</text>
+          <text y="54">/app/feed</text>
+          <text y="68">/app/earnings</text>
+          <text y="82">/app/bookings (mine)</text>
+          <text y="96">/app/bookings/[id]/match</text>
+        </g>
+      </g>
+
+      <!-- Admin leaves -->
+      <g font-family="JetBrains Mono" font-size="7.5" text-anchor="middle" fill="#1b2537">
+        <line x1="1010" y1="148" x2="1010" y2="170" stroke="#F59E0B"/>
+        <g transform="translate(1010,170)">
+          <text y="12" font-weight="700">/app/admin</text>
+          <text y="26">/app/admin/verification</text>
+          <text y="40">/app/admin/referees</text>
+          <text y="54">/app/admin/referees/[id]</text>
+          <text y="68">/app/admin/coaches</text>
+          <text y="82">/app/admin/settings</text>
+          <text y="96">/app/admin/map</text>
+        </g>
+      </g>
+
+      <!-- Shared routes bar -->
+      <g transform="translate(40,370)">
+        <rect width="1140" height="110" rx="4" fill="#F59E0B" fill-opacity="0.08" stroke="#F59E0B" stroke-dasharray="3 3"/>
+        <text x="20" y="22" font-family="Inter" font-size="7" font-weight="800" letter-spacing="2.5" fill="#b45309">SHARED · every signed-in user gets these</text>
+        <g font-family="JetBrains Mono" font-size="7.5" fill="#1b2537">
+          <g transform="translate(20,42)"><text font-weight="700" font-family="Inter" font-size="7" letter-spacing="1.5" fill="#b45309">MESSAGING</text><text y="16">/app/messages</text><text y="30">/app/messages/[id]</text></g>
+          <g transform="translate(240,42)"><text font-weight="700" font-family="Inter" font-size="7" letter-spacing="1.5" fill="#b45309">MONEY</text><text y="16">/app/wallet</text><text y="30">/app/wallet/top-up</text><text y="44">/app/wallet/withdraw</text></g>
+          <g transform="translate(460,42)"><text font-weight="700" font-family="Inter" font-size="7" letter-spacing="1.5" fill="#b45309">PROFILE</text><text y="16">/app/profile</text><text y="30">/app/map</text><text y="44">/app/disputes</text></g>
+          <g transform="translate(680,42)"><text font-weight="700" font-family="Inter" font-size="7" letter-spacing="1.5" fill="#b45309">NOTIFICATIONS</text><text y="16">/app/notifications</text></g>
+        </g>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<!-- PAGE 15 · DATA SCHEMA (ERD) -->
+<div class="page dark">
+  <div class="pg-top"><span class="pg-name dark">04 · Reference</span><span class="lab" style="color:rgba(248,250,252,0.4)">— Data schema</span></div>
+  <div class="ruler dark"></div><div class="ruler-red"></div>
+  <div class="pg-bot dark"><span class="mono">WC · V2 · 15</span><span class="pg-num">15</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:rgba(248,250,252,0.4)">How the tables connect</div>
+    <div class="display" style="font-size:44pt;color:var(--paper);margin-top:2mm">Every table.<br>Every connection.</div>
+    <p class="body dark" style="margin-top:3mm;max-width:190mm">Boxes are tables, lines are foreign keys. Colour groups concern: cyan = people, red = bookings, purple = messaging, green = money, amber = operations.</p>
+
+    <svg viewBox="0 0 1220 470" style="width:100%;margin-top:4mm" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="ek" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="rgba(248,250,252,0.45)"/></marker>
+      </defs>
+
+      <!-- Relationship lines (background) -->
+      <g stroke="rgba(248,250,252,0.25)" fill="none" stroke-width="1">
+        <!-- profiles centre -->
+        <line x1="280" y1="96" x2="520" y2="96"/>
+        <line x1="280" y1="96" x2="520" y2="200"/>
+        <line x1="280" y1="96" x2="520" y2="300"/>
+        <line x1="280" y1="96" x2="520" y2="400"/>
+        <line x1="280" y1="96" x2="1040" y2="96"/>
+        <!-- referee_profiles -->
+        <line x1="280" y1="190" x2="100" y2="280"/>
+        <line x1="280" y1="190" x2="100" y2="380"/>
+        <!-- bookings -->
+        <line x1="640" y1="96" x2="820" y2="96"/>
+        <line x1="640" y1="96" x2="820" y2="200"/>
+        <line x1="640" y1="96" x2="820" y2="300"/>
+        <!-- threads -->
+        <line x1="940" y1="200" x2="1140" y2="200"/>
+        <line x1="940" y1="200" x2="1140" y2="290"/>
+        <!-- wallets -->
+        <line x1="640" y1="400" x2="820" y2="400"/>
+      </g>
+
+      <!-- people / users -->
+      <g font-family="Inter">
+        <g transform="translate(140,60)">
+          <rect width="140" height="72" rx="4" fill="#151e2e" stroke="#22D3EE"/>
+          <rect width="140" height="18" rx="4" fill="#22D3EE"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="#1b2537" letter-spacing="1.5">PROFILES</text>
+          <text x="6" y="32" font-size="7" font-weight="600" fill="#F8FAFC">id · role</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">name · email · postcode</text>
+          <text x="6" y="56" font-size="6.5" fill="rgba(248,250,252,0.55)">lat · long</text>
+          <text x="6" y="68" font-size="6" font-style="italic" fill="rgba(248,250,252,0.4)">every user starts here</text>
+        </g>
+        <g transform="translate(20,170)">
+          <rect width="160" height="72" rx="4" fill="#151e2e" stroke="#22D3EE"/>
+          <rect width="160" height="18" rx="4" fill="#22D3EE"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="#1b2537" letter-spacing="1.5">REFEREE_PROFILES</text>
+          <text x="6" y="32" font-size="7" font-weight="600" fill="#F8FAFC">profile_id · level</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">is_available · county</text>
+          <text x="6" y="56" font-size="6.5" fill="rgba(248,250,252,0.55)">fa_verified · dbs · radius</text>
+          <text x="6" y="68" font-size="6" font-style="italic" fill="rgba(248,250,252,0.4)">only for referees</text>
+        </g>
+        <g transform="translate(20,260)">
+          <rect width="160" height="46" rx="4" fill="#151e2e" stroke="#22D3EE"/>
+          <rect width="160" height="18" rx="4" fill="#22D3EE"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="#1b2537" letter-spacing="1.5">REFEREE_AVAILABILITY</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">day_of_week · start · end</text>
+        </g>
+        <g transform="translate(20,330)">
+          <rect width="160" height="46" rx="4" fill="#151e2e" stroke="#22D3EE"/>
+          <rect width="160" height="18" rx="4" fill="#22D3EE"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="#1b2537" letter-spacing="1.5">DATE_AVAILABILITY</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">date · start · end</text>
+        </g>
+      </g>
+
+      <!-- bookings cluster -->
+      <g font-family="Inter">
+        <g transform="translate(540,60)">
+          <rect width="140" height="72" rx="4" fill="#151e2e" stroke="#cd1719"/>
+          <rect width="140" height="18" rx="4" fill="#cd1719"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">BOOKINGS</text>
+          <text x="6" y="32" font-size="7" font-weight="600" fill="#F8FAFC">id · coach_id · status</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">date · kickoff · postcode</text>
+          <text x="6" y="56" font-size="6.5" fill="rgba(248,250,252,0.55)">age_group · format</text>
+          <text x="6" y="68" font-size="6" font-style="italic" fill="rgba(248,250,252,0.4)">the fixture itself</text>
+        </g>
+        <g transform="translate(540,170)">
+          <rect width="140" height="60" rx="4" fill="#151e2e" stroke="#cd1719"/>
+          <rect width="140" height="18" rx="4" fill="#cd1719"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">BOOKING_OFFERS</text>
+          <text x="6" y="32" font-size="7" font-weight="600" fill="#F8FAFC">booking_id · referee_id</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">status · price_pence</text>
+          <text x="6" y="56" font-size="6.5" fill="rgba(248,250,252,0.55)">match_fee · travel</text>
+        </g>
+        <g transform="translate(540,270)">
+          <rect width="140" height="48" rx="4" fill="#151e2e" stroke="#10B981"/>
+          <rect width="140" height="18" rx="4" fill="#10B981"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">ASSIGNMENTS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">booking_id (unique)</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">referee_id</text>
+        </g>
+        <g transform="translate(540,370)">
+          <rect width="140" height="54" rx="4" fill="#151e2e" stroke="#cd1719"/>
+          <rect width="140" height="18" rx="4" fill="#cd1719"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">TRAVEL_EXPENSES</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">booking_id</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">distance_km · rate · cost</text>
+        </g>
+      </g>
+
+      <!-- messaging cluster -->
+      <g font-family="Inter">
+        <g transform="translate(840,60)">
+          <rect width="140" height="52" rx="4" fill="#151e2e" stroke="#8B5CF6"/>
+          <rect width="140" height="18" rx="4" fill="#8B5CF6"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">THREADS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">booking_id · title</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">created_at</text>
+        </g>
+        <g transform="translate(840,170)">
+          <rect width="140" height="52" rx="4" fill="#151e2e" stroke="#8B5CF6"/>
+          <rect width="140" height="18" rx="4" fill="#8B5CF6"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">THREAD_PARTICIPANTS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">thread_id · profile_id</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">last_read_at</text>
+        </g>
+        <g transform="translate(840,270)">
+          <rect width="140" height="52" rx="4" fill="#151e2e" stroke="#8B5CF6"/>
+          <rect width="140" height="18" rx="4" fill="#8B5CF6"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">MESSAGES</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">thread_id · sender</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">body · kind (user/sys)</text>
+        </g>
+        <g transform="translate(1060,170)">
+          <rect width="140" height="40" rx="4" fill="#151e2e" stroke="#8B5CF6"/>
+          <rect width="140" height="18" rx="4" fill="#8B5CF6"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">NOTIFICATIONS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">user · title · read_at</text>
+        </g>
+        <g transform="translate(1060,260)">
+          <rect width="140" height="40" rx="4" fill="#151e2e" stroke="#8B5CF6"/>
+          <rect width="140" height="18" rx="4" fill="#8B5CF6"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">PUSH_SUBSCRIPTIONS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">platform · endpoint</text>
+        </g>
+      </g>
+
+      <!-- money cluster -->
+      <g font-family="Inter">
+        <g transform="translate(540,445)" visibility="hidden"></g>
+        <g transform="translate(1060,60)">
+          <rect width="140" height="52" rx="4" fill="#151e2e" stroke="#10B981"/>
+          <rect width="140" height="18" rx="4" fill="#10B981"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">WALLETS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">user · balance · escrow</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">stripe_customer_id</text>
+        </g>
+        <g transform="translate(1060,370)">
+          <rect width="140" height="54" rx="4" fill="#151e2e" stroke="#10B981"/>
+          <rect width="140" height="18" rx="4" fill="#10B981"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="white" letter-spacing="1.5">WALLET_TRANSACTIONS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">wallet · type · direction</text>
+          <text x="6" y="44" font-size="6.5" fill="rgba(248,250,252,0.55)">amount · reference_id</text>
+        </g>
+      </g>
+
+      <!-- ops -->
+      <g font-family="Inter">
+        <g transform="translate(300,380)">
+          <rect width="160" height="40" rx="4" fill="#151e2e" stroke="#F59E0B"/>
+          <rect width="160" height="18" rx="4" fill="#F59E0B"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="#1b2537" letter-spacing="1.5">FA_VERIFICATION_REQUESTS</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">ref · fa_id · status</text>
+        </g>
+        <g transform="translate(300,430)">
+          <rect width="160" height="28" rx="4" fill="#151e2e" stroke="#F59E0B"/>
+          <rect width="160" height="18" rx="4" fill="#F59E0B"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="#1b2537" letter-spacing="1.5">PLATFORM_SETTINGS</text>
+        </g>
+        <g transform="translate(840,380)">
+          <rect width="140" height="40" rx="4" fill="#151e2e" stroke="#F59E0B"/>
+          <rect width="140" height="18" rx="4" fill="#F59E0B"/>
+          <text x="6" y="12" font-size="7" font-weight="800" fill="#1b2537" letter-spacing="1.5">DISPUTES</text>
+          <text x="6" y="32" font-size="6.5" fill="rgba(248,250,252,0.55)">booking · raised_by · status</text>
+        </g>
+      </g>
+
+      <!-- legend -->
+      <g transform="translate(20,455)" font-family="Inter" font-size="6.5" fill="rgba(248,250,252,0.6)">
+        <g><rect width="8" height="8" fill="#22D3EE"/><text x="12" y="7">People</text></g>
+        <g transform="translate(70,0)"><rect width="8" height="8" fill="#cd1719"/><text x="12" y="7">Bookings</text></g>
+        <g transform="translate(150,0)"><rect width="8" height="8" fill="#10B981"/><text x="12" y="7">Money</text></g>
+        <g transform="translate(215,0)"><rect width="8" height="8" fill="#8B5CF6"/><text x="12" y="7">Messaging</text></g>
+        <g transform="translate(300,0)"><rect width="8" height="8" fill="#F59E0B"/><text x="12" y="7">Operations</text></g>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<!-- PAGE 16 · HIDDEN WIRING -->
+<div class="page">
+  <div class="pg-top"><span class="pg-name">04 · Reference</span><span class="lab" style="color:var(--red)">— The hidden wiring</span></div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 16</span><span class="pg-num">16</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:var(--red)">Seven things nobody writes down</div>
+    <div class="display" style="font-size:30pt;margin-top:2mm">The glue behind the glue.</div>
+    <p class="body" style="margin-top:2mm;max-width:230mm;font-size:8.5pt">The small quirks and invisible rules that save half a day of debugging when you know them. Tattoo this somewhere the support team can find it.</p>
+
+    <div class="grid-4" style="margin-top:4mm;gap:3mm">
+      <!-- 1 · Geocoding is the glue -->
+      <div style="padding:3mm 4mm;background:white;border-radius:2mm;border:1px solid var(--line);position:relative">
+        <svg viewBox="0 0 60 60" style="width:12mm;height:12mm"><circle cx="30" cy="30" r="20" fill="none" stroke="#cd1719" stroke-width="3"/><circle cx="30" cy="30" r="8" fill="#cd1719"/><line x1="30" y1="10" x2="30" y2="0" stroke="#cd1719" stroke-width="2"/><line x1="30" y1="60" x2="30" y2="50" stroke="#cd1719" stroke-width="2"/><line x1="0" y1="30" x2="10" y2="30" stroke="#cd1719" stroke-width="2"/><line x1="60" y1="30" x2="50" y2="30" stroke="#cd1719" stroke-width="2"/></svg>
+        <div class="lab-sm" style="color:var(--red);margin-top:2mm">01 · GEOCODING</div>
+        <h3 style="margin-top:1.5mm;font-size:10.5pt;line-height:1.25;font-weight:800;color:var(--dark);letter-spacing:-0.005em">Postcodes become coordinates — or matching silently breaks.</h3>
+        <div class="micro" style="margin-top:1.5mm;font-size:6.8pt;line-height:1.4">Both bookings and profiles store lat/long. Without them, search falls back to exact-match county names. Case-sensitive and fragile.</div>
+      </div>
+      <!-- 2 · Threads born at payment -->
+      <div style="padding:3mm 4mm;background:white;border-radius:2mm;border:1px solid var(--line)">
+        <svg viewBox="0 0 60 60" style="width:12mm;height:12mm"><rect x="8" y="15" width="40" height="26" rx="4" fill="#8B5CF6"/><path d="M 20 41 L 20 50 L 30 41" fill="#8B5CF6"/><circle cx="22" cy="28" r="2" fill="white"/><circle cx="30" cy="28" r="2" fill="white"/><circle cx="38" cy="28" r="2" fill="white"/></svg>
+        <div class="lab-sm" style="color:var(--purple);margin-top:2mm">02 · THREADS</div>
+        <h3 style="margin-top:1.5mm;font-size:10.5pt;line-height:1.25;font-weight:800;color:var(--dark);letter-spacing:-0.005em">A thread existing is a strong "booking confirmed" signal.</h3>
+        <div class="micro" style="margin-top:1.5mm;font-size:6.8pt;line-height:1.4">No thread is ever created for a pending or offered booking. If your dashboard disagrees, trust the threads.</div>
+      </div>
+      <!-- 3 · Acceptance atomic -->
+      <div style="padding:3mm 4mm;background:white;border-radius:2mm;border:1px solid var(--line)">
+        <svg viewBox="0 0 60 60" style="width:12mm;height:12mm"><circle cx="30" cy="30" r="22" fill="#10B981"/><path d="M 18 30 L 26 38 L 42 22" fill="none" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <div class="lab-sm" style="color:var(--green);margin-top:2mm">03 · ATOMIC ACCEPT</div>
+        <h3 style="margin-top:1.5mm;font-size:10.5pt;line-height:1.25;font-weight:800;color:var(--dark);letter-spacing:-0.005em">All seven side-effects commit together — or none do.</h3>
+        <div class="micro" style="margin-top:1.5mm;font-size:6.8pt;line-height:1.4">Hold, assign, status, withdraw siblings, open thread, clean slot, notify. One transaction. You never see half-finished state.</div>
+      </div>
+      <!-- 4 · Escrow on accept not offer -->
+      <div style="padding:3mm 4mm;background:white;border-radius:2mm;border:1px solid var(--line)">
+        <svg viewBox="0 0 60 60" style="width:12mm;height:12mm"><rect x="12" y="22" width="36" height="30" rx="4" fill="#F59E0B"/><path d="M 18 22 L 18 14 Q 18 6 30 6 Q 42 6 42 14 L 42 22" fill="none" stroke="#F59E0B" stroke-width="4"/><circle cx="30" cy="36" r="3" fill="white"/></svg>
+        <div class="lab-sm" style="color:var(--amber);margin-top:2mm">04 · ESCROW TIMING</div>
+        <h3 style="margin-top:1.5mm;font-size:10.5pt;line-height:1.25;font-weight:800;color:var(--dark);letter-spacing:-0.005em">Money is held on accept, not on offer.</h3>
+        <div class="micro" style="margin-top:1.5mm;font-size:6.8pt;line-height:1.4">Coaches can send ten offers with one fixture's worth of cash. Only the winning acceptance pulls money from balance.</div>
+      </div>
+      <!-- 5 · SOS priority -->
+      <div style="padding:3mm 4mm;background:white;border-radius:2mm;border:1px solid var(--line)">
+        <svg viewBox="0 0 60 60" style="width:12mm;height:12mm"><circle cx="30" cy="30" r="22" fill="#cd1719"/><text x="30" y="36" text-anchor="middle" font-family="Inter" font-size="11" font-weight="900" fill="white">SOS</text><circle cx="30" cy="30" r="28" fill="none" stroke="#cd1719" stroke-width="1.5" opacity="0.5"/></svg>
+        <div class="lab-sm" style="color:var(--red);margin-top:2mm">05 · SOS URGENCY</div>
+        <h3 style="margin-top:1.5mm;font-size:10.5pt;line-height:1.25;font-weight:800;color:var(--dark);letter-spacing:-0.005em">SOS uses a different push priority.</h3>
+        <div class="micro" style="margin-top:1.5mm;font-size:6.8pt;line-height:1.4">High urgency flag bypasses Do Not Disturb. "My app is silent" is expected behaviour outside of an SOS.</div>
+      </div>
+      <!-- 6 · Auto slot cleanup -->
+      <div style="padding:3mm 4mm;background:white;border-radius:2mm;border:1px solid var(--line)">
+        <svg viewBox="0 0 60 60" style="width:12mm;height:12mm"><rect x="10" y="14" width="40" height="36" rx="3" fill="#1b2537"/><rect x="10" y="14" width="40" height="8" fill="#cd1719"/><rect x="16" y="28" width="8" height="6" fill="rgba(248,250,252,0.4)"/><rect x="28" y="28" width="8" height="6" fill="rgba(248,250,252,0.4)"/><rect x="40" y="28" width="6" height="6" fill="#10B981"/><path d="M 15 40 L 20 44 L 26 38" stroke="#cd1719" stroke-width="2" fill="none"/></svg>
+        <div class="lab-sm" style="color:var(--navy);margin-top:2mm">06 · SLOT CLEANUP</div>
+        <h3 style="margin-top:1.5mm;font-size:10.5pt;line-height:1.25;font-weight:800;color:var(--dark);letter-spacing:-0.005em">Accepting auto-removes the <em>date-specific</em> slot only.</h3>
+        <div class="micro" style="margin-top:1.5mm;font-size:6.8pt;line-height:1.4">Weekly recurring patterns stay intact. A ref with "every Saturday 10-18" keeps showing for the next Saturday.</div>
+      </div>
+      <!-- 7 · Verified != Findable -->
+      <div style="padding:3mm 4mm;background:white;border-radius:2mm;border:1px solid var(--line);grid-column:span 2">
+        <div style="display:flex;gap:6mm;align-items:center">
+          <svg viewBox="0 0 60 60" style="width:22mm;height:22mm;flex-shrink:0"><circle cx="30" cy="30" r="24" fill="#1b2537"/><path d="M 30 14 L 38 18 L 38 30 Q 38 40, 30 46 Q 22 40, 22 30 L 22 18 Z" fill="#10B981"/><path d="M 25 30 L 29 34 L 36 26" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/><line x1="15" y1="15" x2="45" y2="45" stroke="#cd1719" stroke-width="3"/></svg>
+          <div>
+            <div class="lab-sm" style="color:var(--red)">07 · THE BIG ONE</div>
+            <h3 style="margin-top:1.5mm;font-size:10.5pt;line-height:1.25;font-weight:800;color:var(--dark);letter-spacing:-0.005em">"Verified" ≠ "Findable".</h3>
+            <div class="body" style="margin-top:2mm;font-size:9pt">Admin verification shows a badge to coaches, but it is <strong style="color:var(--red)">not a filter</strong> on search results. A ref can be FA-verified and still invisible because their master availability toggle is off. Don't waste time chasing verification when the symptom is "they're not showing up." Check the toggle first.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 17 · STILL TO DO -->
+<div class="page ink">
+  <div class="pg-top">
+    <div style="display:flex;align-items:center;gap:4mm">
+      <svg style="height:8mm;width:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36.96 43.37"><path fill="#F8FAFC" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg>
+      <span style="font-size:9pt;font-weight:800;color:var(--paper)">Whistle Connect</span>
+    </div>
+    <span class="lab" style="color:rgba(248,250,252,0.4)">— Roadmap &amp; fixes in flight</span>
+  </div>
+  <div class="ruler dark"></div><div class="ruler-red"></div>
+  <div class="pg-bot dark"><span class="mono">WC · V2 · 17</span><span class="pg-num">17</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:rgba(248,250,252,0.4)">Where the product is heading</div>
+    <div class="display" style="font-size:42pt;color:var(--paper);margin-top:2mm">Still to do.</div>
+    <p class="body dark" style="margin-top:3mm;max-width:230mm;font-size:9.5pt">A live snapshot of what's being worked on, what's queued, and what's on the horizon. Three lanes by time-horizon, not priority — everything here matters, we just can't build it all at once.</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5mm;margin-top:8mm">
+      <!-- IN FLIGHT -->
+      <div>
+        <div style="display:flex;align-items:center;gap:3mm;margin-bottom:3mm">
+          <span style="display:inline-block;width:8mm;height:8mm;border-radius:50%;background:#cd1719;position:relative">
+            <span style="position:absolute;inset:0;border-radius:50%;background:#cd1719;animation:none"></span>
+          </span>
+          <div>
+            <div class="lab-sm" style="color:#cd1719">IN FLIGHT</div>
+            <div style="font-size:7pt;color:rgba(248,250,252,0.45);margin-top:0.5mm;letter-spacing:0.05em">being worked on right now</div>
+          </div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Master toggle default + red confirm</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Referees now default to available. Going unavailable requires confirmation, and the toggle turns red so it's obvious at a glance.</div>
+          <div class="lab-sm" style="color:#e8494b;margin-top:2mm;font-size:5.5pt">JUST LANDED</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Self-healing profile rows</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">If a referee's profile row is missing or a save silently fails, the system now repairs itself. The "I ticked it but it didn't save" bug is closed.</div>
+          <div class="lab-sm" style="color:#e8494b;margin-top:2mm;font-size:5.5pt">JUST LANDED</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Permission hardening on mutations</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Tightening the database's "who can do what" rules so that every write checks authorship. Makes the platform audit-ready.</div>
+          <div class="lab-sm" style="color:#e8494b;margin-top:2mm;font-size:5.5pt">IN REVIEW</div>
+        </div>
+      </div>
+
+      <!-- UP NEXT -->
+      <div>
+        <div style="display:flex;align-items:center;gap:3mm;margin-bottom:3mm">
+          <span style="display:inline-block;width:8mm;height:8mm;border-radius:50%;background:#F59E0B"></span>
+          <div>
+            <div class="lab-sm" style="color:#F59E0B">UP NEXT</div>
+            <div style="font-size:7pt;color:rgba(248,250,252,0.45);margin-top:0.5mm;letter-spacing:0.05em">queued for the next sprint</div>
+          </div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #F59E0B;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Rate limiting on offers &amp; bookings</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Throttle the number of offers any one coach can send per hour. Protects referees from offer-spam and keeps notifications meaningful.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #F59E0B;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Standardised error messages</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Every failure path returns the same shape so support can triage quickly. No more generic "something went wrong".</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #F59E0B;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Pagination on list views</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Bookings and messages currently load everything. As the platform grows, pages will load a chunk at a time and scroll for more.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #F59E0B;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Admin audit log</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Every admin action — verifications, bans, dispute resolutions — written to an immutable log visible to other admins for oversight.</div>
+        </div>
+      </div>
+
+      <!-- LATER -->
+      <div>
+        <div style="display:flex;align-items:center;gap:3mm;margin-bottom:3mm">
+          <span style="display:inline-block;width:8mm;height:8mm;border-radius:50%;background:#10B981"></span>
+          <div>
+            <div class="lab-sm" style="color:#10B981">LATER</div>
+            <div style="font-size:7pt;color:rgba(248,250,252,0.45);margin-top:0.5mm;letter-spacing:0.05em">on the roadmap, no date yet</div>
+          </div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #10B981;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Reliability &amp; reputation scores</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Referees earn a visible reliability badge based on on-time arrivals, completion rate, and coach ratings. Rewards quality over volume.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #10B981;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">FA sync automation</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Direct integration with the FA's register — verification becomes a one-click action or fully automatic on signup.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #10B981;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-bottom:3mm">
+          <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">Club pool group accounting</div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">Clubs pool referee budgets, set spend caps per team, and get per-team invoices at month-end. Opens the door to bigger clubs.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #10B981;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:2mm">
+            <div style="font-size:8.5pt;font-weight:800;color:var(--paper)">SMS fallback for critical alerts</div>
+            <div style="font-size:5.5pt;font-weight:700;letter-spacing:0.12em;color:rgba(248,250,252,0.45);text-transform:uppercase;white-space:nowrap">↪ PG 18</div>
+          </div>
+          <div class="micro dark" style="margin-top:1.5mm;font-size:7pt;line-height:1.45">If a user hasn't enabled push and an SOS or last-minute cancel goes out, they get a text so match day never dies on a silent notification. Costed on the next page.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- PAGE 18 · COST OF REACH (light variant) -->
+<div class="page">
+  <div class="pg-top">
+    <div style="font-size:10pt;font-weight:800;color:var(--dark);letter-spacing:-0.01em">Whistle Connect</div>
+    <span class="lab" style="color:var(--light)">— Email &amp; SMS cost at scale</span>
+  </div>
+  <div class="ruler"></div><div class="ruler-red"></div>
+  <div class="pg-bot"><span class="mono">WC · V2 · 18</span><span class="pg-num">18</span></div>
+
+  <div class="stage">
+    <div class="lab" style="color:var(--red)">Reach at scale</div>
+    <div class="display" style="font-size:38pt;color:var(--dark);margin-top:2mm">The cost of talking to users.</div>
+    <p class="body" style="margin-top:3mm;max-width:235mm;font-size:9pt">Email is effectively free at grassroots scale. SMS is the line that grows with user count — and the one to keep on a short leash. Design SMS as a scalpel (SOS + last-minute cancels only), push everything else through in-app + web push + email, and the monthly bill stays tame.</p>
+
+    <!-- EMAIL + SMS panels -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin-top:5mm">
+      <!-- EMAIL -->
+      <div>
+        <div style="display:flex;align-items:center;gap:3mm;margin-bottom:3mm">
+          <span style="display:inline-block;width:8mm;height:8mm;border-radius:50%;background:#10B981"></span>
+          <div>
+            <div class="lab-sm" style="color:#10B981">EMAIL</div>
+            <div style="font-size:7pt;color:var(--light);margin-top:0.5mm;letter-spacing:0.05em">cheap · scalable · stable</div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-size:6.5pt;color:var(--light);letter-spacing:0.12em">PER 1,000 SENDS</div>
+          </div>
+        </div>
+        <div style="background:white;border:1px solid var(--line);border-radius:2mm;overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm;border-bottom:1px solid var(--line)">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">AWS SES</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Cheapest. DIY templates + deliverability.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:#10B981;line-height:1.4">£0.08</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm;border-bottom:1px solid var(--line)">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">Resend</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Great DX, fits the Next.js stack.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:var(--dark);line-height:1.4">£1.00</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm;border-bottom:1px solid var(--line)">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">Postmark</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Best deliverability for transactional.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:var(--dark);line-height:1.4">£1.25</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">SendGrid</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Scales to millions, plan-stepped pricing.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:var(--dark);line-height:1.4">£0.40–1.50</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SMS -->
+      <div>
+        <div style="display:flex;align-items:center;gap:3mm;margin-bottom:3mm">
+          <span style="display:inline-block;width:8mm;height:8mm;border-radius:50%;background:#cd1719"></span>
+          <div>
+            <div class="lab-sm" style="color:#cd1719">SMS · UK OUTBOUND</div>
+            <div style="font-size:7pt;color:var(--light);margin-top:0.5mm;letter-spacing:0.05em">expensive · critical · use sparingly</div>
+          </div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-size:6.5pt;color:var(--light);letter-spacing:0.12em">PER MESSAGE</div>
+          </div>
+        </div>
+        <div style="background:white;border:1px solid var(--line);border-radius:2mm;overflow:hidden">
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm;border-bottom:1px solid var(--line)">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">Twilio</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Market leader, best docs, most integrations.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:var(--dark);line-height:1.4">£0.035–0.04</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm;border-bottom:1px solid var(--line)">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">Vonage</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Cheaper at volume, strong UK presence.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:var(--dark);line-height:1.4">£0.025–0.035</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm;border-bottom:1px solid var(--line)">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">AWS SNS</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Simple if already on AWS, thinner tooling.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:var(--dark);line-height:1.4">£0.03</div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 22mm;padding:2.5mm 4mm">
+            <div><div style="font-size:9pt;font-weight:700;color:var(--dark)">Plivo / MessageBird</div><div style="font-size:6.5pt;color:var(--mid);margin-top:0.5mm">Aggressive pricing at very high volume.</div></div>
+            <div style="text-align:right;font-family:'Inter',sans-serif;font-size:13pt;font-weight:800;color:#10B981;line-height:1.4">£0.02–0.03</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario matrix -->
+    <div style="margin-top:5mm;background:white;border:1px solid var(--line);border-radius:2mm;padding:4mm 5mm">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3mm">
+        <div class="lab-sm" style="color:var(--mid)">AT SCALE · MONTHLY COST (SES + TWILIO · DISCIPLINED SMS USE)</div>
+        <div style="font-size:6pt;color:var(--light);letter-spacing:0.1em">~5 EMAILS · 0.5 SMS PER USER / MO</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.1fr 0.9fr 0.9fr 0.9fr 0.9fr 1fr;gap:0;font-family:'Inter',sans-serif;font-size:8pt">
+        <!-- header row -->
+        <div style="font-size:6.5pt;font-weight:700;color:var(--light);letter-spacing:0.1em;padding:1.5mm 2mm">USER BASE</div>
+        <div style="font-size:6.5pt;font-weight:700;color:var(--light);letter-spacing:0.1em;padding:1.5mm 2mm;text-align:right">EMAILS / MO</div>
+        <div style="font-size:6.5pt;font-weight:700;color:var(--light);letter-spacing:0.1em;padding:1.5mm 2mm;text-align:right">SMS / MO</div>
+        <div style="font-size:6.5pt;font-weight:700;color:#10B981;letter-spacing:0.1em;padding:1.5mm 2mm;text-align:right">EMAIL £</div>
+        <div style="font-size:6.5pt;font-weight:700;color:#cd1719;letter-spacing:0.1em;padding:1.5mm 2mm;text-align:right">SMS £</div>
+        <div style="font-size:6.5pt;font-weight:700;color:var(--dark);letter-spacing:0.1em;padding:1.5mm 2mm;text-align:right">TOTAL / MO</div>
+        <!-- row 1 -->
+        <div style="padding:2mm;color:var(--dark);font-weight:700;border-top:1px solid var(--line)">10,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">50,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">5,000</div>
+        <div style="padding:2mm;color:#10B981;text-align:right;font-weight:700;border-top:1px solid var(--line)">£4</div>
+        <div style="padding:2mm;color:#cd1719;text-align:right;font-weight:700;border-top:1px solid var(--line)">£175</div>
+        <div style="padding:2mm;color:var(--dark);text-align:right;font-weight:800;border-top:1px solid var(--line)">£179</div>
+        <!-- row 2 -->
+        <div style="padding:2mm;color:var(--dark);font-weight:700;border-top:1px solid var(--line)">50,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">250,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">25,000</div>
+        <div style="padding:2mm;color:#10B981;text-align:right;font-weight:700;border-top:1px solid var(--line)">£20</div>
+        <div style="padding:2mm;color:#cd1719;text-align:right;font-weight:700;border-top:1px solid var(--line)">£875</div>
+        <div style="padding:2mm;color:var(--dark);text-align:right;font-weight:800;border-top:1px solid var(--line)">£895</div>
+        <!-- row 3 -->
+        <div style="padding:2mm;color:var(--dark);font-weight:700;border-top:1px solid var(--line)">100,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">500,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">50,000</div>
+        <div style="padding:2mm;color:#10B981;text-align:right;font-weight:700;border-top:1px solid var(--line)">£40</div>
+        <div style="padding:2mm;color:#cd1719;text-align:right;font-weight:700;border-top:1px solid var(--line)">£1,750</div>
+        <div style="padding:2mm;color:var(--dark);text-align:right;font-weight:800;border-top:1px solid var(--line)">£1,790</div>
+        <!-- row 4 -->
+        <div style="padding:2mm;color:var(--dark);font-weight:700;border-top:1px solid var(--line)">500,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">2,500,000</div>
+        <div style="padding:2mm;color:var(--mid);text-align:right;border-top:1px solid var(--line)">250,000</div>
+        <div style="padding:2mm;color:#10B981;text-align:right;font-weight:700;border-top:1px solid var(--line)">£200</div>
+        <div style="padding:2mm;color:#cd1719;text-align:right;font-weight:700;border-top:1px solid var(--line)">£8,750</div>
+        <div style="padding:2mm;color:var(--dark);text-align:right;font-weight:800;border-top:1px solid var(--line)">£8,950</div>
+      </div>
+    </div>
+
+    <!-- Principle callout (cream with red left-border — matches the brochure pattern) -->
+    <div style="margin-top:4mm;padding:3.5mm 5mm;background:var(--paper-2);border-left:3px solid var(--red);border-radius:0 2mm 2mm 0">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6mm">
+        <div class="lab-sm" style="color:var(--red)">THE PRINCIPLE</div>
+        <div style="font-size:7pt;font-weight:600;letter-spacing:0.12em;color:var(--light);text-transform:uppercase">↩ SEE PG 17 · SMS FALLBACK (LATER)</div>
+      </div>
+      <div style="font-size:9.5pt;font-weight:500;color:var(--dark);line-height:1.5;margin-top:1.5mm">Send SMS only when a missed message kills match day — SOS, last-minute cancels, assignment confirmations. Everything else stays on push + in-app + email. That single piece of discipline is the difference between a £175/mo line and a £1,750/mo line at 100K users.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE 19 · GLOSSARY & TALKING POINTS (back cover) -->
+<div class="page ink">
+  <div class="pg-top">
+    <div style="display:flex;align-items:center;gap:4mm">
+      <svg style="height:8mm;width:auto" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36.96 43.37"><path fill="#F8FAFC" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg>
+      <span style="font-size:9pt;font-weight:800;color:var(--paper)">Whistle Connect</span>
+    </div>
+    <span class="lab" style="color:rgba(248,250,252,0.4)">— Glossary &amp; Talking Points</span>
+  </div>
+  <div class="ruler dark"></div><div class="ruler-red"></div>
+  <div class="pg-bot dark"><span class="mono">WC · V2 · 19</span><span class="pg-num">19</span></div>
+
+  <div class="stage">
+    <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:10mm;height:100%">
+      <div>
+        <div class="lab" style="color:rgba(248,250,252,0.4)">Key terms, one line each</div>
+        <div class="display" style="font-size:38pt;color:var(--paper);margin-top:2mm">Glossary.</div>
+
+        <div style="margin-top:6mm;display:grid;grid-template-columns:1fr 1fr;gap:2mm 8mm">
+          <div><div class="lab-sm" style="color:#e8494b">FA</div><div class="micro dark" style="margin-top:1mm">The Football Association — the referee's governing body. FA verification is the admin step that confirms a registered number.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">DBS</div><div class="micro dark" style="margin-top:1mm">Disclosure &amp; Barring Service check. Required to officiate youth matches (U16 and under).</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">ESCROW</div><div class="micro dark" style="margin-top:1mm">The locked pot holding a coach's money while a booking is live. Released on completion; refunded on cancel.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">SOS</div><div class="micro dark" style="margin-top:1mm">Emergency booking flow. Higher-urgency notifications go to every available ref in radius.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">THREAD</div><div class="micro dark" style="margin-top:1mm">A confirmed booking's chat. Born at accept, two participants, permanent record.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">OFFER</div><div class="micro dark" style="margin-top:1mm">A priced invitation from a coach to a specific referee. Non-binding until accepted.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">ASSIGNMENT</div><div class="micro dark" style="margin-top:1mm">The confirmed pairing of a referee to a booking. One per booking. Created atomically.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">CENTRAL VENUE</div><div class="micro dark" style="margin-top:1mm">A multi-game event at one location. Separate opt-in flag on referee profiles.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">TRAVEL COST</div><div class="micro dark" style="margin-top:1mm">Distance × admin rate (default 28p/km). Added transparently to every offer.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">MASTER TOGGLE</div><div class="micro dark" style="margin-top:1mm">The big green/red switch on a referee's availability page. Off = invisible. On = findable.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">PARTICIPANT</div><div class="micro dark" style="margin-top:1mm">A user in a thread. Two per thread, never more, never fewer.</div></div>
+          <div><div class="lab-sm" style="color:#e8494b">LEDGER</div><div class="micro dark" style="margin-top:1mm">Immutable log of every money movement. Never edited, never deleted. Audit-friendly by design.</div></div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:3mm">
+        <div class="lab" style="color:rgba(248,250,252,0.4)">Memorise these</div>
+        <div class="display" style="font-size:32pt;color:var(--paper)">Talking points.</div>
+
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0;margin-top:3mm">
+          <div class="lab-sm" style="color:#e8494b">COACH FLOW</div>
+          <div style="font-size:10pt;font-weight:600;color:var(--paper);line-height:1.4;margin-top:1.5mm">Create → search → offer → get accepted → chat → play → mark complete → pay out.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0">
+          <div class="lab-sm" style="color:#e8494b">REFEREE FLOW</div>
+          <div style="font-size:10pt;font-weight:600;color:var(--paper);line-height:1.4;margin-top:1.5mm">Toggle on → set slots → accept offer → chat → play → get paid → withdraw.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0">
+          <div class="lab-sm" style="color:#e8494b">MONEY PROMISE</div>
+          <div style="font-size:10pt;font-weight:600;color:var(--paper);line-height:1.4;margin-top:1.5mm">Money never moves between strangers — it flows through a platform wallet with an escrow lock.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0">
+          <div class="lab-sm" style="color:#e8494b">SUPPORT CHEAT</div>
+          <div style="font-size:10pt;font-weight:600;color:var(--paper);line-height:1.4;margin-top:1.5mm">Nine out of ten "my ref isn't showing up" tickets are the master availability toggle being off.</div>
+        </div>
+        <div style="background:#151e2e;border-left:3px solid #cd1719;padding:3.5mm 4.5mm;border-radius:0 2mm 2mm 0">
+          <div class="lab-sm" style="color:#e8494b">EFFICIENCY LINE</div>
+          <div style="font-size:10pt;font-weight:600;color:var(--paper);line-height:1.4;margin-top:1.5mm">A fixture that used to take ten WhatsApp messages now takes one search and one tap.</div>
+        </div>
+
+        <!-- Closing strip -->
+        <div style="margin-top:auto;padding-top:5mm;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid rgba(248,250,252,0.08)">
+          <div>
+            <div class="lab-sm" style="color:rgba(248,250,252,0.35)">QUESTIONS?</div>
+            <div style="font-size:9pt;color:rgba(248,250,252,0.75);font-weight:500;margin-top:1.5mm">Ask your team lead.</div>
+            <div style="font-size:7.5pt;color:rgba(248,250,252,0.3);margin-top:2mm">hello@whistleconnect.co.uk</div>
+          </div>
+          <div style="text-align:right">
+            <div class="lab-sm" style="color:rgba(248,250,252,0.3)">EDITION</div>
+            <div style="font-family:'Inter',sans-serif;font-weight:800;font-size:36pt;line-height:1;color:var(--paper);margin-top:1.5mm;letter-spacing:-0.04em">02</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
