@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useRef, useCallback } from 'react'
+import { useState, useTransition, useRef, useCallback, useEffect } from 'react'
 import { toggleAvailability, updateTravelRadius } from '@/app/app/availability/actions'
 import { useToast } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/Modal'
@@ -19,6 +19,13 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
     const [confirmOff, setConfirmOff] = useState(false)
     const { showToast } = useToast()
     const radiusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+    // Sync internal state when the parent finishes its async DB load and
+    // passes new initial values. Without this, useState locks onto the
+    // first-render prop (false) and the toggle permanently shows "off"
+    // even after the DB returns true on page refresh.
+    useEffect(() => { setIsAvailable(initialAvailable) }, [initialAvailable])
+    useEffect(() => { setRadius(initialRadius) }, [initialRadius])
 
     const applyToggle = (newValue: boolean) => {
         setIsAvailable(newValue)

@@ -31,7 +31,9 @@
       "Bash(npm install @capacitor/core @capacitor/cli @capacitor/push-notifications)",
       "Bash(npm install firebase-admin)",
       "Bash(wmic logicaldisk get size,freespace,caption)",
-      "Bash(npm cache clean --force)"
+      "Bash(npm cache clean --force)",
+      "Bash(git fetch *)",
+      "Bash(git status *)"
     ]
   }
 }
