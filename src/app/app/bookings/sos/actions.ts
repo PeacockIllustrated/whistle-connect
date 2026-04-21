@@ -1,4 +1,5 @@
 'use server'
+import { friendlyError } from '@/lib/errors'
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
@@ -63,7 +64,7 @@ export async function createSOSBooking(data: SOSBookingData) {
         .select()
         .single()
 
-    if (bookingError) return { error: bookingError.message }
+    if (bookingError) return { error: friendlyError(bookingError) }
 
     // Find nearby available referees and create offers + notify
     if (latitude && longitude) {
@@ -128,7 +129,7 @@ export async function claimSOSBooking(bookingId: string) {
         p_referee_id: user.id,
     })
 
-    if (error) return { error: error.message }
+    if (error) return { error: friendlyError(error) }
 
     const result = data as { success?: boolean; error?: string }
     if (result.error) return { error: result.error }

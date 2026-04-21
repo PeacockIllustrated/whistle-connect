@@ -8,6 +8,7 @@ import { checkBookingRateLimit, checkConfirmRateLimit, checkSearchRateLimit, che
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { requiresDBS } from '@/lib/constants'
+import { friendlyError } from '@/lib/errors'
 
 /** Fetch the current travel cost rate from platform settings */
 export async function getTravelRate(): Promise<number> {
@@ -137,7 +138,7 @@ export async function createBooking(data: BookingFormData) {
     }
 
     if (bookingError) {
-        return { error: bookingError.message }
+        return { error: friendlyError(bookingError) }
     }
 
     // Geocode booking location for distance-based features
@@ -170,7 +171,7 @@ export async function updateBookingStatus(bookingId: string, status: BookingStat
         .eq('coach_id', user.id) // Ensure user owns the booking
 
     if (error) {
-        return { error: error.message }
+        return { error: friendlyError(error) }
     }
 
     revalidatePath(`/app/bookings/${bookingId}`)
@@ -264,7 +265,7 @@ export async function updateBooking(bookingId: string, data: Partial<BookingForm
     }
 
     if (result.error) {
-        return { error: result.error.message }
+        return { error: friendlyError(result.error) }
     }
 
     revalidatePath(`/app/bookings/${bookingId}`)
@@ -288,7 +289,7 @@ export async function getBooking(bookingId: string) {
         .single()
 
     if (error) {
-        return { error: error.message, data: null }
+        return { error: friendlyError(error), data: null }
     }
 
     // Verify the user is the coach who owns this booking, or an assigned/offered referee
@@ -331,7 +332,7 @@ export async function deleteBooking(bookingId: string) {
         .eq('coach_id', user.id) // Ensure ownership
 
     if (error) {
-        return { error: error.message }
+        return { error: friendlyError(error) }
     }
 
     revalidatePath('/app/bookings')
@@ -369,7 +370,7 @@ export async function dismissBooking(bookingId: string) {
         .eq('referee_id', user.id)
 
     if (error) {
-        return { error: error.message }
+        return { error: friendlyError(error) }
     }
 
     // Also remove any assignment
@@ -424,7 +425,7 @@ export async function cancelBooking(bookingId: string) {
             .eq('id', bookingId)
 
         if (error) {
-            return { error: error.message }
+            return { error: friendlyError(error) }
         }
 
         // Remove the assignment so the booking is open again
@@ -457,7 +458,7 @@ export async function cancelBooking(bookingId: string) {
             .eq('id', bookingId)
 
         if (error) {
-            return { error: error.message }
+            return { error: friendlyError(error) }
         }
 
         // Refund escrow if funds were held for this booking
@@ -548,7 +549,7 @@ export async function completeBooking(bookingId: string) {
         .eq('id', bookingId)
 
     if (error) {
-        return { error: error.message }
+        return { error: friendlyError(error) }
     }
 
     // Notify the other party
@@ -605,19 +606,17 @@ export async function acceptOffer(offerId: string) {
         return { error: 'This offer has no valid price' }
     }
 
-    // Record responded_at timestamp
-    await supabase
-        .from('booking_offers')
-        .update({ responded_at: new Date().toISOString() })
-        .eq('id', offerId)
-
-    // Confirm booking atomically: accept offer → escrow hold → create assignment
+    // Confirm booking atomically. The RPC (SECURITY DEFINER) handles the whole
+    // flow in one transaction: accept offer → escrow hold → create assignment →
+    // withdraw competing offers → create thread → add both participants →
+    // post "Booking confirmed" system message. All under elevated privilege so
+    // RLS can't block any single step and leave the booking half-confirmed.
     const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
         p_offer_id: offerId,
     })
 
     if (rpcError) {
-        return { error: 'Failed to confirm booking: ' + rpcError.message }
+        return { error: friendlyError(rpcError, 'Failed to confirm booking. Please try again.') }
     }
 
     if (rpcResult?.error) {
@@ -636,68 +635,7 @@ export async function acceptOffer(offerId: string) {
         return { error: rpcResult.error }
     }
 
-    // --- Core booking is now atomically committed. Steps below are secondary ---
-
-    // Withdraw other offers for this booking
-    const { error: withdrawError } = await supabase
-        .from('booking_offers')
-        .update({ status: 'withdrawn' })
-        .eq('booking_id', offer.booking_id)
-        .neq('id', offerId)
-
-    if (withdrawError) {
-        console.error('Failed to withdraw competing offers:', withdrawError)
-    }
-
-    // Create or get a thread for communication
-    let { data: thread } = await supabase
-        .from('threads')
-        .select('id')
-        .eq('booking_id', offer.booking_id)
-        .maybeSingle()
-
-    if (!thread) {
-        const { data: newThread, error: threadError } = await supabase
-            .from('threads')
-            .insert({
-                booking_id: offer.booking_id,
-                title: `Booking: ${offer.booking.ground_name || offer.booking.location_postcode}`,
-            })
-            .select()
-            .single()
-
-        if (threadError || !newThread) {
-            console.error('Thread creation error:', threadError)
-        } else {
-            thread = newThread
-        }
-    }
-
-    if (thread) {
-        const { error: participantError } = await supabase
-            .from('thread_participants')
-            .upsert([
-                { thread_id: thread.id, profile_id: offer.booking.coach_id },
-                { thread_id: thread.id, profile_id: offer.referee_id },
-            ], { onConflict: 'thread_id, profile_id' })
-
-        if (participantError) {
-            console.error('Failed to add thread participants:', participantError)
-        }
-
-        const { error: messageError } = await supabase
-            .from('messages')
-            .insert({
-                thread_id: thread.id,
-                sender_id: null,
-                kind: 'system',
-                body: 'Booking confirmed. Use chat to finalise details.',
-            })
-
-        if (messageError) {
-            console.error('Failed to add system message:', messageError)
-        }
-    }
+    const thread = rpcResult?.thread_id ? { id: rpcResult.thread_id as string } : null
 
     // Notify Coach that referee accepted
     const { data: refereeProfile } = await supabase
@@ -761,7 +699,7 @@ export async function declineOffer(offerId: string) {
         .eq('referee_id', user.id)
 
     if (error) {
-        return { error: error.message }
+        return { error: friendlyError(error) }
     }
 
     // Get booking to notify coach
@@ -817,7 +755,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
     ])
 
     if (dateAvailResult.error) {
-        return { error: dateAvailResult.error.message }
+        return { error: friendlyError(dateAvailResult.error) }
     }
 
     // Merge referee IDs from both date-specific and weekly recurring availability
@@ -865,7 +803,7 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
         .in('profile_id', refereeIds)
 
     if (error) {
-        return { error: error.message }
+        return { error: friendlyError(error) }
     }
 
     // Format the results
@@ -921,7 +859,7 @@ export async function bookReferee(refereeId: string, data: BookingFormData): Pro
         .single()
 
     if (bookingError) {
-        return { error: bookingError.message }
+        return { error: friendlyError(bookingError) }
     }
 
     // 2. Create the offer for this specific referee
@@ -934,7 +872,7 @@ export async function bookReferee(refereeId: string, data: BookingFormData): Pro
         })
 
     if (offerError) {
-        return { error: offerError.message }
+        return { error: friendlyError(offerError) }
     }
 
     // Removed immediate thread creation - now happens after price confirmation
@@ -999,7 +937,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
     ])
 
     if (dateAvailResult.error) {
-        return { error: dateAvailResult.error.message }
+        return { error: friendlyError(dateAvailResult.error) }
     }
 
     // Merge referee IDs from both date-specific and weekly recurring availability
@@ -1100,7 +1038,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
 
     const { data: results, error } = await query
 
-    if (error) return { error: error.message }
+    if (error) return { error: friendlyError(error) }
 
     // 4b. DBS enforcement: U16 and under require verified DBS — filter out non-verified referees
     const dbsRequired = requiresDBS(booking.age_group)
@@ -1227,7 +1165,7 @@ export async function sendBookingRequest(
 
     if (offerError) {
         if (offerError.code === '23505') return { error: 'Request already sent to this referee' }
-        return { error: offerError.message }
+        return { error: friendlyError(offerError) }
     }
 
     // 2. Update Booking Status if it was 'pending'
@@ -1311,7 +1249,7 @@ export async function rateReferee(bookingId: string, refereeId: string, input: R
             comment: input.comment || null,
         })
 
-    if (error) return { error: error.message }
+    if (error) return { error: friendlyError(error) }
 
     // Notify the referee
     await createNotification({
@@ -1339,6 +1277,6 @@ export async function getRating(bookingId: string) {
         .eq('reviewer_id', user.id)
         .maybeSingle()
 
-    if (error) return { error: error.message, data: null }
+    if (error) return { error: friendlyError(error), data: null }
     return { data, error: null }
 }
