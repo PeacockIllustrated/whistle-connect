@@ -7,7 +7,7 @@ import { RefereeSearchResult } from '@/lib/types'
 import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCard'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import Image from 'next/image'
-import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin } from 'lucide-react'
+import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, PoundSterling } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -156,7 +156,7 @@ export default function BookingMatchPage({ params }: Props) {
                             {/* Match fee input */}
                             <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm space-y-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-lg">💰</span>
+                                    <PoundSterling className="w-5 h-5 text-[var(--color-primary)]" />
                                     <p className="text-sm font-semibold">Match fee</p>
                                 </div>
                                 <div className="relative">

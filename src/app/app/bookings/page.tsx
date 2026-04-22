@@ -64,12 +64,16 @@ interface RefereeActionItem {
     venue: string
 }
 
-const statusFilters: { value: BookingStatus | 'all'; label: string }[] = [
+type BookingFilter = BookingStatus | 'all' | 'declined'
+
+const statusFilters: { value: BookingFilter; label: string }[] = [
     { value: 'all', label: 'All' },
     { value: 'pending', label: 'Pending' },
     { value: 'offered', label: 'Offered' },
     { value: 'confirmed', label: 'Confirmed' },
     { value: 'completed', label: 'Completed' },
+    { value: 'declined', label: 'Declined' },
+    { value: 'cancelled', label: 'Cancelled' },
 ]
 
 export default async function BookingsPage({
@@ -92,7 +96,7 @@ export default async function BookingsPage({
     const isCoach = profile?.role === 'coach'
     const isReferee = profile?.role === 'referee'
     const isAdmin = profile?.role === 'admin'
-    const statusFilter = params.status as BookingStatus | 'all' | undefined
+    const statusFilter = params.status as BookingFilter | undefined
     const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1)
     const offset = (currentPage - 1) * PAGE_SIZE
 
@@ -227,6 +231,28 @@ export default async function BookingsPage({
     }
 
     if (isCoach) {
+        // "Declined" filter means: bookings where at least one offer was
+        // declined and no one has accepted yet. We scope by coach first, then
+        // narrow. Build the id-set once and reuse it for both count & query.
+        let declinedBookingIds: string[] | null = null
+        if (statusFilter === 'declined') {
+            const { data: declinedOfferRows } = await supabase
+                .from('booking_offers')
+                .select('booking_id, booking:bookings!inner(coach_id, status, deleted_at)')
+                .eq('status', 'declined')
+                .eq('bookings.coach_id', user.id)
+                .is('bookings.deleted_at', null)
+                .neq('bookings.status', 'confirmed')
+                .neq('bookings.status', 'completed')
+                .neq('bookings.status', 'cancelled')
+            declinedBookingIds = Array.from(new Set((declinedOfferRows || []).map((r) => r.booking_id)))
+            // No declined offers → empty list, skip the normal count/query path
+            if (declinedBookingIds.length === 0) {
+                bookings = []
+                totalBookings = 0
+            }
+        }
+
         // First get total count for pagination
         let countQuery = supabase
             .from('bookings')
@@ -234,32 +260,41 @@ export default async function BookingsPage({
             .eq('coach_id', user.id)
             .is('deleted_at', null)
 
-        if (statusFilter && statusFilter !== 'all') {
+        if (statusFilter === 'declined' && declinedBookingIds && declinedBookingIds.length > 0) {
+            countQuery = countQuery.in('id', declinedBookingIds)
+        } else if (statusFilter && statusFilter !== 'all' && statusFilter !== 'declined') {
             countQuery = countQuery.eq('status', statusFilter)
         }
 
         const { count } = await countQuery
         totalBookings = count || 0
 
-        let query = supabase
-            .from('bookings')
-            .select(`
-        *,
-        coach:profiles!bookings_coach_id_fkey(*),
-        assignment:booking_assignments(*, referee:profiles(*)),
-        thread:threads(*)
-      `)
-            .eq('coach_id', user.id)
-            .is('deleted_at', null)
-            .order('match_date', { ascending: true })
-            .range(offset, offset + PAGE_SIZE - 1)
+        // Short-circuit the query when declined filter has no matches
+        if (statusFilter === 'declined' && declinedBookingIds && declinedBookingIds.length === 0) {
+            bookings = []
+        } else {
+            let query = supabase
+                .from('bookings')
+                .select(`
+            *,
+            coach:profiles!bookings_coach_id_fkey(*),
+            assignment:booking_assignments(*, referee:profiles(*)),
+            thread:threads(*)
+          `)
+                .eq('coach_id', user.id)
+                .is('deleted_at', null)
+                .order('match_date', { ascending: true })
+                .range(offset, offset + PAGE_SIZE - 1)
 
-        if (statusFilter && statusFilter !== 'all') {
-            query = query.eq('status', statusFilter)
+            if (statusFilter === 'declined' && declinedBookingIds && declinedBookingIds.length > 0) {
+                query = query.in('id', declinedBookingIds)
+            } else if (statusFilter && statusFilter !== 'all' && statusFilter !== 'declined') {
+                query = query.eq('status', statusFilter)
+            }
+
+            const { data } = await query
+            bookings = data || []
         }
-
-        const { data } = await query
-        bookings = data || []
     } else if (isReferee) {
         // Get bookings via offers or assignments
         const { data: offers } = await supabase

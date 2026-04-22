@@ -309,14 +309,21 @@ export default function AdminMapPage() {
                     if (!features?.length) return
                     const p = features[0].properties
 
+                    const availDot = p.is_available
+                        ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#10b981;margin-right:5px;vertical-align:middle"></span>'
+                        : '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#94a3b8;margin-right:5px;vertical-align:middle"></span>'
+                    const verifiedBadge = p.verified
+                        ? ' · <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="20 6 9 17 4 12"></polyline></svg> Verified'
+                        : ''
+                    const starIcon = '<svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="#f59e0b" stroke-width="1" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+
                     new mapboxgl.Popup({ offset: 25, closeButton: true })
                         .setLngLat([e.lngLat.lng, e.lngLat.lat])
                         .setHTML(`
                             <div style="font-family:system-ui;min-width:180px;font-size:13px">
                                 <strong style="font-size:14px">${escapeHtml(p.name)}</strong>
                                 <div style="color:#666;margin-top:4px">
-                                    ${p.is_available ? '🟢 Available' : '⚪ Unavailable'}
-                                    ${p.verified ? ' · ✅ Verified' : ''}
+                                    ${availDot}${p.is_available ? 'Available' : 'Unavailable'}${verifiedBadge}
                                 </div>
                                 <div style="color:#888;margin-top:2px;font-size:11px">
                                     Level ${escapeHtml(p.level)} · ${escapeHtml(p.county)}
@@ -324,7 +331,7 @@ export default function AdminMapPage() {
                                 <div style="color:#888;font-size:11px">
                                     ${escapeHtml(p.reliability)}% reliable · ${escapeHtml(p.matches)} matches
                                 </div>
-                                ${Number(p.rating) > 0 ? `<div style="color:#888;font-size:11px">⭐ ${Number(p.rating).toFixed(1)} avg rating</div>` : ''}
+                                ${Number(p.rating) > 0 ? `<div style="color:#888;font-size:11px">${starIcon}${Number(p.rating).toFixed(1)} avg rating</div>` : ''}
                                 <div style="margin-top:6px;font-size:11px;color:#999">FA: ${escapeHtml(p.fa_status)}</div>
                             </div>
                         `)
@@ -353,8 +360,12 @@ export default function AdminMapPage() {
                                     <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${statusColor};margin-right:4px;vertical-align:middle"></span>
                                     ${escapeHtml(String(p.status).charAt(0).toUpperCase() + String(p.status).slice(1))}
                                 </div>
-                                <div style="color:#888;margin-top:2px;font-size:11px">
-                                    📅 ${formatDate(String(p.match_date))} · ⏰ ${formatTime(String(p.kickoff_time))}
+                                <div style="color:#888;margin-top:2px;font-size:11px;display:flex;align-items:center;gap:4px">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                    <span>${formatDate(String(p.match_date))}</span>
+                                    <span>·</span>
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                    <span>${formatTime(String(p.kickoff_time))}</span>
                                 </div>
                                 <div style="color:#888;font-size:11px">
                                     Coach: ${escapeHtml(p.coach_name)} · Ref: ${escapeHtml(p.referee_name)}

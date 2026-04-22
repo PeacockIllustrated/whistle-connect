@@ -92,7 +92,12 @@ export default async function AppLayout({
                         <PushNotificationManager />
                         <InstallPrompt />
 
-                        <main className="pt-[calc(var(--header-height)+24px)] pb-[calc(var(--bottom-nav-height)+24px)]">
+                        <main
+                            style={{
+                                paddingTop: 'calc(var(--header-height) + var(--safe-area-top) + 24px)',
+                                paddingBottom: 'calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 24px)',
+                            }}
+                        >
                             {children}
                         </main>
 

@@ -86,12 +86,20 @@ export function BottomNav({ userRole }: BottomNavProps) {
     }, [])
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 h-[var(--bottom-nav-height)] safe-area-bottom">
-            {/* Frosted glass background */}
+        <nav
+            className="fixed bottom-0 left-0 right-0 z-50"
+            style={{ height: 'calc(var(--bottom-nav-height) + var(--safe-area-bottom))' }}
+        >
+            {/* Frosted glass background — extends through the home-indicator
+                area so the blur reads as a continuous bar */}
             <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-t border-[var(--border-color)]" />
 
-            {/* Content */}
-            <div className="relative h-full max-w-[var(--content-max-width)] mx-auto px-4 flex items-center justify-around">
+            {/* Content — pinned to the TOP of the expanded bar so the nav
+                items sit above the home indicator, not in it */}
+            <div
+                className="relative max-w-[var(--content-max-width)] mx-auto px-4 flex items-center justify-around"
+                style={{ height: 'var(--bottom-nav-height)' }}
+            >
                 {navItems.map((item) => {
                     const active = isActive(item.href)
                     const Icon = item.icon
