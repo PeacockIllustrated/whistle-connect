@@ -4,6 +4,7 @@ import { AppHeader } from '@/components/app/AppHeader'
 import { BottomNav } from '@/components/app/BottomNav'
 import { ToastProvider } from '@/components/ui/Toast'
 import { PushNotificationManager } from '@/components/app/PushNotificationManager'
+import { InstallPrompt } from '@/components/app/InstallPrompt'
 import { UnreadMessagesProvider } from '@/components/app/UnreadMessagesProvider'
 import { BookingUpdatesProvider } from '@/components/app/BookingUpdatesProvider'
 import SplashScreen from '@/components/ui/SplashScreen'
@@ -89,6 +90,7 @@ export default async function AppLayout({
                         <DevBanner />
 
                         <PushNotificationManager />
+                        <InstallPrompt />
 
                         <main className="pt-[calc(var(--header-height)+24px)] pb-[calc(var(--bottom-nav-height)+24px)]">
                             {children}

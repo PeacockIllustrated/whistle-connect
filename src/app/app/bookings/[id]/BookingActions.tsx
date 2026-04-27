@@ -6,13 +6,12 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { useToast } from '@/components/ui/Toast'
-import { acceptOffer, declineOffer, cancelBooking, confirmPrice, completeBooking } from '../actions'
+import { acceptOffer, declineOffer, cancelBooking, completeBooking } from '../actions'
 import { BookingOffer, BookingWithDetails } from '@/lib/types'
-import { Input } from '@/components/ui/Input'
+// Input no longer needed — referee doesn't set price
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { RatingModal } from '@/components/app/RatingModal'
-import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, CircleDollarSign, Pencil, Search, Star } from 'lucide-react'
-import { getWallet } from '@/app/app/wallet/actions'
+import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, Pencil, Search, Star } from 'lucide-react'
 
 interface BookingActionsProps {
     booking: BookingWithDetails
@@ -37,7 +36,6 @@ export function BookingActions({
     const [completing, setCompleting] = useState(false)
     const [showCancelDialog, setShowCancelDialog] = useState(false)
     const [showCompleteDialog, setShowCompleteDialog] = useState(false)
-    const [price, setPrice] = useState('')
     const [errorMessage, setErrorMessage] = useState('')
     const [celebration, setCelebration] = useState<{
         icon: 'check-circle' | 'party-popper' | 'send' | 'user-check' | 'calendar-check'
@@ -47,37 +45,29 @@ export function BookingActions({
     } | null>(null)
     const [showRatingModal, setShowRatingModal] = useState(false)
     const [hasRated, setHasRated] = useState(false)
-    const [walletBalance, setWalletBalance] = useState<number | null>(null)
-    const [walletLoading, setWalletLoading] = useState(true)
+    // Wallet balance no longer needed here — escrow check happens server-side
 
-    useEffect(() => {
-        async function fetchWallet() {
-            const { data } = await getWallet()
-            setWalletBalance(data?.balance_pence ?? 0)
-            setWalletLoading(false)
-        }
-        fetchWallet()
-    }, [])
-
-    // ─── Referee: Accept offer with price ───
-    const handleAcceptWithPrice = async () => {
+    // ─── Referee: Accept offer (coach already set the price) ───
+    const handleAcceptOffer = async () => {
         if (!userOffer) return
-
-        const priceNum = parseFloat(price)
-        if (isNaN(priceNum) || priceNum <= 0) {
-            setErrorMessage('Please enter a valid price')
-            return
-        }
 
         setAccepting(true)
         setErrorMessage('')
         try {
-            const result = await acceptOffer(userOffer.id, priceNum)
-            if (result.success) {
+            const result = await acceptOffer(userOffer.id)
+            if (result.success && result.threadId) {
+                const threadId = result.threadId
                 setCelebration({
-                    icon: 'send',
-                    title: 'Price Sent!',
-                    subtitle: `£${priceNum.toFixed(2)} sent to the coach`,
+                    icon: 'party-popper',
+                    title: 'Booking Confirmed!',
+                    subtitle: `You're booked in — £${((userOffer.price_pence || 0) / 100).toFixed(2)}`,
+                    onComplete: () => router.push(`/app/messages/${threadId}`),
+                })
+            } else if (result.success) {
+                setCelebration({
+                    icon: 'party-popper',
+                    title: 'Booking Confirmed!',
+                    subtitle: `You're booked in — £${((userOffer.price_pence || 0) / 100).toFixed(2)}`,
                     onComplete: () => router.refresh(),
                 })
             } else {
@@ -110,36 +100,7 @@ export function BookingActions({
         }
     }
 
-    // ─── Coach: Confirm price → creates assignment + thread ───
-    const handleConfirmPrice = async (offerId: string) => {
-        setAccepting(true)
-        setErrorMessage('')
-        try {
-            const result = await confirmPrice(offerId)
-            if (result.success && result.threadId) {
-                const threadId = result.threadId
-                setCelebration({
-                    icon: 'party-popper',
-                    title: 'Booking Confirmed!',
-                    subtitle: 'Your referee is locked in',
-                    onComplete: () => router.push(`/app/messages/${threadId}`),
-                })
-            } else {
-                setErrorMessage(result.error || 'Failed to confirm booking. Please try again.')
-                showToast({ message: result.error || 'Failed to confirm booking', type: 'error' })
-                if ((result as { code?: string }).code === 'INSUFFICIENT_FUNDS' || (result as { code?: string }).code === 'NO_WALLET') {
-                    const { data } = await getWallet()
-                    setWalletBalance(data?.balance_pence ?? 0)
-                }
-                setAccepting(false)
-            }
-        } catch (error) {
-            console.error('Failed to confirm price:', error)
-            setErrorMessage('Something went wrong. Please try again.')
-            showToast({ message: 'Failed to confirm booking', type: 'error' })
-            setAccepting(false)
-        }
-    }
+    // handleConfirmPrice removed — referees now confirm bookings directly when accepting
 
     // ─── Cancel booking (coach or referee) ───
     const handleCancel = async () => {
@@ -209,6 +170,7 @@ export function BookingActions({
     //  SCENARIO 1: Referee has a pending offer (sent)
     // ═══════════════════════════════════════════════
     if (isReferee && userOffer?.status === 'sent') {
+        const displayPrice = (userOffer.price_pence || 0) / 100
         return (
             <div className="space-y-3">
                 {errorMessage && (
@@ -217,41 +179,37 @@ export function BookingActions({
                     </div>
                 )}
 
-                {/* Price input shown immediately — no confusing two-step */}
-                <div className="p-4 bg-[var(--background-elevated)] border border-[var(--border-color)] rounded-xl space-y-3">
-                    <div className="flex items-center gap-2 mb-1">
-                        <CircleDollarSign className="w-5 h-5 text-green-600" />
-                        <p className="text-sm font-semibold">Your fee for this match</p>
-                    </div>
-                    <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">&pound;</span>
-                        <Input
-                            type="number"
-                            placeholder="0.00"
-                            value={price}
-                            onChange={(e) => {
-                                setPrice(e.target.value)
-                                setErrorMessage('')
-                            }}
-                            className="pl-7"
-                            step="0.01"
-                            min="0"
-                        />
-                    </div>
-                    <p className="text-[10px] text-[var(--foreground-muted)]">
-                        Enter your total fee including travel and expenses.
-                    </p>
+                {/* Offered price with travel breakdown — read-only (coach set this) */}
+                <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                    <p className="text-sm text-green-700 mb-2 text-center">Offered Fee</p>
+                    <p className="text-3xl font-bold text-green-700 text-center">&pound;{displayPrice.toFixed(2)}</p>
+
+                    {/* Show breakdown if travel data exists */}
+                    {userOffer.match_fee_pence != null && (
+                        <div className="mt-3 pt-3 border-t border-green-200 space-y-1 text-xs">
+                            <div className="flex justify-between text-green-700">
+                                <span>Match fee</span>
+                                <span>&pound;{(userOffer.match_fee_pence / 100).toFixed(2)}</span>
+                            </div>
+                            {userOffer.travel_cost_pence != null && userOffer.travel_cost_pence > 0 && (
+                                <div className="flex justify-between text-green-700">
+                                    <span>Travel{userOffer.travel_distance_km ? ` (${userOffer.travel_distance_km} km)` : ''}</span>
+                                    <span>&pound;{(userOffer.travel_cost_pence / 100).toFixed(2)}</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <Button
                     fullWidth
                     variant="success"
-                    onClick={handleAcceptWithPrice}
+                    onClick={handleAcceptOffer}
                     loading={accepting}
-                    disabled={declining || !price}
+                    disabled={declining}
                 >
                     <Check className="w-5 h-5 mr-2" />
-                    Accept &amp; Send Price
+                    Accept Offer
                 </Button>
                 <Button
                     fullWidth
@@ -266,97 +224,8 @@ export function BookingActions({
         )
     }
 
-    // ═══════════════════════════════════════════════
-    //  SCENARIO 2: Coach sees a priced offer
-    // ═══════════════════════════════════════════════
-    const pricedOffer = isCoach && booking.offers?.find(o => o.status === 'accepted_priced')
-    if (pricedOffer && booking.status !== 'confirmed') {
-        const displayPrice = (pricedOffer.price_pence || 0) / 100
-        const refereeInfo = pricedOffer.referee as { full_name?: string } | null
-        return (
-            <div className="space-y-3">
-                {errorMessage && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center">
-                        {errorMessage}
-                    </div>
-                )}
-
-                {/* Referee who sent the price */}
-                <div className="card p-4">
-                    <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">REFEREE</h3>
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white font-semibold">
-                            {refereeInfo?.full_name?.charAt(0) || '?'}
-                        </div>
-                        <div className="flex-1">
-                            <p className="font-medium">{refereeInfo?.full_name || 'Unknown Referee'}</p>
-                            <p className="text-sm text-[var(--foreground-muted)]">Has accepted your request</p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Price Display */}
-                <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-center">
-                    <p className="text-sm text-green-700 mb-1">Proposed Fee</p>
-                    <p className="text-3xl font-bold text-green-700">&pound;{displayPrice.toFixed(2)}</p>
-                    <p className="text-xs text-green-600 mt-2">
-                        This is the referee&apos;s fee including travel and expenses.
-                    </p>
-                </div>
-
-                {!walletLoading && walletBalance !== null && (
-                    <div className="mt-3 flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Wallet balance:</span>
-                        <span className={walletBalance < (pricedOffer.price_pence ?? 0) ? 'text-red-500 font-medium' : 'text-green-600 font-medium'}>
-                            £{(walletBalance / 100).toFixed(2)}
-                        </span>
-                    </div>
-                )}
-
-                {!walletLoading && walletBalance !== null && walletBalance < (pricedOffer.price_pence ?? 0) && (
-                    <div className="mt-2 rounded-lg bg-red-50 dark:bg-red-950/30 p-3 text-sm">
-                        <p className="text-red-700 dark:text-red-400 font-medium">
-                            Insufficient funds — you need £{(((pricedOffer.price_pence ?? 0) - walletBalance) / 100).toFixed(2)} more
-                        </p>
-                        <a
-                            href={`/app/wallet/top-up?amount=${Math.ceil(((pricedOffer.price_pence ?? 0) - walletBalance) / 100)}`}
-                            className="mt-2 inline-block text-blue-600 dark:text-blue-400 underline"
-                        >
-                            Top up your wallet
-                        </a>
-                    </div>
-                )}
-
-                <Button
-                    fullWidth
-                    variant="success"
-                    onClick={() => handleConfirmPrice(pricedOffer.id)}
-                    loading={accepting}
-                    disabled={accepting || walletLoading || (walletBalance !== null && walletBalance < (pricedOffer.price_pence ?? 0))}
-                >
-                    <Check className="w-5 h-5 mr-2" />
-                    Accept Price &amp; Confirm Booking
-                </Button>
-                <Button
-                    fullWidth
-                    variant="outline"
-                    onClick={() => setShowCancelDialog(true)}
-                    disabled={accepting}
-                >
-                    Decline &amp; Cancel
-                </Button>
-                <ConfirmDialog
-                    isOpen={showCancelDialog}
-                    onClose={() => setShowCancelDialog(false)}
-                    onConfirm={handleCancel}
-                    title="Cancel Booking"
-                    message="Are you sure you want to cancel this booking? This action cannot be undone."
-                    confirmLabel="Yes, Cancel"
-                    variant="danger"
-                />
-            </div>
-        )
-    }
+    // SCENARIO 2 (coach sees accepted_priced) removed — no longer part of the flow.
+    // When a referee accepts, the booking goes straight to 'confirmed'.
 
     // ═══════════════════════════════════════════════
     //  SCENARIO 3: Confirmed/completed booking

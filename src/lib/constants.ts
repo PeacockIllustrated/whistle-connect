@@ -47,3 +47,13 @@ export const AGE_GROUPS = [
     { value: 'adult', label: 'Adult' },
     { value: 'veterans', label: 'Veterans' },
 ]
+
+/** Age groups where a verified DBS check is mandatory for the referee (U16 and under). */
+export const DBS_REQUIRED_AGE_GROUPS = new Set([
+    'u7', 'u8', 'u9', 'u10', 'u11', 'u12', 'u13', 'u14', 'u15', 'u16',
+])
+
+/** Returns true if the given age group requires a DBS-verified referee. */
+export function requiresDBS(ageGroup: string | null | undefined): boolean {
+    return !!ageGroup && DBS_REQUIRED_AGE_GROUPS.has(ageGroup)
+}

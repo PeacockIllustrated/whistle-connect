@@ -3,6 +3,7 @@
 import { useState, useTransition, useRef, useCallback } from 'react'
 import { toggleAvailability, updateTravelRadius } from '@/app/app/availability/actions'
 import { useToast } from '@/components/ui/Toast'
+import { ConfirmDialog } from '@/components/ui/Modal'
 import { MapPin, Zap, ZapOff } from 'lucide-react'
 
 interface AvailabilityToggleProps {
@@ -15,11 +16,11 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
     const [radius, setRadius] = useState(initialRadius)
     const [togglePending, startToggleTransition] = useTransition()
     const [radiusPending, startRadiusTransition] = useTransition()
+    const [confirmOff, setConfirmOff] = useState(false)
     const { showToast } = useToast()
     const radiusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-    const handleToggle = () => {
-        const newValue = !isAvailable
+    const applyToggle = (newValue: boolean) => {
         setIsAvailable(newValue)
         startToggleTransition(async () => {
             const result = await toggleAvailability(newValue)
@@ -30,6 +31,15 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
                 showToast({ message: newValue ? 'You are now available' : 'You are now unavailable', type: 'success' })
             }
         })
+    }
+
+    const handleToggle = () => {
+        if (isAvailable) {
+            // Turning OFF — confirm first so it can't happen by accident.
+            setConfirmOff(true)
+        } else {
+            applyToggle(true)
+        }
     }
 
     // Debounce radius saves — update UI instantly, save after user stops dragging
@@ -51,23 +61,27 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
     }
 
     return (
-        <div className="card p-4 space-y-4">
+        <div
+            className={`card p-4 space-y-4 transition-colors ${
+                isAvailable ? '' : 'border-red-300 bg-red-50'
+            }`}
+        >
             {/* Availability Toggle */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${
                         isAvailable
                             ? 'bg-emerald-100 text-emerald-600'
-                            : 'bg-[var(--neutral-100)] text-[var(--foreground-muted)]'
+                            : 'bg-red-100 text-red-600'
                     }`}>
                         {isAvailable ? <Zap className="w-5 h-5" /> : <ZapOff className="w-5 h-5" />}
                     </div>
                     <div>
-                        <p className="font-semibold text-sm">
+                        <p className={`font-semibold text-sm ${isAvailable ? '' : 'text-red-700'}`}>
                             {isAvailable ? 'Available for matches' : 'Not available'}
                         </p>
-                        <p className="text-xs text-[var(--foreground-muted)]">
-                            {isAvailable ? 'Coaches can find you nearby' : 'You won\'t appear in searches'}
+                        <p className={`text-xs ${isAvailable ? 'text-[var(--foreground-muted)]' : 'text-red-700/80'}`}>
+                            {isAvailable ? 'Coaches can find you nearby' : "You won't appear in any coach searches"}
                         </p>
                     </div>
                 </div>
@@ -75,7 +89,7 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
                     onClick={handleToggle}
                     disabled={togglePending}
                     className={`relative w-14 h-8 rounded-full transition-colors duration-200 ${
-                        isAvailable ? 'bg-emerald-500' : 'bg-[var(--neutral-300)]'
+                        isAvailable ? 'bg-emerald-500' : 'bg-red-500'
                     } ${togglePending ? 'opacity-60' : ''}`}
                     aria-label={isAvailable ? 'Disable availability' : 'Enable availability'}
                 >
@@ -86,6 +100,17 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
                     />
                 </button>
             </div>
+
+            <ConfirmDialog
+                isOpen={confirmOff}
+                onClose={() => setConfirmOff(false)}
+                onConfirm={() => applyToggle(false)}
+                title="Mark yourself unavailable?"
+                message="Coaches won't be able to find you in searches or send you offers until you turn this back on."
+                confirmLabel="Yes, go unavailable"
+                cancelLabel="Cancel"
+                variant="danger"
+            />
 
             {/* Travel Radius */}
             <div className="pt-2 border-t border-[var(--border-color)]">

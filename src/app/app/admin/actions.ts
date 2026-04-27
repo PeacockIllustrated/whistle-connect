@@ -315,3 +315,60 @@ export async function backfillGeolocations() {
 
     return { success: true, profilesUpdated, bookingsUpdated }
 }
+
+// ── Platform Settings ────────────────────────────────────────────────────
+
+export async function getPlatformSettings(): Promise<{
+    data?: Record<string, string>
+    error?: string
+}> {
+    const supabase = await createClient()
+    const user = await requireAdmin(supabase)
+    if (!user) return { error: 'Admin access required' }
+
+    const { data, error } = await supabase
+        .from('platform_settings')
+        .select('key, value')
+
+    if (error) return { error: error.message }
+
+    const settings: Record<string, string> = {}
+    for (const row of data || []) {
+        settings[row.key] = row.value
+    }
+
+    return { data: settings }
+}
+
+export async function updatePlatformSetting(
+    key: string,
+    value: string,
+): Promise<{ success?: boolean; error?: string }> {
+    const supabase = await createClient()
+    const user = await requireAdmin(supabase)
+    if (!user) return { error: 'Admin access required' }
+
+    // Validate
+    if (!key || !value) return { error: 'Key and value are required' }
+
+    if (key === 'travel_cost_per_km_pence') {
+        const num = parseInt(value, 10)
+        if (isNaN(num) || num < 0 || num > 200) {
+            return { error: 'Travel cost must be between 0 and 200 pence per km' }
+        }
+    }
+
+    const { error } = await supabase
+        .from('platform_settings')
+        .update({
+            value,
+            updated_at: new Date().toISOString(),
+            updated_by: user.id,
+        })
+        .eq('key', key)
+
+    if (error) return { error: error.message }
+
+    revalidatePath('/app/admin/settings')
+    return { success: true }
+}

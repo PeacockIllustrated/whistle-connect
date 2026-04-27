@@ -131,6 +131,9 @@ export interface BookingOffer {
     referee_id: string
     status: OfferStatus
     price_pence: number | null
+    match_fee_pence: number | null
+    travel_distance_km: number | null
+    travel_cost_pence: number | null
     currency: string
     sent_at: string
     created_at: string
@@ -235,6 +238,7 @@ export interface RefereeSearchResult {
     level: string | null
     county: string | null
     travel_radius_km: number
+    distance_km: number | null
     verified: boolean
     fa_verification_status: FAVerificationStatus
     dbs_status: DBSStatus
