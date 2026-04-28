@@ -10,6 +10,7 @@ import { Skeleton, SkeletonCard } from '@/components/ui/Skeleton'
 import { ActionCard, AccessLane } from '@/components/app/ActionCard'
 import { StepperWizard } from '@/components/app/StepperWizard'
 import { MessageBubble } from '@/components/app/MessageBubble'
+import { CalendarDays, Lock, Goal, Users, Inbox, Plus, Clock } from 'lucide-react'
 import { useState } from 'react'
 
 export default function ComponentsPage() {
@@ -235,13 +236,13 @@ export default function ComponentsPage() {
                         <h2 className="text-lg font-semibold mb-4">Action Cards</h2>
                         <div className="space-y-3">
                             <ActionCard
-                                icon={<span>📅</span>}
+                                icon={<CalendarDays className="w-6 h-6" />}
                                 title="Book a Referee"
                                 subtitle="Find and book officials"
                                 variant="primary"
                             />
                             <ActionCard
-                                icon={<span>🔒</span>}
+                                icon={<Lock className="w-6 h-6" />}
                                 title="Coming Soon"
                                 subtitle="This feature is disabled"
                                 disabled
@@ -253,8 +254,8 @@ export default function ComponentsPage() {
                     <section>
                         <h2 className="text-lg font-semibold mb-4">Access Lanes</h2>
                         <div className="space-y-2">
-                            <AccessLane icon={<span>⚽</span>} title="Referee Access" variant="referee" />
-                            <AccessLane icon={<span>👥</span>} title="Coach Access" variant="coach" />
+                            <AccessLane icon={<Goal className="w-5 h-5" />} title="Referee Access" variant="referee" />
+                            <AccessLane icon={<Users className="w-5 h-5" />} title="Coach Access" variant="coach" />
                         </div>
                     </section>
 
@@ -320,7 +321,7 @@ export default function ComponentsPage() {
                         <h2 className="text-lg font-semibold mb-4">Empty State</h2>
                         <div className="card">
                             <EmptyState
-                                icon={<span className="text-4xl">📭</span>}
+                                icon={<Inbox className="w-12 h-12" strokeWidth={1.5} />}
                                 title="No messages"
                                 description="Start a conversation with a referee or coach"
                                 action={<Button size="sm">Send Message</Button>}
@@ -358,7 +359,7 @@ export default function ComponentsPage() {
                                 </div>
                             </div>
                             <ActionCard
-                                icon={<span>➕</span>}
+                                icon={<Plus className="w-6 h-6" />}
                                 title="Book a Referee"
                                 subtitle="Create a new booking"
                                 variant="primary"
@@ -377,8 +378,14 @@ export default function ComponentsPage() {
                                 <StatusChip status="confirmed" size="sm" />
                             </div>
                             <div className="flex items-center gap-4 text-sm text-[var(--foreground-muted)]">
-                                <span>📅 Sat, Jan 4</span>
-                                <span>⏰ 10:00am</span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <CalendarDays className="w-3.5 h-3.5" />
+                                    Sat, Jan 4
+                                </span>
+                                <span className="inline-flex items-center gap-1.5">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    10:00am
+                                </span>
                             </div>
                             <div className="flex gap-2 mt-2">
                                 <span className="px-2 py-0.5 bg-[var(--neutral-100)] rounded text-xs">11v11</span>

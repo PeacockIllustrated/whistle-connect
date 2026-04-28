@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { formatDate, formatTime } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
-import { ChevronDown, Star, Clock, CheckCircle, XCircle, User, CalendarDays } from 'lucide-react'
+import { ChevronDown, Star, Clock, CheckCircle, User, CalendarDays } from 'lucide-react'
 import type { BookingStatus } from '@/lib/types'
 
 // Types for what we pass from the server

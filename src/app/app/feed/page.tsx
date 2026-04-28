@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { getMatchFeed, expressInterest, getMyOffers, FeedBooking, FeedOffer } from './actions'
 import { MatchFeedCard } from '@/components/app/MatchFeedCard'
@@ -24,12 +24,7 @@ export default function FeedPage() {
     const { showToast } = useToast()
     const { offerCount } = useBookingUpdates()
 
-    useEffect(() => {
-        loadFeed()
-        loadOffers()
-    }, [])
-
-    async function loadFeed() {
+    const loadFeed = useCallback(async () => {
         setLoading(true)
         const result = await getMatchFeed()
         if (result.error) {
@@ -38,14 +33,23 @@ export default function FeedPage() {
             setBookings(result.data || [])
         }
         setLoading(false)
-    }
+    }, [])
 
-    async function loadOffers() {
+    const loadOffers = useCallback(async () => {
         const result = await getMyOffers()
         if (!result.error) {
             setOffers(result.data || [])
         }
-    }
+    }, [])
+
+    useEffect(() => {
+        // Initial fetch on mount. State updates happen after the awaited fetches
+        // resolve, not synchronously in the effect body — the textbook
+        // "subscribe for external updates" pattern.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        void loadFeed()
+        void loadOffers()
+    }, [loadFeed, loadOffers])
 
     async function handleExpressInterest(bookingId: string) {
         const result = await expressInterest(bookingId)

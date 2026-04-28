@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Standalone Node utility scripts
     "generate-keys.js",
+    // Capacitor / Android build output (vendored bridge JS, not authored here)
+    "android/app/build/**",
   ]),
 ]);
 

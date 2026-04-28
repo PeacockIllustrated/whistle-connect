@@ -13,47 +13,56 @@ const DISMISS_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
 
 type Mode = 'hidden' | 'android' | 'ios'
 
+/**
+ * Decide initial mode synchronously at mount.
+ * iOS Safari has no `beforeinstallprompt` event, so we surface the manual
+ * "Add to Home Screen" instructions immediately if it's the user's browser.
+ * Android / desktop Chromium browsers stay hidden until the event fires.
+ */
+function computeInitialMode(): Mode {
+    if (typeof window === 'undefined') return 'hidden'
+    if (isNative()) return 'hidden'
+
+    const isStandalone =
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true
+    if (isStandalone) return 'hidden'
+
+    try {
+        const dismissed = window.localStorage.getItem(DISMISS_KEY)
+        if (dismissed && Date.now() - Number(dismissed) < DISMISS_TTL_MS) return 'hidden'
+    } catch {
+        // localStorage may be disabled — proceed
+    }
+
+    const ua = window.navigator.userAgent
+    const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream
+    const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua)
+    if (isIOS && isSafari) return 'ios'
+
+    return 'hidden'
+}
+
 export function InstallPrompt() {
-    const [mode, setMode] = useState<Mode>('hidden')
+    // Initial mode is computed once at mount — keeps the effect free of
+    // synchronous setState (which violates react-hooks/set-state-in-effect).
+    const [mode, setMode] = useState<Mode>(computeInitialMode)
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null)
 
     useEffect(() => {
-        // Never show in a native Capacitor shell — already "installed"
+        // The iOS path is already decided by the lazy initializer.
+        // We only need event listeners for the Android / desktop Chromium path.
+        if (typeof window === 'undefined') return
         if (isNative()) return
 
-        // Hide if already running as an installed PWA
-        const isStandalone =
-            window.matchMedia('(display-mode: standalone)').matches ||
-            // iOS Safari exposes this non-standard flag when running as a home-screen app
-            (window.navigator as unknown as { standalone?: boolean }).standalone === true
-        if (isStandalone) return
-
-        // Respect recent dismissal
-        const dismissed = localStorage.getItem(DISMISS_KEY)
-        if (dismissed && Date.now() - Number(dismissed) < DISMISS_TTL_MS) return
-
-        const ua = window.navigator.userAgent
-        const isIOS = /iPad|iPhone|iPod/.test(ua) && !(window as unknown as { MSStream?: unknown }).MSStream
-        const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua)
-
-        // iOS path: no beforeinstallprompt event — show manual instructions.
-        // Only show to actual iOS Safari (not in-app browsers like Chrome iOS which can't install PWAs either way).
-        if (isIOS && isSafari) {
-            setMode('ios')
-            return
-        }
-
-        // Android / desktop Chrome / Edge path: listen for the browser event.
         const handler = (e: Event) => {
             e.preventDefault()
             setDeferredPrompt(e as BeforeInstallPromptEvent)
             setMode('android')
         }
+        const installedHandler = () => setMode('hidden')
 
         window.addEventListener('beforeinstallprompt', handler as EventListener)
-
-        // If the app becomes installed during the session, hide immediately
-        const installedHandler = () => setMode('hidden')
         window.addEventListener('appinstalled', installedHandler)
 
         return () => {

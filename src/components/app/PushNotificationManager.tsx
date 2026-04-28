@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { isNative } from '@/lib/platform'
 import { initNativePush } from '@/lib/notifications-native'
@@ -30,7 +30,41 @@ export function PushNotificationManager() {
     // For now, we assume it's exposed via env
     const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
 
-    async function registerServiceWorker() {
+    // Declared first (used by registerServiceWorker and subscribe). useCallback gives
+    // a stable reference so the effect dependencies don't churn.
+    const saveSubscription = useCallback(async (sub: PushSubscription) => {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) {
+            console.error('[Push] Cannot save subscription: user not authenticated')
+            return
+        }
+
+        const p256dh = sub.toJSON().keys?.p256dh
+        const auth = sub.toJSON().keys?.auth
+
+        if (!p256dh || !auth) {
+            console.error('[Push] Subscription missing VAPID keys:', { p256dh: !!p256dh, auth: !!auth })
+            return
+        }
+
+        const { error } = await supabase.from('push_subscriptions').upsert({
+            user_id: user.id,
+            endpoint: sub.endpoint,
+            p256dh,
+            auth,
+            platform: 'web',
+        }, { onConflict: 'user_id, endpoint' })
+
+        if (error) {
+            console.error('[PushNotification] Failed to save subscription:', error)
+        } else {
+            console.log('[PushNotification] Subscription saved successfully')
+        }
+    }, [])
+
+    const registerServiceWorker = useCallback(async () => {
         const registration = await navigator.serviceWorker.register('/sw.js', {
             scope: '/',
             updateViaCache: 'none',
@@ -68,7 +102,7 @@ export function PushNotificationManager() {
                 setIsSupported(true)
             }
         }
-    }
+    }, [VAPID_PUBLIC_KEY, saveSubscription])
 
     useEffect(() => {
         // Native path: delegate to Capacitor push (FCM/APNs)
@@ -77,11 +111,16 @@ export function PushNotificationManager() {
             return // Skip all web push logic — native handles its own permissions UI
         }
 
-        // Web path: register SW, then decide whether to show the prompt inside the async flow
+        // Web path: this effect is the textbook case described in React's docs
+        // ("Subscribe for updates from some external system, calling setState in a
+        // callback function when external state changes") — service worker registration
+        // is the external system. State updates happen asynchronously after navigator
+        // / Notification APIs resolve, not synchronously in the effect body.
         if ('serviceWorker' in navigator && 'PushManager' in window && VAPID_PUBLIC_KEY) {
-            registerServiceWorker()
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            void registerServiceWorker()
         }
-    }, [VAPID_PUBLIC_KEY])
+    }, [VAPID_PUBLIC_KEY, registerServiceWorker])
 
 
     async function subscribe() {
@@ -98,38 +137,6 @@ export function PushNotificationManager() {
             await saveSubscription(sub)
         } catch (error) {
             console.error('Failed to subscribe:', error)
-        }
-    }
-
-    async function saveSubscription(sub: PushSubscription) {
-        const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
-
-        if (!user) {
-            console.error('[Push] Cannot save subscription: user not authenticated')
-            return
-        }
-
-        const p256dh = sub.toJSON().keys?.p256dh
-        const auth = sub.toJSON().keys?.auth
-
-        if (!p256dh || !auth) {
-            console.error('[Push] Subscription missing VAPID keys:', { p256dh: !!p256dh, auth: !!auth })
-            return
-        }
-
-        const { error } = await supabase.from('push_subscriptions').upsert({
-            user_id: user.id,
-            endpoint: sub.endpoint,
-            p256dh,
-            auth,
-            platform: 'web',
-        }, { onConflict: 'user_id, endpoint' })
-
-        if (error) {
-            console.error('[PushNotification] Failed to save subscription:', error)
-        } else {
-            console.log('[PushNotification] Subscription saved successfully')
         }
     }
 
