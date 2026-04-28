@@ -55,8 +55,8 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--brand-primary)]/10 to-[var(--brand-primary)]/5 flex items-center justify-center">
-                            <CreditCard className="w-4 h-4 text-[var(--brand-primary)]" />
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--wc-green)]/10 to-[var(--wc-green)]/5 flex items-center justify-center">
+                            <CreditCard className="w-4 h-4 text-[var(--wc-green)]" />
                         </div>
                         <h2 className="text-lg font-semibold text-[var(--foreground)]">Add Funds</h2>
                     </div>
@@ -76,8 +76,8 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
                             onClick={() => { setAmount(preset); setCustomAmount('') }}
                             className={`rounded-xl border-2 py-3.5 text-center font-bold text-sm transition-all duration-200 ${
                                 amount === preset
-                                    ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/10 text-[var(--brand-primary)] shadow-sm'
-                                    : 'border-[var(--border-color)] bg-[var(--background-soft)] text-[var(--foreground)] hover:border-[var(--brand-primary)]/50'
+                                    ? 'border-[var(--wc-green)] bg-[var(--wc-green)]/10 text-[var(--wc-green)] shadow-sm'
+                                    : 'border-[var(--border-color)] bg-[var(--background-soft)] text-[var(--foreground)] hover:border-[var(--wc-green)]/50'
                             }`}
                         >
                             &pound;{preset}
@@ -96,7 +96,7 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
                         value={customAmount}
                         onChange={(e) => { setCustomAmount(e.target.value); setAmount(null) }}
                         placeholder="Custom amount"
-                        className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--background-soft)] py-3 pl-8 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:outline-none focus:border-[var(--brand-primary)] focus:ring-1 focus:ring-[var(--brand-primary)]/30 transition-all"
+                        className="w-full rounded-xl border border-[var(--border-color)] bg-[var(--background-soft)] py-3 pl-8 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--foreground-muted)] focus:outline-none focus:border-[var(--wc-green)] focus:ring-1 focus:ring-[var(--wc-green)]/30 transition-all"
                     />
                 </div>
 
@@ -128,7 +128,7 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
                 <button
                     onClick={handleSubmit}
                     disabled={!isValid || loading}
-                    className="w-full rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-dark)] text-white shadow-lg shadow-[var(--brand-primary)]/20 hover:shadow-xl hover:shadow-[var(--brand-primary)]/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg transition-all duration-200"
+                    className="w-full rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-lg shadow-[var(--wc-green)]/20 hover:shadow-xl hover:shadow-[var(--wc-green)]/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg transition-all duration-200"
                 >
                     {loading ? 'Redirecting to Stripe...' : 'Pay with Stripe'}
                 </button>

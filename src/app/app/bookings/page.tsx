@@ -8,8 +8,8 @@ import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/Awa
 import { AdminBookingsView } from '@/components/app/AdminBookingsView'
 import type { AdminBooking } from '@/components/app/AdminBookingsView'
 import { BookingStatus, BookingWithDetails } from '@/lib/types'
-import { toLocalDateString } from '@/lib/utils'
-import { CalendarDays } from 'lucide-react'
+import { formatDate, formatTime, toLocalDateString } from '@/lib/utils'
+import { CalendarDays, XCircle } from 'lucide-react'
 import { Pagination } from '@/components/app/Pagination'
 
 const PAGE_SIZE = 20
@@ -62,6 +62,16 @@ interface RefereeActionItem {
     matchDate: string
     kickoffTime: string
     venue: string
+}
+
+interface DeclinedOfferItem {
+    id: string
+    bookingId: string
+    matchDate: string
+    kickoffTime: string
+    venue: string
+    refereeName: string | null
+    declinedAt: string
 }
 
 const statusFilters: { value: BookingStatus | 'all'; label: string }[] = [
@@ -297,6 +307,7 @@ export default async function BookingsPage({
     // ── Awaiting Action data ────────────────────────────
     let coachActionItems: CoachActionItem[] = []
     let refereeActionItems: RefereeActionItem[] = []
+    let coachDeclinedItems: DeclinedOfferItem[] = []
 
     if (isCoach) {
         const { data: awaitingOffers } = await supabase
@@ -330,6 +341,51 @@ export default async function BookingsPage({
                     refereeName: referee?.full_name,
                 }
             })
+        }
+
+        // ── Declined offers — last 10, future matches only ──
+        const today = toLocalDateString(new Date())
+        const { data: declinedOffers } = await supabase
+            .from('booking_offers')
+            .select(`
+                id, responded_at,
+                booking:bookings!inner(
+                    id, match_date, kickoff_time,
+                    ground_name, location_postcode, address_text,
+                    coach_id, deleted_at
+                ),
+                referee:profiles!booking_offers_referee_id_fkey(full_name)
+            `)
+            .eq('status', 'declined')
+            .eq('bookings.coach_id', user.id)
+            .gte('bookings.match_date', today)
+            .order('responded_at', { ascending: false })
+            .limit(10)
+
+        if (declinedOffers) {
+            coachDeclinedItems = (declinedOffers as Array<{
+                id: string
+                responded_at: string | null
+                booking: OfferBookingJoin & { deleted_at: string | null } | Array<OfferBookingJoin & { deleted_at: string | null }>
+                referee: { full_name: string } | { full_name: string }[] | null
+            }>)
+                .map((o) => {
+                    const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
+                    if (!booking || booking.deleted_at) return null
+                    const referee = o.referee
+                        ? (Array.isArray(o.referee) ? o.referee[0] : o.referee)
+                        : null
+                    return {
+                        id: o.id,
+                        bookingId: booking.id,
+                        matchDate: booking.match_date,
+                        kickoffTime: booking.kickoff_time,
+                        venue: booking.address_text || booking.ground_name || booking.location_postcode,
+                        refereeName: referee?.full_name ?? null,
+                        declinedAt: o.responded_at ?? '',
+                    }
+                })
+                .filter((i): i is DeclinedOfferItem => i !== null)
         }
     }
 
@@ -391,6 +447,50 @@ export default async function BookingsPage({
             {/* Awaiting Action — real-time updates */}
             {isCoach && <CoachAwaitingAction initialItems={coachActionItems} />}
             {isReferee && <RefereeAwaitingAction initialItems={refereeActionItems} />}
+
+            {/* Declined Offers — coach view, read-only summary */}
+            {isCoach && coachDeclinedItems.length > 0 && (
+                <section className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                        <XCircle className="w-4 h-4 text-red-500" />
+                        <h2 className="font-semibold text-[var(--foreground)]">Declined</h2>
+                        <span className="ml-auto px-2 py-0.5 text-[10px] font-bold bg-red-500 text-white rounded-full">
+                            {coachDeclinedItems.length}
+                        </span>
+                    </div>
+                    <p className="text-xs text-[var(--foreground-muted)] mb-3">
+                        Referees who declined offers for upcoming matches.
+                    </p>
+                    <div className="space-y-2">
+                        {coachDeclinedItems.map((item) => (
+                            <Link
+                                key={item.id}
+                                href={`/app/bookings/${item.bookingId}`}
+                                className="flex items-center gap-3 p-3 rounded-lg border border-[var(--border-color)] bg-red-50/50 hover:bg-red-50 transition-colors"
+                            >
+                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-red-100 flex flex-col items-center justify-center">
+                                    <span className="text-xs font-bold text-red-700">
+                                        {new Date(item.matchDate).getDate()}
+                                    </span>
+                                    <span className="text-[10px] text-red-500 uppercase">
+                                        {new Date(item.matchDate).toLocaleDateString('en', { month: 'short' })}
+                                    </span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm truncate">{item.venue}</p>
+                                    <p className="text-xs text-[var(--foreground-muted)]">
+                                        {item.refereeName ? <span className="font-medium">{item.refereeName}</span> : 'A referee'}
+                                        {' · '}declined{item.declinedAt ? ` ${formatDate(item.declinedAt)}` : ''}
+                                    </p>
+                                </div>
+                                <span className="text-xs text-[var(--foreground-muted)] flex-shrink-0">
+                                    {formatTime(item.kickoffTime)}
+                                </span>
+                            </Link>
+                        ))}
+                    </div>
+                </section>
+            )}
 
             {/* Status Filters */}
             {isCoach && (

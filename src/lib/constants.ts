@@ -57,3 +57,6 @@ export const DBS_REQUIRED_AGE_GROUPS = new Set([
 export function requiresDBS(ageGroup: string | null | undefined): boolean {
     return !!ageGroup && DBS_REQUIRED_AGE_GROUPS.has(ageGroup)
 }
+
+/** Platform booking fee added to coach's total per booking, in pence. */
+export const BOOKING_FEE_PENCE = 99

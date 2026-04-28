@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
+import { BOOKING_FEE_PENCE } from '@/lib/constants'
 
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization')
@@ -61,6 +62,17 @@ export async function GET(req: NextRequest) {
     // 2. Release escrow for bookings past 24 hours
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
 
+    // Read the current booking fee from platform settings (so admins can tune it).
+    // Falls back to the constant if the setting is missing.
+    const { data: feeSetting } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'booking_fee_pence')
+        .single()
+    const platformFeePence = feeSetting
+        ? (parseInt(feeSetting.value, 10) || BOOKING_FEE_PENCE)
+        : BOOKING_FEE_PENCE
+
     const { data: releaseBookings } = await supabase
         .from('bookings')
         .select(`
@@ -88,7 +100,7 @@ export async function GET(req: NextRequest) {
 
             const { data: result, error: rpcError } = await supabase.rpc('escrow_release', {
                 p_booking_id: booking.id,
-                p_platform_fee_pence: 0,
+                p_platform_fee_pence: platformFeePence,
             })
 
             if (rpcError || result?.error) {
@@ -99,19 +111,22 @@ export async function GET(req: NextRequest) {
             }
 
             const refereeId = (booking.booking_assignments as unknown as { referee_id: string }[])[0]?.referee_id
+            const refereeAmountPence = (booking.escrow_amount_pence ?? 0) - platformFeePence
+            const totalDisplay = `£${((booking.escrow_amount_pence ?? 0) / 100).toFixed(2)}`
+            const refereeDisplay = `£${(refereeAmountPence / 100).toFixed(2)}`
 
             await Promise.allSettled([
                 createNotification({
                     userId: booking.coach_id,
                     title: 'Payment Released',
-                    message: `Payment of £${((booking.escrow_amount_pence ?? 0) / 100).toFixed(2)} has been released for your match at ${booking.ground_name || booking.location_postcode}.`,
+                    message: `Payment of ${totalDisplay} has been released for your match at ${booking.ground_name || booking.location_postcode}.`,
                     type: 'success',
                     link: `/app/bookings/${booking.id}`,
                 }),
                 refereeId ? createNotification({
                     userId: refereeId,
                     title: 'Payment Received',
-                    message: `£${((booking.escrow_amount_pence ?? 0) / 100).toFixed(2)} has been added to your wallet for the match at ${booking.ground_name || booking.location_postcode}.`,
+                    message: `${refereeDisplay} has been added to your wallet for the match at ${booking.ground_name || booking.location_postcode}.`,
                     type: 'success',
                     link: '/app/wallet',
                 }) : Promise.resolve(),

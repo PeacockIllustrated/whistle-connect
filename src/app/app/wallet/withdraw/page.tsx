@@ -98,9 +98,10 @@ export default function WithdrawPage() {
                     <button
                         onClick={handleStripeConnect}
                         disabled={submitting}
-                        className="w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                        className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 py-3 text-center font-semibold text-white disabled:opacity-50 transition-colors"
                     >
                         {submitting ? 'Redirecting...' : 'Set Up Withdrawals'}
+
                     </button>
                 </div>
             ) : (

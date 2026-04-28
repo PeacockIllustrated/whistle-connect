@@ -27,6 +27,11 @@
   --wc-coach-blue: var(--wc-blue);
   --wc-ref-red: var(--wc-red);
 
+  /* Wallet brand — emerald, scoped to wallet UI */
+  --wc-green: #10B981;
+  --wc-green-dark: #047857;
+  --wc-green-light: #34D399;
+
   --brand-navy: var(--wc-ink);
 
   --brand-primary: var(--wc-blue);

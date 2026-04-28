@@ -4,10 +4,10 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
-import { checkBookingRateLimit, checkConfirmRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
+import { checkBookingRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
-import { requiresDBS } from '@/lib/constants'
+import { requiresDBS, BOOKING_FEE_PENCE } from '@/lib/constants'
 
 /** Fetch the current travel cost rate from platform settings */
 export async function getTravelRate(): Promise<number> {
@@ -18,6 +18,22 @@ export async function getTravelRate(): Promise<number> {
         .eq('key', 'travel_cost_per_km_pence')
         .single()
     return data ? parseInt(data.value, 10) : 28
+}
+
+/**
+ * Fetch the current platform booking fee in pence.
+ * Falls back to BOOKING_FEE_PENCE constant (99) if the setting is missing.
+ */
+export async function getBookingFeePence(): Promise<number> {
+    const supabase = await createClient()
+    const { data } = await supabase
+        .from('platform_settings')
+        .select('value')
+        .eq('key', 'booking_fee_pence')
+        .single()
+    if (!data) return BOOKING_FEE_PENCE
+    const parsed = parseInt(data.value, 10)
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : BOOKING_FEE_PENCE
 }
 
 /** Shape returned by Supabase when querying referee_profiles with a joined profile */
@@ -611,9 +627,13 @@ export async function acceptOffer(offerId: string) {
         .update({ responded_at: new Date().toISOString() })
         .eq('id', offerId)
 
-    // Confirm booking atomically: accept offer → escrow hold → create assignment
+    // Confirm booking atomically: accept offer → escrow hold → create assignment.
+    // Platform booking fee is held alongside price_pence so the coach is charged
+    // (price + fee) into escrow; on release the fee goes to the platform, not the ref.
+    const platformFeePence = await getBookingFeePence()
     const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
         p_offer_id: offerId,
+        p_platform_fee_pence: platformFeePence,
     })
 
     if (rpcError) {
@@ -781,6 +801,185 @@ export async function declineOffer(offerId: string) {
     }
 
     revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+/**
+ * Coach confirms a referee-initiated "I'm Available" offer.
+ * Sets the price (if not already set), runs the atomic confirm_booking RPC
+ * which moves funds into escrow, marks the offer accepted, and creates a thread.
+ * Returns the threadId so the caller can redirect to the messenger.
+ */
+export async function coachConfirmInterest(
+    offerId: string,
+    pricePounds: number,
+): Promise<{ success?: boolean; threadId?: string; error?: string; code?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    if (!Number.isFinite(pricePounds) || pricePounds <= 0 || pricePounds > 500) {
+        return { error: 'Enter a valid match fee (£1 — £500)' }
+    }
+
+    const { data: offer, error: offerError } = await supabase
+        .from('booking_offers')
+        .select('id, booking_id, referee_id, status, price_pence, booking:bookings(id, coach_id, ground_name, location_postcode, match_date, kickoff_time)')
+        .eq('id', offerId)
+        .single()
+
+    if (offerError || !offer) {
+        return { error: 'Offer not found' }
+    }
+
+    const booking = Array.isArray(offer.booking) ? offer.booking[0] : offer.booking
+    if (!booking || booking.coach_id !== user.id) {
+        return { error: 'Unauthorized' }
+    }
+
+    if (offer.status !== 'sent') {
+        return { error: 'This offer is no longer pending' }
+    }
+
+    // Set the price on the offer (overwrite if previously null) so confirm_booking has a price.
+    const pricePence = Math.round(pricePounds * 100)
+    const { error: priceError } = await supabase
+        .from('booking_offers')
+        .update({ price_pence: pricePence })
+        .eq('id', offerId)
+
+    if (priceError) {
+        return { error: 'Failed to set price: ' + priceError.message }
+    }
+
+    // Atomic confirm via RPC (handles escrow, assignment, booking status).
+    // Platform booking fee is held on top so the ref's gross stays equal to price_pence.
+    const platformFeePence = await getBookingFeePence()
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
+        p_offer_id: offerId,
+        p_platform_fee_pence: platformFeePence,
+    })
+
+    if (rpcError) {
+        return { error: 'Failed to confirm booking: ' + rpcError.message }
+    }
+    if (rpcResult?.error) {
+        return { error: rpcResult.error, code: rpcResult.code }
+    }
+
+    // Withdraw competing offers
+    await supabase
+        .from('booking_offers')
+        .update({ status: 'withdrawn' })
+        .eq('booking_id', offer.booking_id)
+        .neq('id', offerId)
+
+    // Create / find thread and add participants (mirrors acceptOffer flow)
+    let { data: thread } = await supabase
+        .from('threads')
+        .select('id')
+        .eq('booking_id', offer.booking_id)
+        .maybeSingle()
+
+    if (!thread) {
+        const { data: newThread } = await supabase
+            .from('threads')
+            .insert({
+                booking_id: offer.booking_id,
+                title: `Booking: ${booking.ground_name || booking.location_postcode}`,
+            })
+            .select('id')
+            .single()
+        thread = newThread ?? null
+    }
+
+    if (thread) {
+        await supabase
+            .from('thread_participants')
+            .upsert([
+                { thread_id: thread.id, profile_id: booking.coach_id },
+                { thread_id: thread.id, profile_id: offer.referee_id },
+            ], { onConflict: 'thread_id, profile_id' })
+
+        await supabase
+            .from('messages')
+            .insert({
+                thread_id: thread.id,
+                sender_id: null,
+                kind: 'system',
+                body: 'Booking confirmed. Use chat to finalise details.',
+            })
+    }
+
+    // Notify the referee that the coach accepted their availability
+    await createNotification({
+        userId: offer.referee_id,
+        title: 'You\'re Booked In!',
+        message: `The coach confirmed you for ${booking.ground_name || booking.location_postcode}. Open the chat to finalise details.`,
+        type: 'success',
+        link: thread ? `/app/messages/${thread.id}` : `/app/bookings/${offer.booking_id}`,
+    })
+
+    revalidatePath(`/app/bookings/${offer.booking_id}`)
+    revalidatePath('/app/bookings')
+
+    return { success: true, threadId: thread?.id }
+}
+
+/**
+ * Coach declines a referee-initiated "I'm Available" offer.
+ * Marks the offer 'withdrawn' and notifies the referee.
+ */
+export async function coachDeclineInterest(offerId: string): Promise<{ success?: boolean; error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const { data: offer, error: offerError } = await supabase
+        .from('booking_offers')
+        .select('id, booking_id, referee_id, status, booking:bookings(coach_id, ground_name, location_postcode)')
+        .eq('id', offerId)
+        .single()
+
+    if (offerError || !offer) {
+        return { error: 'Offer not found' }
+    }
+
+    const booking = Array.isArray(offer.booking) ? offer.booking[0] : offer.booking
+    if (!booking || booking.coach_id !== user.id) {
+        return { error: 'Unauthorized' }
+    }
+
+    if (offer.status !== 'sent') {
+        return { error: 'This offer is no longer pending' }
+    }
+
+    const { error } = await supabase
+        .from('booking_offers')
+        .update({ status: 'withdrawn', responded_at: new Date().toISOString() })
+        .eq('id', offerId)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    await createNotification({
+        userId: offer.referee_id,
+        title: 'Offer Withdrawn',
+        message: `The coach passed on your availability for ${booking.ground_name || booking.location_postcode}.`,
+        type: 'info',
+        link: `/app/feed`,
+    })
+
+    revalidatePath(`/app/bookings/${offer.booking_id}`)
+    revalidatePath('/app/bookings')
+
     return { success: true }
 }
 

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
+import { CoachInterestActions } from '@/components/app/CoachInterestActions'
 import { BookingOffer, Profile } from '@/lib/types'
 import { ChevronLeft, CalendarDays, MapPin } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
@@ -136,12 +137,22 @@ export default async function BookingDetailPage({
                         )}
                     </div>
 
-                    {/* Budget */}
+                    {/* Match Fee — prominent so referees see the price clearly */}
                     {booking.budget_pounds && (
-                        <div className="pt-2">
-                            <p className="text-sm text-[var(--foreground-muted)]">
-                                Budget: <span className="font-semibold text-[var(--foreground)]">£{booking.budget_pounds}</span>
-                            </p>
+                        <div className="pt-3 mt-1 border-t border-[var(--border-color)]">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-emerald-50 border border-emerald-200">
+                                <div>
+                                    <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-700">
+                                        Match Fee
+                                    </p>
+                                    <p className="text-[11px] text-emerald-700/80">
+                                        Set by the coach for this fixture
+                                    </p>
+                                </div>
+                                <p className="text-2xl font-bold text-emerald-700">
+                                    £{booking.budget_pounds}
+                                </p>
+                            </div>
                         </div>
                     )}
 
@@ -203,26 +214,44 @@ export default async function BookingDetailPage({
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">
                         OFFERS ({booking.offers.length})
                     </h3>
-                    <div className="space-y-2">
-                        {booking.offers.map((offer: BookingOffer & { referee: Profile | null }) => (
-                            <div
-                                key={offer.id}
-                                className={`flex items-center gap-3 p-2 rounded-lg ${getStatusCardStyle(offer.status) || 'bg-[var(--neutral-50)]'}`}
-                            >
-                                <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-sm font-semibold">
-                                    {offer.referee?.full_name?.charAt(0) || '?'}
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium">{offer.referee?.full_name || 'Unknown'}</p>
-                                    {offer.status === 'accepted_priced' && offer.price_pence && (
-                                        <p className="text-xs text-green-600 font-medium">
-                                            Quoted: &pound;{(offer.price_pence / 100).toFixed(2)}
-                                        </p>
+                    <div className="space-y-3">
+                        {booking.offers.map((offer: BookingOffer & { referee: Profile | null }) => {
+                            // A ref-initiated "I'm Available" offer = status sent + no price set yet
+                            const isRefInitiated = offer.status === 'sent' && !offer.price_pence
+                            return (
+                                <div
+                                    key={offer.id}
+                                    className={`p-2 rounded-lg ${getStatusCardStyle(offer.status) || 'bg-[var(--neutral-50)]'}`}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-sm font-semibold">
+                                            {offer.referee?.full_name?.charAt(0) || '?'}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-sm font-medium">{offer.referee?.full_name || 'Unknown'}</p>
+                                            {offer.status === 'accepted_priced' && offer.price_pence && (
+                                                <p className="text-xs text-green-600 font-medium">
+                                                    Quoted: &pound;{(offer.price_pence / 100).toFixed(2)}
+                                                </p>
+                                            )}
+                                            {isRefInitiated && (
+                                                <p className="text-xs text-amber-700 font-medium">
+                                                    Tapped &quot;I&apos;m Available&quot; — needs your response
+                                                </p>
+                                            )}
+                                        </div>
+                                        <StatusChip status={offer.status} size="sm" />
+                                    </div>
+                                    {isRefInitiated && (
+                                        <CoachInterestActions
+                                            offerId={offer.id}
+                                            refereeName={offer.referee?.full_name || 'this referee'}
+                                            defaultPricePounds={booking.budget_pounds ?? null}
+                                        />
                                     )}
                                 </div>
-                                <StatusChip status={offer.status} size="sm" />
-                            </div>
-                        ))}
+                            )
+                        })}
                     </div>
                 </div>
             )}

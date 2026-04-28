@@ -6,8 +6,9 @@ import { searchRefereesForBooking, sendBookingRequest, getTravelRate } from '../
 import { RefereeSearchResult } from '@/lib/types'
 import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCard'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
+import { BOOKING_FEE_PENCE } from '@/lib/constants'
 import Image from 'next/image'
-import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin } from 'lucide-react'
+import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, Receipt, Banknote } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -81,6 +82,11 @@ export default function BookingMatchPage({ params }: Props) {
         }
     }
 
+    /** Total in pence: match fee + travel + platform booking fee */
+    const calcTotalPence = (referee: RefereeSearchResult, feePence: number) => {
+        return feePence + calcTravelPence(referee.distance_km) + BOOKING_FEE_PENCE
+    }
+
     /** Render the cost breakdown for a specific referee */
     const renderBreakdown = (referee: RefereeSearchResult) => {
         const feeNum = parseFloat(matchFee)
@@ -88,7 +94,7 @@ export default function BookingMatchPage({ params }: Props) {
 
         const feePence = Math.round(feeNum * 100)
         const travelPence = calcTravelPence(referee.distance_km)
-        const totalPence = feePence + travelPence
+        const totalPence = feePence + travelPence + BOOKING_FEE_PENCE
 
         return (
             <div className="mt-3 p-3 bg-[var(--neutral-50)] rounded-lg border border-[var(--border-color)] text-xs space-y-1">
@@ -110,6 +116,10 @@ export default function BookingMatchPage({ params }: Props) {
                         <span>Distance unavailable</span>
                     </div>
                 )}
+                <div className="flex justify-between">
+                    <span className="text-[var(--foreground-muted)]">Booking fee</span>
+                    <span className="font-medium">{fmtPrice(BOOKING_FEE_PENCE)}</span>
+                </div>
                 <div className="flex justify-between pt-1 border-t border-[var(--border-color)] font-semibold">
                     <span>Total to coach</span>
                     <span className="text-green-700">{fmtPrice(totalPence)}</span>
@@ -156,7 +166,7 @@ export default function BookingMatchPage({ params }: Props) {
                             {/* Match fee input */}
                             <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm space-y-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-lg">💰</span>
+                                    <Banknote className="w-5 h-5 text-emerald-600" />
                                     <p className="text-sm font-semibold">Match fee</p>
                                 </div>
                                 <div className="relative">
@@ -194,13 +204,19 @@ export default function BookingMatchPage({ params }: Props) {
                                             onBook={() => handleRequest(referee)}
                                             onViewProfile={(ref) => setSelectedReferee(ref)}
                                         />
-                                        {/* Distance + cost badge */}
-                                        {referee.distance_km !== null && (
-                                            <div className="absolute top-3 right-3 z-[5] flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-semibold text-[var(--foreground-muted)] border border-[var(--border-color)]">
-                                                <MapPin className="w-3 h-3" />
-                                                {referee.distance_km.toFixed(1)} km
+                                        {/* Distance + booking fee badges */}
+                                        <div className="absolute top-3 right-3 z-[5] flex flex-col items-end gap-1">
+                                            {referee.distance_km !== null && (
+                                                <div className="flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-semibold text-[var(--foreground-muted)] border border-[var(--border-color)]">
+                                                    <MapPin className="w-3 h-3" />
+                                                    {referee.distance_km.toFixed(1)} km
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 backdrop-blur-sm rounded-full text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                                                <Receipt className="w-3 h-3" />
+                                                Booking fee {fmtPrice(BOOKING_FEE_PENCE)}
                                             </div>
-                                        )}
+                                        </div>
                                         {/* Cost breakdown below card */}
                                         {matchFee && renderBreakdown(referee)}
                                         {sentRequests.includes(referee.id) && (
@@ -305,7 +321,7 @@ export default function BookingMatchPage({ params }: Props) {
                                 className="w-full mt-4 py-4 bg-[var(--color-primary)] text-white rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                             >
                                 {sentRequests.includes(selectedReferee.id) ? 'Request Sent' : matchFee
-                                    ? `Send Offer — ${fmtPrice(Math.round(parseFloat(matchFee) * 100) + calcTravelPence(selectedReferee.distance_km))}`
+                                    ? `Send Offer — ${fmtPrice(calcTotalPence(selectedReferee, Math.round(parseFloat(matchFee) * 100)))}`
                                     : 'Set a match fee first'}
                             </button>
                         </div>

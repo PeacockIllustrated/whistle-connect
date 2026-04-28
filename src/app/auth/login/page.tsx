@@ -62,9 +62,13 @@ export default function LoginPage() {
             </header>
 
             {/* Form */}
-            <main className="flex-1 flex flex-col justify-center px-4 py-8">
+            <form
+                onSubmit={handleSubmit}
+                autoComplete="off"
+                className="flex-1 flex flex-col px-4 pt-8 pb-[max(2rem,env(safe-area-inset-bottom))]"
+            >
                 <div className="max-w-[var(--content-max-width)] mx-auto w-full">
-                    <div className="text-center mb-10">
+                    <div className="text-center mb-8">
                         <Image
                             src="/assets/icon-lightblue.svg"
                             alt="Whistle Connect"
@@ -77,7 +81,7 @@ export default function LoginPage() {
                     </div>
 
                     {/* Role Selection */}
-                    <div className="mb-8">
+                    <div className="mb-6">
                         <div className="grid grid-cols-2 gap-2 p-1 bg-[var(--background-soft)] rounded-2xl border border-[var(--border-color)]">
                             {roleOptions.map((option) => (
                                 <button
@@ -99,7 +103,7 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
+                    <div className="space-y-4">
                         {error && (
                             <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm font-medium">
                                 {error}
@@ -132,30 +136,31 @@ export default function LoginPage() {
                                 Forgot password?
                             </Link>
                         </div>
-
-                        <div className="pt-2">
-                            <Button
-                                type="submit"
-                                fullWidth
-                                loading={loading}
-                                size="lg"
-                                className="shadow-lg"
-                            >
-                                Sign In
-                            </Button>
-                        </div>
-                    </form>
-
-                    <div className="mt-8 text-center border-t border-[var(--border-color)] pt-8">
-                        <p className="text-[var(--foreground-muted)]">
-                            Don&apos;t have an account?{' '}
-                            <Link href={`/auth/register${returnTo !== '/app' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`} className="text-[var(--brand-primary)] font-bold hover:underline">
-                                Register Now
-                            </Link>
-                        </p>
                     </div>
                 </div>
-            </main>
+
+                {/* Bottom-anchored CTA — kept in the thumb zone */}
+                <div className="max-w-[var(--content-max-width)] mx-auto w-full mt-auto pt-8">
+                    <Button
+                        type="submit"
+                        fullWidth
+                        loading={loading}
+                        size="lg"
+                        className="shadow-lg"
+                    >
+                        Sign In
+                    </Button>
+                    <p className="text-[var(--foreground-muted)] text-center mt-5">
+                        Don&apos;t have an account?{' '}
+                        <Link
+                            href={`/auth/register${returnTo !== '/app' ? `?returnTo=${encodeURIComponent(returnTo)}` : ''}`}
+                            className="text-[var(--brand-primary)] font-bold hover:underline"
+                        >
+                            Register Now
+                        </Link>
+                    </p>
+                </div>
+            </form>
         </div>
     )
 }

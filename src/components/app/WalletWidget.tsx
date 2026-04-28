@@ -31,12 +31,15 @@ export default function WalletWidget({ userRole }: WalletWidgetProps) {
         <>
             <div className="rounded-2xl overflow-hidden mb-6 border border-[var(--border-color)] shadow-sm">
                 {/* Header */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-dark)]">
+                <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)]">
                     <div className="flex items-center gap-2.5">
                         <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
                             <Wallet className="w-3.5 h-3.5 text-white" />
                         </div>
                         <span className="font-semibold text-sm text-white">Wallet</span>
+                        <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/20 text-white">
+                            Trial
+                        </span>
                     </div>
                     <Link href="/app/wallet" className="text-xs text-white/70 hover:text-white transition-colors">
                         View all &rarr;
@@ -69,7 +72,7 @@ export default function WalletWidget({ userRole }: WalletWidgetProps) {
                             {isCoach ? (
                                 <button
                                     onClick={() => setShowTopUp(true)}
-                                    className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-dark)] text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                                    className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                     <Plus className="w-4 h-4" />
                                     Add Funds
@@ -77,7 +80,7 @@ export default function WalletWidget({ userRole }: WalletWidgetProps) {
                             ) : (
                                 <Link
                                     href="/app/wallet/withdraw"
-                                    className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-dark)] text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                                    className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
                                 >
                                     <ArrowUpRight className="w-4 h-4" />
                                     Withdraw

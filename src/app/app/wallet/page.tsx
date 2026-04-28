@@ -39,11 +39,25 @@ export default async function WalletPage({
                     <ChevronLeft className="w-5 h-5" />
                 </Link>
                 <div className="flex-1">
-                    <h1 className="text-lg font-semibold text-[var(--foreground)]">Wallet</h1>
+                    <div className="flex items-center gap-2">
+                        <h1 className="text-lg font-semibold text-[var(--foreground)]">Wallet</h1>
+                        <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            Trial
+                        </span>
+                    </div>
                     <p className="text-sm text-[var(--foreground-muted)]">
                         Manage your funds
                     </p>
                 </div>
+            </div>
+
+            {/* Trial banner */}
+            <div className="card p-3 mb-4 border-emerald-200 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/30">
+                <p className="text-xs text-emerald-800 dark:text-emerald-300">
+                    <span className="font-semibold">Wallet is in trial.</span>{' '}
+                    Top-ups, escrow holds and withdrawals are processed via Stripe.
+                    Report any issues so we can iron them out before launch.
+                </p>
             </div>
 
             {/* Status banners */}
@@ -111,7 +125,7 @@ export default async function WalletPage({
                 {isCoach && (
                     <Link
                         href="/app/wallet/top-up"
-                        className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-dark)] text-white shadow-lg shadow-[var(--brand-primary)]/20 hover:shadow-xl hover:shadow-[var(--brand-primary)]/30 hover:-translate-y-0.5 transition-all duration-200"
+                        className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-lg shadow-[var(--wc-green)]/20 hover:shadow-xl hover:shadow-[var(--wc-green)]/30 hover:-translate-y-0.5 transition-all duration-200"
                     >
                         <Plus className="w-4 h-4" />
                         Add Funds
@@ -120,7 +134,7 @@ export default async function WalletPage({
                 {isReferee && (
                     <Link
                         href="/app/wallet/withdraw"
-                        className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--brand-primary)] to-[var(--brand-primary-dark)] text-white shadow-lg shadow-[var(--brand-primary)]/20 hover:shadow-xl hover:shadow-[var(--brand-primary)]/30 hover:-translate-y-0.5 transition-all duration-200"
+                        className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-lg shadow-[var(--wc-green)]/20 hover:shadow-xl hover:shadow-[var(--wc-green)]/30 hover:-translate-y-0.5 transition-all duration-200"
                     >
                         <ArrowUpRight className="w-4 h-4" />
                         Withdraw

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createTopUpSession } from '../actions'
 import { calculateChargeAmount } from '@/lib/stripe/config'
 import Link from 'next/link'
@@ -9,7 +8,6 @@ import Link from 'next/link'
 const PRESET_AMOUNTS = [10, 20, 50]
 
 export default function TopUpPage() {
-    const router = useRouter()
     const [amount, setAmount] = useState<number | null>(null)
     const [customAmount, setCustomAmount] = useState('')
     const [loading, setLoading] = useState(false)
@@ -57,8 +55,8 @@ export default function TopUpPage() {
                         onClick={() => { setAmount(preset); setCustomAmount('') }}
                         className={`rounded-lg border-2 p-4 text-center font-semibold transition ${
                             amount === preset
-                                ? 'border-primary bg-primary/10 text-primary'
-                                : 'border-border hover:border-primary/50'
+                                ? 'border-emerald-600 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400'
+                                : 'border-border hover:border-emerald-400'
                         }`}
                     >
                         &pound;{preset}
@@ -110,7 +108,7 @@ export default function TopUpPage() {
             <button
                 onClick={handleSubmit}
                 disabled={!isValid || loading}
-                className="w-full rounded-lg bg-primary py-3 text-center font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full rounded-lg bg-emerald-600 hover:bg-emerald-700 py-3 text-center font-semibold text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
                 {loading ? 'Redirecting to payment...' : 'Proceed to Payment'}
             </button>
