@@ -113,8 +113,11 @@ END
 $$;
 
 -- ----------------------------------------------------------------------------
--- 3. Pin search_path on every SECURITY DEFINER function in public.
---    Prevents search-path-hijack escalation; closes lint 0011.
+-- 3. Pin search_path on every SECURITY DEFINER function in public that this
+--    role actually owns. Skips functions installed by extensions (PostGIS
+--    ships SECDEF helpers like st_estimatedextent that are owned by the
+--    extension and would error with "must be owner of function").
+--    Closes lint 0011 for our own functions.
 -- ----------------------------------------------------------------------------
 
 DO $$
@@ -127,6 +130,12 @@ BEGIN
         JOIN pg_namespace n ON p.pronamespace = n.oid
         WHERE n.nspname = 'public'
           AND p.prosecdef = TRUE
+          -- Skip anything owned by an extension (deptype = 'e').
+          AND NOT EXISTS (
+              SELECT 1 FROM pg_depend d
+              WHERE d.objid = p.oid
+                AND d.deptype = 'e'
+          )
     LOOP
         EXECUTE format(
             'ALTER FUNCTION public.%I(%s) SET search_path = public, pg_temp',
