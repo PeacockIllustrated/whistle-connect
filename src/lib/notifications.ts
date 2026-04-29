@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import * as Sentry from '@sentry/nextjs'
 import { isFirebaseConfigured, sendFCMMessage } from '@/lib/firebase-admin'
 import { isEnabled } from '@/lib/feature-flags'
 import { validateVapidKeys } from '@/lib/push/validate'
@@ -108,6 +109,10 @@ async function sendWebPush(
     const validation = validateVapidKeys()
     if (!validation.ok) {
         console.error(`[WebPush] ${validation.reason}`)
+        Sentry.captureMessage(`[WebPush] VAPID validation failed: ${validation.reason}`, {
+            level: 'error',
+            tags: { 'push.transport': 'web', 'push.failure': 'vapid-' + validation.code.toLowerCase() },
+        })
         // Throw so callers / observability tools see the failure. createNotification
         // wraps push send in a way that doesn't bubble to the user — in-app
         // notification has already been written, so the user is not blocked.
@@ -144,6 +149,17 @@ async function sendWebPush(
             if (result.status === 'rejected') {
                 const statusCode = (result.reason as { statusCode?: number })?.statusCode
                 console.error(`[WebPush] Failed to send to subscription ${subscriptions[index].id}:`, statusCode, result.reason)
+                // 410 = subscription expired, gets cleaned up below — not an
+                // anomaly, no Sentry event. Anything else is unexpected.
+                if (statusCode !== 410) {
+                    Sentry.captureException(result.reason, {
+                        tags: {
+                            'push.transport': 'web',
+                            'push.status_code': String(statusCode ?? 'unknown'),
+                        },
+                        extra: { subscription_id: subscriptions[index].id },
+                    })
+                }
             }
         })
 

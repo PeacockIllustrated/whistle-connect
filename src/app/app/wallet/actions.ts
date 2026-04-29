@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import * as Sentry from '@sentry/nextjs'
 import { getStripe } from '@/lib/stripe/server'
 import { calculateChargeAmount, STRIPE_CONFIG } from '@/lib/stripe/config'
 import { validate, topUpSchema, withdrawSchema } from '@/lib/validation'
@@ -233,6 +234,11 @@ export async function requestWithdrawal(amountPounds: number): Promise<{
 
     if (beginErr || beginResult?.error) {
         console.error('[Withdraw] begin failed:', beginErr || beginResult?.error)
+        Sentry.captureException(beginErr || new Error(beginResult?.error || 'wallet_withdraw_begin failed'), {
+            tags: { 'wallet.flow': 'withdraw', 'wallet.step': 'begin' },
+            user: { id: user.id },
+            extra: { amountPence },
+        })
         return { error: beginResult?.error || beginErr?.message || 'Failed to start withdrawal' }
     }
 
@@ -265,6 +271,11 @@ export async function requestWithdrawal(amountPounds: number): Promise<{
     } catch (err) {
         const errMessage = err instanceof Error ? err.message : String(err)
         console.error('[Withdraw] Stripe transfer failed, cancelling request:', errMessage)
+        Sentry.captureException(err, {
+            tags: { 'wallet.flow': 'withdraw', 'wallet.step': 'stripe.transfers.create' },
+            user: { id: user.id },
+            extra: { requestId, amountPence },
+        })
         // Best-effort cancel — refunds the hold back to the user's balance.
         const { error: cancelErr } = await supabase.rpc('wallet_withdraw_cancel', {
             p_request_id: requestId,
@@ -272,6 +283,12 @@ export async function requestWithdrawal(amountPounds: number): Promise<{
         })
         if (cancelErr) {
             console.error('[Withdraw] cancel after stripe-failure also failed:', cancelErr)
+            Sentry.captureException(cancelErr, {
+                tags: { 'wallet.flow': 'withdraw', 'wallet.step': 'cancel-after-stripe-fail' },
+                user: { id: user.id },
+                extra: { requestId, amountPence, originalError: errMessage },
+                level: 'fatal',
+            })
             // The reconcile sweep will catch this stuck-pending row.
         }
         return { error: 'Withdrawal failed. Please try again later.' }
@@ -292,6 +309,19 @@ export async function requestWithdrawal(amountPounds: number): Promise<{
             transferId,
             error: finaliseErr || finaliseResult?.error,
         })
+        // Highest-severity Sentry event — a successful Stripe transfer that
+        // didn't get recorded means the withdrawal_requests row stays
+        // pending. Manually finalise via SQL: the reconcile sweep will
+        // also surface this row.
+        Sentry.captureException(
+            finaliseErr || new Error(finaliseResult?.error || 'wallet_withdraw_finalise failed'),
+            {
+                tags: { 'wallet.flow': 'withdraw', 'wallet.step': 'finalise', 'wallet.severity': 'money-out-no-record' },
+                user: { id: user.id },
+                extra: { requestId, transferId, amountPence },
+                level: 'fatal',
+            },
+        )
         return { error: 'Withdrawal sent but record-keeping failed. Support has been alerted.' }
     }
 

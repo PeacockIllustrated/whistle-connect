@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import * as Sentry from '@sentry/nextjs'
 import { getStripe } from '@/lib/stripe/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
@@ -104,6 +105,17 @@ export async function POST(req: NextRequest) {
             .from('webhook_events')
             .update({ error: errMessage })
             .eq('id', event.id)
+
+        // Tag the Sentry event with the Stripe event id and type so the
+        // alerting rule can group repeats and on-call can pull the matching
+        // webhook_events row from the DB.
+        Sentry.captureException(err, {
+            tags: {
+                'stripe.event.id': event.id,
+                'stripe.event.type': event.type,
+                'webhook.handler': event.type,
+            },
+        })
 
         return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
     }

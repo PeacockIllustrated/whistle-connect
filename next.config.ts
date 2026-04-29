@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
@@ -64,4 +65,27 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry build-time wrapper. Uploads source maps when SENTRY_AUTH_TOKEN is
+// set (CI / production builds), tunnels Sentry events through /monitoring
+// to bypass ad-blockers, and configures the Next.js plugin.
+//
+// If Sentry env vars are missing (local dev without Sentry), the wrapper
+// no-ops and you get a vanilla Next.js build.
+export default withSentryConfig(nextConfig, {
+    org: process.env.SENTRY_ORG || "whistle-connect",
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+
+    // Route Sentry beacons through your domain — bypasses ad-blockers that
+    // would otherwise drop the events client-side.
+    tunnelRoute: "/monitoring",
+
+    // Quiet the build output unless we're in CI.
+    silent: !process.env.CI,
+
+    // Don't fail the build if Sentry CLI auth fails (missing token in dev).
+    // Production builds via Vercel CI will have the token, dev builds skip.
+    sourcemaps: {
+        disable: !process.env.SENTRY_AUTH_TOKEN,
+    },
+});
