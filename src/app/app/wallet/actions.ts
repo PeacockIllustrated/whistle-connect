@@ -6,6 +6,7 @@ import { getStripe } from '@/lib/stripe/server'
 import { calculateChargeAmount, STRIPE_CONFIG } from '@/lib/stripe/config'
 import { validate, topUpSchema, withdrawSchema } from '@/lib/validation'
 import { checkTopUpRateLimit, checkWithdrawRateLimit } from '@/lib/rate-limit'
+import { isEnabled } from '@/lib/feature-flags'
 import type { Wallet, WalletTransaction } from '@/lib/types'
 
 export async function getWallet(): Promise<{ data?: Wallet; error?: string }> {
@@ -68,6 +69,10 @@ export async function createTopUpSession(amountPounds: number): Promise<{
     url?: string
     error?: string
 }> {
+    if (!isEnabled('WALLET_TOPUPS_ENABLED')) {
+        return { error: 'Wallet top-ups are temporarily disabled. Please try again later.' }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -153,6 +158,10 @@ export async function requestWithdrawal(amountPounds: number): Promise<{
     success?: boolean
     error?: string
 }> {
+    if (!isEnabled('WITHDRAWALS_ENABLED')) {
+        return { error: 'Withdrawals are temporarily disabled. Please try again later.' }
+    }
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 

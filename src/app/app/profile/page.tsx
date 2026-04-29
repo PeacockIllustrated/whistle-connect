@@ -75,8 +75,9 @@ export default async function ProfilePage() {
 
             </Card>
 
-            {/* Notification Test */}
-            <NotificationTester />
+            {/* Notification Test — dev / preview only. Excluded from prod
+                bundle so end users don't see a "fire test notification" panel. */}
+            {process.env.NODE_ENV !== 'production' && <NotificationTester />}
 
             {/* Sign Out */}
             <SignOutButton />

@@ -2,6 +2,8 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { isFirebaseConfigured, sendFCMMessage } from '@/lib/firebase-admin'
+import { isEnabled } from '@/lib/feature-flags'
+import { validateVapidKeys } from '@/lib/push/validate'
 import type { FCMMessage } from '@/lib/firebase-admin'
 
 export type NotificationType = 'info' | 'success' | 'warning' | 'error'
@@ -60,14 +62,32 @@ export async function createNotification({
         urgency,
     }
 
-    // 3a. Send via web-push (existing flow)
+    // 3a. Send via web-push (existing flow). Kill-switchable: in-app row
+    //     was already written above, so users still see notifications when
+    //     they next load the app even if the push leg is gated. Errors
+    //     (e.g. invalid VAPID keys) are logged but don't block the FCM
+    //     leg below — both transports are independent.
     if (webSubs.length > 0) {
-        await sendWebPush(supabase, webSubs, payload)
+        if (!isEnabled('WEB_PUSH_ENABLED')) {
+            console.log('[Notifications] Skipping web push — WEB_PUSH_ENABLED=false')
+        } else {
+            try {
+                await sendWebPush(supabase, webSubs, payload)
+            } catch (err) {
+                console.error('[Notifications] sendWebPush threw:', err)
+            }
+        }
     }
 
-    // 3b. Send via Firebase Cloud Messaging (native apps)
+    // 3b. Send via Firebase Cloud Messaging (native apps). Not gated by the
+    //     web-push flag — native is a separate transport with its own
+    //     reliability characteristics.
     if (firebaseSubs.length > 0) {
-        await sendFirebasePush(supabase, firebaseSubs, payload, isSOS)
+        try {
+            await sendFirebasePush(supabase, firebaseSubs, payload, isSOS)
+        } catch (err) {
+            console.error('[Notifications] sendFirebasePush threw:', err)
+        }
     }
 
     return { success: true }
@@ -82,18 +102,25 @@ async function sendWebPush(
     subscriptions: Array<{ id: string; endpoint: string; p256dh: string | null; auth: string | null }>,
     payload: { title: string; body: string; link: string },
 ) {
-    if (!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
-        console.warn('[WebPush] VAPID keys not configured — skipping web push send')
-        return
+    // Validate keys once per server instance. Failures bubble up clearly
+    // instead of the previous silent skip — Sentry / Vercel logs will see
+    // the error and we'll know push is misconfigured before users do.
+    const validation = validateVapidKeys()
+    if (!validation.ok) {
+        console.error(`[WebPush] ${validation.reason}`)
+        // Throw so callers / observability tools see the failure. createNotification
+        // wraps push send in a way that doesn't bubble to the user — in-app
+        // notification has already been written, so the user is not blocked.
+        throw new Error(`[WebPush] ${validation.reason}`)
     }
 
     try {
         const webPush = (await import('web-push')).default
 
         webPush.setVapidDetails(
-            'mailto:support@whistle-connect.com',
-            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-            process.env.VAPID_PRIVATE_KEY
+            process.env.VAPID_SUBJECT || 'mailto:donking1801@gmail.com',
+            process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
+            process.env.VAPID_PRIVATE_KEY!
         )
 
         const results = await Promise.allSettled(

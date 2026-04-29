@@ -27,6 +27,50 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
+    // ── Idempotency gate ────────────────────────────────────────────────
+    // Stripe re-delivers events on 5xx and via the dashboard "Resend" button.
+    // Track every event in webhook_events (id PK = Stripe event.id):
+    //   - first delivery: insert row, run handler, set processed_at on success
+    //   - retry of an already-processed event: short-circuit with 200
+    //   - retry of an event whose handler PREVIOUSLY THREW (processed_at IS NULL,
+    //     error IS NOT NULL): RE-RUN the handler so the failure can be recovered
+    //     by the retry. Without this branch, a transient handler failure becomes
+    //     permanent because the second delivery would also short-circuit.
+    // The handlers' business-key idempotency (e.g. wallet_top_up checking
+    // stripe_session_id) is still in place as belt-and-braces.
+    const supabase = createAdminClient()
+    if (!supabase) {
+        console.error('[Webhook] Admin client unavailable — SUPABASE_SERVICE_ROLE_KEY missing')
+        return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
+    }
+
+    const { data: existing } = await supabase
+        .from('webhook_events')
+        .select('id, processed_at')
+        .eq('id', event.id)
+        .maybeSingle()
+
+    if (existing && existing.processed_at) {
+        console.log(`[Webhook] Skipping already-processed event ${event.id} (${event.type})`)
+        return NextResponse.json({ received: true, idempotent: true })
+    }
+
+    if (!existing) {
+        const { error: insertErr } = await supabase
+            .from('webhook_events')
+            .insert({ id: event.id, type: event.type })
+
+        if (insertErr && insertErr.code !== '23505') {
+            // 23505 = unique violation — race between two concurrent deliveries
+            // of the same event. Whichever lost the race will re-fetch above on
+            // its next read; safe to fall through to processing.
+            console.error(`[Webhook] Failed to insert webhook_events row for ${event.id}:`, insertErr)
+            return NextResponse.json({ error: 'Idempotency log write failed' }, { status: 500 })
+        }
+    } else {
+        console.log(`[Webhook] Retrying previously-failed event ${event.id} (${event.type})`)
+    }
+
     try {
         switch (event.type) {
             case 'checkout.session.completed':
@@ -45,9 +89,22 @@ export async function POST(req: NextRequest) {
                 break
         }
 
+        await supabase
+            .from('webhook_events')
+            .update({ processed_at: new Date().toISOString() })
+            .eq('id', event.id)
+
         return NextResponse.json({ received: true })
     } catch (err) {
+        const errMessage = err instanceof Error ? err.message : String(err)
         console.error(`Webhook handler error for ${event.type}:`, err)
+
+        // Persist the failure on the webhook_events row so we can investigate.
+        await supabase
+            .from('webhook_events')
+            .update({ error: errMessage })
+            .eq('id', event.id)
+
         return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 })
     }
 }
