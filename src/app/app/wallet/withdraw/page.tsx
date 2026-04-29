@@ -73,7 +73,7 @@ export default function WithdrawPage() {
     const needsOnboarding = !wallet?.stripe_connect_id || !wallet?.stripe_connect_onboarded
 
     return (
-        <div className="mx-auto max-w-md space-y-6 p-4">
+        <div className="mx-auto max-w-md space-y-6 p-4 pb-24">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold">Withdraw</h1>
                 <Link href="/app/wallet" className="text-sm text-muted-foreground hover:underline">
