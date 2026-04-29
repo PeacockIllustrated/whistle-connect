@@ -14,23 +14,31 @@ export async function GET(
         return new NextResponse('Unauthorized', { status: 401 })
     }
 
-    // 2. Fetch booking details and verify authorization
-    // We need to ensure:
-    // a) Booking is confirmed
-    // b) Requesting user is the assigned referee
+    // 2. Fetch booking. Authorisation check happens after — both coaches and
+    //    assigned referees can download the ICS for their own confirmed booking.
     const { data: booking, error } = await supabase
         .from('bookings')
         .select(`
             *,
-            assignment:booking_assignments!inner(*)
+            assignment:booking_assignments(referee_id)
         `)
         .eq('id', id)
         .eq('status', 'confirmed')
-        .eq('assignment.referee_id', user.id)
+        .is('deleted_at', null)
         .single()
 
     if (error || !booking) {
-        return new NextResponse('Booking not found or unauthorized', { status: 404 })
+        return new NextResponse('Booking not found', { status: 404 })
+    }
+
+    const isCoach = booking.coach_id === user.id
+    const assignment = Array.isArray(booking.assignment)
+        ? booking.assignment[0]
+        : booking.assignment
+    const isAssignedReferee = assignment?.referee_id === user.id
+
+    if (!isCoach && !isAssignedReferee) {
+        return new NextResponse('Unauthorized', { status: 403 })
     }
 
     // 3. Prepare ICS data
@@ -52,10 +60,13 @@ export async function GET(
     const dtEnd = formatICSDate(endDateTime)
     const dtStamp = formatICSDate(new Date())
 
-    // Summary
-    const summary = booking.home_team && booking.away_team
-        ? `Match Official - ${booking.home_team} vs ${booking.away_team}`
-        : 'Match Official'
+    // Summary — phrased differently for the coach vs the official
+    const matchTitle = booking.home_team && booking.away_team
+        ? `${booking.home_team} vs ${booking.away_team}`
+        : 'Match'
+    const summary = isCoach
+        ? matchTitle
+        : `Match Official${booking.home_team && booking.away_team ? ` - ${matchTitle}` : ''}`
 
     // Location
     const locationParts = [booking.address_text, booking.ground_name, booking.location_postcode].filter(Boolean)

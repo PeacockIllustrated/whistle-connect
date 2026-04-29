@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { updatePassword } from '@/lib/auth/actions'
+import { createClient } from '@/lib/supabase/client'
+
+type SessionState = 'checking' | 'valid' | 'missing'
 
 export default function ResetPasswordPage() {
     const router = useRouter()
@@ -15,6 +18,21 @@ export default function ResetPasswordPage() {
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [sessionState, setSessionState] = useState<SessionState>('checking')
+
+    // Validate that the user actually arrived here via a recovery link
+    // (i.e. has an active Supabase session set by /auth/callback). Bare
+    // URL access shows a clear "expired link" message instead of a form
+    // that only fails on submit.
+    useEffect(() => {
+        let cancelled = false
+        const supabase = createClient()
+        supabase.auth.getUser().then(({ data }) => {
+            if (cancelled) return
+            setSessionState(data.user ? 'valid' : 'missing')
+        })
+        return () => { cancelled = true }
+    }, [])
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault()
@@ -80,11 +98,31 @@ export default function ResetPasswordPage() {
                         <p className="text-[var(--foreground-muted)] mt-1">Enter and confirm your new password below.</p>
                     </div>
 
-                    {success ? (
+                    {sessionState === 'checking' && (
+                        <div className="p-4 bg-[var(--background-soft)] border border-[var(--border-color)] rounded-xl text-[var(--foreground-muted)] text-sm font-medium text-center">
+                            Verifying your reset link…
+                        </div>
+                    )}
+
+                    {sessionState === 'missing' && (
+                        <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-sm font-medium text-center space-y-3">
+                            <p>This reset link has expired or is invalid.</p>
+                            <Link
+                                href="/auth/forgot-password"
+                                className="inline-block px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-sm transition-colors"
+                            >
+                                Request a new link
+                            </Link>
+                        </div>
+                    )}
+
+                    {sessionState === 'valid' && success && (
                         <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700 text-sm font-medium text-center">
                             Password updated successfully. Redirecting you to sign in…
                         </div>
-                    ) : (
+                    )}
+
+                    {sessionState === 'valid' && !success && (
                         <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
                             {error && (
                                 <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-700 text-sm font-medium">

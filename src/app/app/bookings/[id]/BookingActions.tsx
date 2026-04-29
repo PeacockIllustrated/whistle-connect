@@ -243,8 +243,8 @@ export function BookingActions({
                     </Link>
                 )}
 
-                {/* Calendar export for referee */}
-                {isReferee && booking.status === 'confirmed' && (
+                {/* Calendar export — available to both coach and assigned referee */}
+                {booking.status === 'confirmed' && (isCoach || isReferee) && (
                     <a
                         href={`/app/bookings/${booking.id}/export`}
                         download={`match-booking-${booking.id}.ics`}

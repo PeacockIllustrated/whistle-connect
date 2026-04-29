@@ -48,14 +48,29 @@ export default async function BookingDetailPage({
 
     const isCoach = profile?.role === 'coach' && booking.coach_id === user.id
     const isReferee = profile?.role === 'referee'
+    const isAdmin = profile?.role === 'admin'
+
+    const assignment = Array.isArray(booking.assignment)
+        ? booking.assignment[0]
+        : booking.assignment
+
     // Get user's offer if referee
     const userOffer = isReferee
         ? booking.offers?.find((o: BookingOffer) => o.referee_id === user.id)
         : null
 
-    const assignment = Array.isArray(booking.assignment)
-        ? booking.assignment[0]
-        : booking.assignment
+    // ── Page-level ownership / participation gate ──────────────────────────
+    // Defence-in-depth: even though Supabase RLS ought to scope reads, we
+    // re-verify here so a misconfigured policy can't leak third-party bookings.
+    // Allowed: the coach who owns the booking, the assigned referee, any referee
+    // with an offer on the booking, or an admin.
+    const isAssignedReferee = !!assignment && assignment.referee_id === user.id
+    const hasOfferOnBooking = !!userOffer
+    const canViewBooking = isCoach || isAdmin || isAssignedReferee || hasOfferOnBooking
+
+    if (!canViewBooking) {
+        notFound()
+    }
 
     const thread = Array.isArray(booking.thread)
         ? booking.thread[0]

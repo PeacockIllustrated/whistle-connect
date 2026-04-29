@@ -1,23 +1,22 @@
 import Link from 'next/link'
-import { Play } from 'lucide-react'
+import Image from 'next/image'
 
 export default function PrivacyPage() {
     return (
         <div className="min-h-screen bg-[var(--background)]">
             {/* Header */}
-            <header className="bg-[var(--brand-navy)] border-b border-white/10">
-                <div className="max-w-[var(--content-max-width)] mx-auto px-4 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--brand-primary)] to-[var(--brand-primary-dark)] flex items-center justify-center shadow-lg shadow-[var(--brand-primary)]/30">
-                                <Play className="w-5 h-5 text-white" fill="currentColor" />
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-bold text-white tracking-tight">Whistle Connect</h1>
-                                <p className="text-[10px] text-white/50 uppercase tracking-widest font-medium">Grassroots Football</p>
-                            </div>
-                        </Link>
-                    </div>
+            <header className="bg-[var(--neutral-900)] text-white py-4 px-4">
+                <div className="max-w-[var(--content-max-width)] mx-auto flex items-center justify-between">
+                    <Link href="/" className="flex items-center gap-3 hover:opacity-90 transition-opacity">
+                        <Image
+                            src="/assets/logo-main-white.svg"
+                            alt="Whistle Connect"
+                            width={130}
+                            height={45}
+                            priority
+                        />
+                    </Link>
+                    <span className="text-sm font-medium text-white/60">Privacy</span>
                 </div>
             </header>
 
