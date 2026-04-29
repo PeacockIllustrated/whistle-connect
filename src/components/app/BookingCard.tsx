@@ -1,15 +1,39 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { cn, formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { BookingWithDetails, BookingStatus } from '@/lib/types'
-import { deleteBooking, cancelBooking, dismissBooking } from '@/app/app/bookings/actions'
+import { deleteBooking, cancelBooking } from '@/app/app/bookings/actions'
 import { useToast } from '@/components/ui/Toast'
-import { MessageCircle, CalendarDays, Clock } from 'lucide-react'
+import { Archive, MessageCircle, CalendarDays, Clock, XCircle } from 'lucide-react'
+
+const ARCHIVE_STORAGE_KEY = 'wc:refereeArchivedBookings'
+
+function readArchivedIds(): Set<string> {
+    if (typeof window === 'undefined') return new Set()
+    try {
+        const raw = window.localStorage.getItem(ARCHIVE_STORAGE_KEY)
+        if (!raw) return new Set()
+        const arr = JSON.parse(raw)
+        return Array.isArray(arr) ? new Set(arr.filter((v): v is string => typeof v === 'string')) : new Set()
+    } catch {
+        return new Set()
+    }
+}
+
+function writeArchivedIds(ids: Set<string>) {
+    if (typeof window === 'undefined') return
+    try {
+        window.localStorage.setItem(ARCHIVE_STORAGE_KEY, JSON.stringify(Array.from(ids)))
+    } catch {
+        // localStorage may be disabled — silent
+    }
+}
 
 export interface BookingCardProps {
     booking: BookingWithDetails & { offer_status?: string }
+    /** When the current viewer is a referee. Misnamed historically — name reflects "show coach info on the card". */
     showCoach?: boolean
     showReferee?: boolean
     className?: string
@@ -17,7 +41,17 @@ export interface BookingCardProps {
 
 export function BookingCard({ booking, showCoach, showReferee, className }: BookingCardProps) {
     const [isLoading, setIsLoading] = useState(false)
+    const [archived, setArchived] = useState(false)
     const { showToast } = useToast()
+
+    const isReferee = !!showCoach
+    const canArchive = isReferee && (booking.status === 'cancelled' || booking.status === 'completed')
+
+    // After mount, hide if previously archived (referee view only).
+    useEffect(() => {
+        if (!isReferee) return
+        if (readArchivedIds().has(booking.id)) setArchived(true)
+    }, [isReferee, booking.id])
 
     // Determine status to show
     // If user is referee (showCoach is true), show their specific offer status if not confirmed/completed
@@ -43,21 +77,16 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
         }
     }
 
-    const handleDismiss = async (e: React.MouseEvent) => {
+    const handleArchive = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!confirm('Remove this cancelled booking from your list?')) return
+        if (!confirm('Archive this booking? It will be hidden from your list.')) return
 
-        setIsLoading(true)
-        try {
-            const result = await dismissBooking(booking.id)
-            if (result.error) throw new Error(result.error)
-            showToast({ message: 'Booking removed', type: 'success' })
-        } catch {
-            showToast({ message: 'Failed to remove booking', type: 'error' })
-        } finally {
-            setIsLoading(false)
-        }
+        const ids = readArchivedIds()
+        ids.add(booking.id)
+        writeArchivedIds(ids)
+        setArchived(true)
+        showToast({ message: 'Booking archived', type: 'success' })
     }
 
     const handleCancel = async (e: React.MouseEvent) => {
@@ -77,6 +106,9 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
         }
     }
 
+    // Referee view: hide if previously archived (post-mount, prevents hydration mismatch).
+    if (archived) return null
+
     return (
         <Link
             href={`/app/bookings/${booking.id}`}
@@ -88,6 +120,14 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                 className
             )}
         >
+            {/* Cancelled banner — impossible to miss when a coach has pulled a fixture */}
+            {booking.status === 'cancelled' && (
+                <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider w-fit">
+                    <XCircle className="w-3 h-3" />
+                    Cancelled{isReferee ? ' by coach' : ''}
+                </div>
+            )}
+
             {/* Header Row */}
             <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
@@ -171,14 +211,14 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                     </button>
                 )}
 
-                {/* Referee Actions: Dismiss if cancelled */}
-                {showCoach && booking.status === 'cancelled' && (
+                {/* Referee Actions: Archive if cancelled or completed */}
+                {canArchive && (
                     <button
-                        onClick={handleDismiss}
-                        disabled={isLoading}
-                        className="text-xs text-red-600 font-medium hover:underline disabled:opacity-50"
+                        onClick={handleArchive}
+                        className="inline-flex items-center gap-1 text-xs text-[var(--foreground-muted)] font-medium hover:text-[var(--foreground)] hover:underline"
                     >
-                        {isLoading ? 'Removing...' : 'Remove'}
+                        <Archive className="w-3.5 h-3.5" />
+                        Archive
                     </button>
                 )}
 

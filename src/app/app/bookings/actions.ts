@@ -1144,7 +1144,7 @@ export async function bookReferee(refereeId: string, data: BookingFormData): Pro
     return { success: true }
 }
 
-export async function searchRefereesForBooking(bookingId: string): Promise<{ data?: RefereeSearchResult[], error?: string }> {
+export async function searchRefereesForBooking(bookingId: string): Promise<{ data?: RefereeSearchResult[], bookingFeePounds?: number | null, error?: string }> {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -1344,7 +1344,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
         })
         .sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0))
 
-    return { data: formattedResults }
+    return { data: formattedResults, bookingFeePounds: booking.budget_pounds ?? null }
 }
 
 export async function sendBookingRequest(

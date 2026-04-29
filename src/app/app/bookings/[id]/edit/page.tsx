@@ -10,7 +10,7 @@ import { getBooking, updateBooking } from '../../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
 import { use } from 'react'
-import { ChevronLeft } from 'lucide-react'
+import { ChevronLeft, Banknote } from 'lucide-react'
 import { toLocalDateString } from '@/lib/utils'
 import { VenueMap } from '@/components/ui/VenueMap'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
@@ -236,6 +236,37 @@ export default function EditBookingPage({
                                     placeholder="Any extra info..."
                                 />
                             </div>
+                        </div>
+
+                        {/* Match fee — visible to refs in their match feed */}
+                        <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Banknote className="w-5 h-5 text-emerald-600" />
+                                <h2 className="text-base font-bold">Referee match fee</h2>
+                            </div>
+                            <p className="text-xs text-[var(--foreground-muted)] mb-3">
+                                The amount you&apos;ll pay the referee for this match. Refs will see this when browsing nearby games.
+                            </p>
+                            <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">&pound;</span>
+                                <input
+                                    type="number"
+                                    inputMode="decimal"
+                                    placeholder="0"
+                                    value={formData.budget_pounds ?? ''}
+                                    onChange={(e) => {
+                                        const v = e.target.value
+                                        updateField('budget_pounds', v ? parseInt(v, 10) : undefined)
+                                    }}
+                                    className="w-full pl-7 pr-3 py-3 bg-[var(--neutral-50)] border border-[var(--border-color)] rounded-xl text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
+                                    min="1"
+                                    max="500"
+                                    step="1"
+                                />
+                            </div>
+                            <p className="text-[10px] text-[var(--foreground-muted)] mt-2">
+                                Travel costs and the £0.99 booking fee are added on top when you send an offer.
+                            </p>
                         </div>
 
                         <div className="flex gap-3">

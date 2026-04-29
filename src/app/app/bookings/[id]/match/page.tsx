@@ -8,7 +8,7 @@ import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCar
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { BOOKING_FEE_PENCE } from '@/lib/constants'
 import Image from 'next/image'
-import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, Receipt, Banknote } from 'lucide-react'
+import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, Receipt, Banknote, Pencil } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -22,7 +22,8 @@ export default function BookingMatchPage({ params }: Props) {
     const [results, setResults] = useState<RefereeSearchResult[]>([])
     const [selectedReferee, setSelectedReferee] = useState<RefereeSearchResult | null>(null)
     const [sentRequests, setSentRequests] = useState<string[]>([])
-    const [matchFee, setMatchFee] = useState('')
+    // Match fee comes from the booking itself (set on New Booking form / Edit page).
+    const [matchFeePounds, setMatchFeePounds] = useState<number | null>(null)
     const [travelRatePence, setTravelRatePence] = useState(28) // default £0.28/km
 
     useEffect(() => {
@@ -37,6 +38,7 @@ export default function BookingMatchPage({ params }: Props) {
                     setError(searchResult.error)
                 } else {
                     setResults(searchResult.data || [])
+                    setMatchFeePounds(searchResult.bookingFeePounds ?? null)
                 }
                 setTravelRatePence(rate)
             } catch {
@@ -58,9 +60,8 @@ export default function BookingMatchPage({ params }: Props) {
     const fmtPrice = (pence: number) => '£' + (pence / 100).toFixed(2)
 
     const handleRequest = async (referee: RefereeSearchResult) => {
-        const feeNum = parseFloat(matchFee)
-        if (isNaN(feeNum) || feeNum <= 0) {
-            setError('Please enter a valid match fee above')
+        if (!matchFeePounds || matchFeePounds <= 0) {
+            setError('This booking has no match fee set. Edit the booking to add one.')
             return
         }
 
@@ -68,7 +69,7 @@ export default function BookingMatchPage({ params }: Props) {
         setError('')
 
         try {
-            const result = await sendBookingRequest(id, referee.id, feeNum, referee.distance_km)
+            const result = await sendBookingRequest(id, referee.id, matchFeePounds, referee.distance_km)
             if (result.error) {
                 setError(result.error)
                 setIsSubmitting(false)
@@ -89,10 +90,9 @@ export default function BookingMatchPage({ params }: Props) {
 
     /** Render the cost breakdown for a specific referee */
     const renderBreakdown = (referee: RefereeSearchResult) => {
-        const feeNum = parseFloat(matchFee)
-        if (isNaN(feeNum) || feeNum <= 0) return null
+        if (!matchFeePounds || matchFeePounds <= 0) return null
 
-        const feePence = Math.round(feeNum * 100)
+        const feePence = Math.round(matchFeePounds * 100)
         const travelPence = calcTravelPence(referee.distance_km)
         const totalPence = feePence + travelPence + BOOKING_FEE_PENCE
 
@@ -163,32 +163,49 @@ export default function BookingMatchPage({ params }: Props) {
                         </div>
                     ) : results.length > 0 ? (
                         <div className="space-y-4">
-                            {/* Match fee input */}
-                            <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm space-y-3">
-                                <div className="flex items-center gap-2">
-                                    <Banknote className="w-5 h-5 text-emerald-600" />
-                                    <p className="text-sm font-semibold">Match fee</p>
+                            {/* Match fee summary — set on the booking itself; tap Edit to change */}
+                            {matchFeePounds && matchFeePounds > 0 ? (
+                                <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                            <Banknote className="w-5 h-5 text-emerald-700" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] uppercase font-bold tracking-wider text-[var(--foreground-muted)]">Match fee</p>
+                                            <p className="text-lg font-bold text-emerald-700">£{matchFeePounds}</p>
+                                            <p className="text-[10px] text-[var(--foreground-muted)] truncate">
+                                                Travel ({fmtPrice(travelRatePence)}/km) + £{(BOOKING_FEE_PENCE / 100).toFixed(2)} booking fee added
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <Link
+                                        href={`/app/bookings/${id}/edit`}
+                                        className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-[var(--color-primary)] bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                                    >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                        Edit
+                                    </Link>
                                 </div>
-                                <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">&pound;</span>
-                                    <input
-                                        type="number"
-                                        placeholder="0.00"
-                                        value={matchFee}
-                                        onChange={(e) => {
-                                            setMatchFee(e.target.value)
-                                            setError('')
-                                        }}
-                                        className="w-full pl-7 pr-3 py-3 bg-[var(--neutral-50)] border border-[var(--border-color)] rounded-xl text-lg font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:border-transparent"
-                                        step="0.01"
-                                        min="1"
-                                        max="500"
-                                    />
+                            ) : (
+                                <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-center justify-between gap-3">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                                            <Banknote className="w-5 h-5 text-amber-700" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="text-sm font-bold text-amber-900">No match fee set</p>
+                                            <p className="text-xs text-amber-800">Add one to send offers — refs need to see what they&apos;re paid.</p>
+                                        </div>
+                                    </div>
+                                    <Link
+                                        href={`/app/bookings/${id}/edit`}
+                                        className="flex-shrink-0 inline-flex items-center gap-1 px-3 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
+                                    >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                        Add fee
+                                    </Link>
                                 </div>
-                                <p className="text-[10px] text-[var(--foreground-muted)]">
-                                    Travel expenses ({fmtPrice(travelRatePence)}/km) will be calculated automatically and added based on each referee&apos;s distance.
-                                </p>
-                            </div>
+                            )}
 
                             <div className="bg-white p-4 rounded-xl border border-[var(--border-color)] shadow-sm">
                                 <p className="text-sm font-medium">
@@ -218,7 +235,7 @@ export default function BookingMatchPage({ params }: Props) {
                                             </div>
                                         </div>
                                         {/* Cost breakdown below card */}
-                                        {matchFee && renderBreakdown(referee)}
+                                        {matchFeePounds && renderBreakdown(referee)}
                                         {sentRequests.includes(referee.id) && (
                                             <div className="absolute inset-0 bg-white/80 backdrop-blur-[1px] rounded-xl flex items-center justify-center z-10 transition-all animate-in fade-in duration-300">
                                                 <div className="bg-green-100 text-green-700 px-4 py-2 rounded-full font-bold flex items-center gap-2 shadow-sm border border-green-200">
@@ -317,11 +334,11 @@ export default function BookingMatchPage({ params }: Props) {
                                     handleRequest(selectedReferee)
                                     setSelectedReferee(null)
                                 }}
-                                disabled={isSubmitting || sentRequests.includes(selectedReferee.id) || !matchFee || parseFloat(matchFee) <= 0}
+                                disabled={isSubmitting || sentRequests.includes(selectedReferee.id) || !matchFeePounds || matchFeePounds <= 0}
                                 className="w-full mt-4 py-4 bg-[var(--color-primary)] text-white rounded-xl font-bold hover:opacity-90 transition-opacity disabled:opacity-50"
                             >
-                                {sentRequests.includes(selectedReferee.id) ? 'Request Sent' : matchFee
-                                    ? `Send Offer — ${fmtPrice(calcTotalPence(selectedReferee, Math.round(parseFloat(matchFee) * 100)))}`
+                                {sentRequests.includes(selectedReferee.id) ? 'Request Sent' : matchFeePounds
+                                    ? `Send Offer — ${fmtPrice(calcTotalPence(selectedReferee, Math.round(matchFeePounds * 100)))}`
                                     : 'Set a match fee first'}
                             </button>
                         </div>
