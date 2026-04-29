@@ -350,6 +350,16 @@ export async function deleteBooking(bookingId: string) {
         return { error: error.message }
     }
 
+    // Withdraw any active offers so they no longer appear in the referee's
+    // "New Offers" / Feed badge. Without this, refs see a count that doesn't
+    // match the visible list, because getMyOffers / count queries skip
+    // soft-deleted bookings via the booking join.
+    await supabase
+        .from('booking_offers')
+        .update({ status: 'withdrawn' })
+        .eq('booking_id', bookingId)
+        .in('status', ['sent', 'accepted_priced'])
+
     revalidatePath('/app/bookings')
     return { success: true }
 }
@@ -1144,7 +1154,12 @@ export async function bookReferee(refereeId: string, data: BookingFormData): Pro
     return { success: true }
 }
 
-export async function searchRefereesForBooking(bookingId: string): Promise<{ data?: RefereeSearchResult[], bookingFeePounds?: number | null, error?: string }> {
+export async function searchRefereesForBooking(bookingId: string): Promise<{
+    data?: RefereeSearchResult[],
+    bookingFeePounds?: number | null,
+    bookingFeedVisible?: boolean,
+    error?: string,
+}> {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -1344,7 +1359,13 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{ dat
         })
         .sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0))
 
-    return { data: formattedResults, bookingFeePounds: booking.budget_pounds ?? null }
+    return {
+        data: formattedResults,
+        bookingFeePounds: booking.budget_pounds ?? null,
+        // Match is discoverable on the referee feed only when geocoding succeeded —
+        // find_bookings_near_referee filters `WHERE b.location IS NOT NULL`.
+        bookingFeedVisible: booking.latitude != null && booking.longitude != null,
+    }
 }
 
 export async function sendBookingRequest(

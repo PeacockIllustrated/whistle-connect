@@ -6,7 +6,7 @@ import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
 import { CoachInterestActions } from '@/components/app/CoachInterestActions'
 import { BookingOffer, Profile } from '@/lib/types'
-import { ChevronLeft, CalendarDays, MapPin, Radar, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, CalendarDays, MapPin } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
 
 export default async function BookingDetailPage({
@@ -88,53 +88,6 @@ export default async function BookingDetailPage({
                 </div>
                 <StatusChip status={booking.status} />
             </div>
-
-            {/* Coach-only feed-visibility banner — coach has just created or is
-                still waiting on this booking. Tells them the match is now
-                discoverable to nearby refs, or warns if geocoding failed. */}
-            {isCoach && !assignment && (booking.status === 'pending' || booking.status === 'offered') && (
-                booking.latitude != null && booking.longitude != null ? (
-                    <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-100 flex-shrink-0 flex items-center justify-center">
-                            <Radar className="w-5 h-5 text-emerald-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-emerald-900">
-                                Live on the referee feed
-                            </p>
-                            <p className="text-xs text-emerald-800/90 mt-0.5">
-                                This match is now showing for referees within their travel radius.
-                                They&apos;ll tap <span className="font-semibold">I&apos;m Available</span> and
-                                you&apos;ll see them appear under Offers below — or pick a referee yourself
-                                from the search.
-                            </p>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-lg bg-amber-100 flex-shrink-0 flex items-center justify-center">
-                            <AlertTriangle className="w-5 h-5 text-amber-700" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-amber-900">
-                                Not yet on the referee feed
-                            </p>
-                            <p className="text-xs text-amber-800/90 mt-0.5">
-                                We couldn&apos;t pin this booking on the map, so nearby referees won&apos;t
-                                see it. Check the postcode is right —
-                                {' '}
-                                <Link
-                                    href={`/app/bookings/${booking.id}/edit`}
-                                    className="underline font-semibold hover:no-underline"
-                                >
-                                    edit booking
-                                </Link>
-                                {' '}— or send offers manually from the search.
-                            </p>
-                        </div>
-                    </div>
-                )
-            )}
 
             {/* Main Card */}
             <div className={`card p-4 mb-4 ${getStatusCardStyle(booking.status)}`}>

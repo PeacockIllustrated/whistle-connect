@@ -62,14 +62,18 @@ export default async function AppLayout({
         }
     }
 
-    // Get pending offers count for referees
+    // Get pending offers count for referees. Filter must match getMyOffers
+    // (feed/actions.ts) so the badge in BottomNav / Feed tab matches what
+    // the My Offers list actually renders. Specifically: skip offers whose
+    // underlying booking has been soft-deleted by the coach.
     let offerCount = 0
     if (profile?.role === 'referee') {
         const { count } = await supabase
             .from('booking_offers')
-            .select('*', { count: 'exact', head: true })
+            .select('*, booking:bookings!inner(deleted_at)', { count: 'exact', head: true })
             .eq('referee_id', user.id)
             .eq('status', 'sent')
+            .is('booking.deleted_at', null)
         offerCount = count || 0
     }
 
