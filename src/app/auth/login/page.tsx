@@ -7,6 +7,7 @@ import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { signIn } from '@/lib/auth/actions'
+import { useRedirectIfAuthed } from '@/lib/hooks/useRedirectIfAuthed'
 import { UserRole } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -18,6 +19,7 @@ const roleOptions = [
 export default function LoginPage() {
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo') || '/app'
+    const { checked } = useRedirectIfAuthed(returnTo)
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [role, setRole] = useState<UserRole>('coach')
@@ -42,6 +44,8 @@ export default function LoginPage() {
             setLoading(false)
         }
     }
+
+    if (!checked) return null
 
     return (
         <div className="min-h-screen bg-[var(--background)] flex flex-col">

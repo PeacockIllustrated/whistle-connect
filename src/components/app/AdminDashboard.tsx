@@ -12,7 +12,8 @@ import type { StatItem } from '@/components/app/DashboardStats'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import {
     ShieldCheck, FileCheck, CalendarDays, Plus, Clock,
-    ClipboardList, Siren, Banknote, Eye, Monitor, Users
+    ClipboardList, Siren, Banknote, Eye, Monitor, Users,
+    AlertOctagon, Settings
 } from 'lucide-react'
 
 type ViewMode = 'admin' | 'coach' | 'referee'
@@ -116,6 +117,18 @@ export function AdminDashboard({
                             icon={<CalendarDays className="w-6 h-6" />}
                             title="All Bookings"
                             subtitle="View and manage all bookings"
+                        />
+                        <ActionCard
+                            href="/app/disputes"
+                            icon={<AlertOctagon className="w-6 h-6" />}
+                            title="Open Disputes"
+                            subtitle="Resolve booking complaints and refunds"
+                        />
+                        <ActionCard
+                            href="/app/admin/settings"
+                            icon={<Settings className="w-6 h-6" />}
+                            title="Platform Settings"
+                            subtitle="Travel rate, booking fee and other tunables"
                         />
                     </div>
                 </>

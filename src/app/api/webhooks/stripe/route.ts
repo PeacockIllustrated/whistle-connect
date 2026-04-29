@@ -134,7 +134,7 @@ async function handleTransferFailed(transfer: Stripe.Transfer) {
                     title: 'Transfer Failed',
                     message: `Stripe transfer ${transfer.id} failed for user ${userId}. Amount: £${(transfer.amount / 100).toFixed(2)}`,
                     type: 'error',
-                    link: '/app/admin',
+                    link: '/app/disputes',
                 })
             }
         }

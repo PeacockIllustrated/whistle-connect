@@ -7,6 +7,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { signUp } from '@/lib/auth/actions'
+import { useRedirectIfAuthed } from '@/lib/hooks/useRedirectIfAuthed'
 import { UserRole } from '@/lib/types'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { cn } from '@/lib/utils'
@@ -20,6 +21,7 @@ export default function RegisterPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const returnTo = searchParams.get('returnTo') || '/app'
+    const { checked } = useRedirectIfAuthed(returnTo)
     const [fullName, setFullName] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
@@ -92,6 +94,8 @@ export default function RegisterPage() {
             />
         )
     }
+
+    if (!checked) return null
 
     return (
         <div className="min-h-screen bg-[var(--background)] flex flex-col">

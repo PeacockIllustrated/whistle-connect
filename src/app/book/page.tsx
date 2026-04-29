@@ -63,8 +63,9 @@ export default function BookInterstitialPage() {
         )
     }
 
-    // Show access denied for referees
-    if (userRole === 'referee') {
+    // Coach is the only role that can book. Anything else (referee, admin,
+    // null/missing profile) gets the access-denied screen — fail-closed.
+    if (userRole !== 'coach') {
         return (
             <div className="min-h-screen bg-[var(--background)]">
                 <header className="bg-[var(--neutral-900)] text-white py-4 px-4">
@@ -77,7 +78,7 @@ export default function BookInterstitialPage() {
                 </header>
                 <RoleAccessDenied
                     requiredRole="coach"
-                    currentRole={userRole}
+                    currentRole={userRole ?? undefined}
                     featureName="Book a Referee"
                     description="This feature is for coaches to book referees for their matches. As a referee, you'll receive booking offers from coaches."
                 />

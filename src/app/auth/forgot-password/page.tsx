@@ -6,8 +6,10 @@ import Image from 'next/image'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { requestPasswordReset } from '@/lib/auth/actions'
+import { useRedirectIfAuthed } from '@/lib/hooks/useRedirectIfAuthed'
 
 export default function ForgotPasswordPage() {
+    const { checked } = useRedirectIfAuthed()
     const [email, setEmail] = useState('')
     const [error, setError] = useState('')
     const [message, setMessage] = useState('')
@@ -33,6 +35,8 @@ export default function ForgotPasswordPage() {
             setLoading(false)
         }
     }
+
+    if (!checked) return null
 
     return (
         <div className="min-h-screen bg-[var(--background)] flex flex-col">
