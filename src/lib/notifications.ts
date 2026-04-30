@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import * as Sentry from '@sentry/nextjs'
 import { isFirebaseConfigured, sendFCMMessage } from '@/lib/firebase-admin'
 import { isEnabled } from '@/lib/feature-flags'
@@ -22,7 +22,15 @@ interface CreateNotificationParams {
 export async function createNotification({
     userId, title, message, type, link, urgency = 'normal',
 }: CreateNotificationParams): Promise<{ success: boolean; error?: string }> {
-    const supabase = await createClient()
+    // Prefer the service-role client where available. The
+    // `create_notification` RPC is SECURITY DEFINER + scoped to whatever
+    // userId the caller passes, but its EXECUTE grant is restricted to
+    // `authenticated` and `service_role` (NOT `anon`). Cron jobs and other
+    // session-less server contexts have no user cookie, so a regular
+    // `createClient()` call runs as `anon` and is denied (Postgres 42501).
+    // Falling back to the cookie-based client keeps RLS in play for the
+    // push_subscriptions read when called from a real user session.
+    const supabase = createAdminClient() ?? await createClient()
 
     // 1. Create in-app notification via SECURITY DEFINER RPC function
     const { error } = await supabase.rpc('create_notification', {
