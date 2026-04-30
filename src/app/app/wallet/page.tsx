@@ -1,10 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getWallet, getTransactions } from './actions'
+import { BOOKING_FEE_PENCE } from '@/lib/constants'
 import Link from 'next/link'
 import {
     ChevronLeft, Wallet, Lock, Plus, ArrowUpRight,
-    ArrowDownLeft, ArrowUpFromLine, Shield, RotateCcw, Receipt
+    ArrowDownLeft, ArrowUpFromLine, Shield, RotateCcw, Receipt, Hourglass
 } from 'lucide-react'
 
 export default async function WalletPage({
@@ -30,6 +31,74 @@ export default async function WalletPage({
 
     const isCoach = profile?.role === 'coach'
     const isReferee = profile?.role === 'referee'
+
+    // Phase 2: pending earnings for refs — sum of (escrow_amount - platform fee)
+    // across bookings they're assigned to where escrow hasn't released yet.
+    // Includes both 'confirmed' (waiting on someone to mark complete) and
+    // 'completed' (both confirmed, in 48h cooling-off) statuses.
+    type PendingBooking = {
+        id: string
+        ground_name: string | null
+        location_postcode: string
+        escrow_amount_pence: number | null
+        coach_marked_complete_at: string | null
+        referee_marked_complete_at: string | null
+        both_confirmed_at: string | null
+        match_date: string
+        kickoff_time: string
+    }
+    let pendingBookings: PendingBooking[] = []
+    if (isReferee) {
+        const { data } = await supabase
+            .from('booking_assignments')
+            .select(`
+                booking:bookings!inner(
+                    id, ground_name, location_postcode, escrow_amount_pence,
+                    coach_marked_complete_at, referee_marked_complete_at,
+                    both_confirmed_at, match_date, kickoff_time
+                )
+            `)
+            .eq('referee_id', user.id)
+            .is('booking.escrow_released_at', null)
+            .not('booking.escrow_amount_pence', 'is', null)
+            .in('booking.status', ['confirmed', 'completed'])
+        pendingBookings = ((data || [])
+            .map((row) => Array.isArray(row.booking) ? row.booking[0] : row.booking)
+            .filter(Boolean) as unknown as PendingBooking[])
+    }
+    const pendingTotalPence = pendingBookings.reduce((sum, b) => {
+        const net = (b.escrow_amount_pence ?? 0) - BOOKING_FEE_PENCE
+        return sum + Math.max(0, net)
+    }, 0)
+
+    /** Compute the expected release date for a single pending booking. */
+    function expectedReleaseDate(b: PendingBooking): { date: Date; reason: 'mutual' | 'fallback-coach' | 'fallback-ref' | 'awaiting' } {
+        if (b.both_confirmed_at) {
+            // Mutually confirmed → 48h after both_confirmed_at
+            return {
+                date: new Date(new Date(b.both_confirmed_at).getTime() + 48 * 60 * 60 * 1000),
+                reason: 'mutual',
+            }
+        }
+        if (b.coach_marked_complete_at && !b.referee_marked_complete_at) {
+            return {
+                date: new Date(new Date(b.coach_marked_complete_at).getTime() + 72 * 60 * 60 * 1000),
+                reason: 'fallback-coach',
+            }
+        }
+        if (b.referee_marked_complete_at && !b.coach_marked_complete_at) {
+            return {
+                date: new Date(new Date(b.referee_marked_complete_at).getTime() + 72 * 60 * 60 * 1000),
+                reason: 'fallback-ref',
+            }
+        }
+        // Neither marked yet — show kickoff date as the earliest possible point;
+        // actual release won't happen until someone marks.
+        return {
+            date: new Date(`${b.match_date}T${b.kickoff_time}`),
+            reason: 'awaiting',
+        }
+    }
 
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto pb-24">
@@ -108,17 +177,66 @@ export default async function WalletPage({
                 {isReferee && (
                     <div className="card p-4">
                         <div className="flex items-center gap-2 mb-2">
-                            <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                                <Receipt className="w-4 h-4 text-blue-600" />
+                            <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                                <Hourglass className="w-4 h-4 text-amber-600" />
                             </div>
                         </div>
-                        <p className="text-2xl font-bold text-[var(--foreground)]">
-                            {transactions?.length ?? 0}
+                        <p className="text-2xl font-bold text-amber-600">
+                            &pound;{(pendingTotalPence / 100).toFixed(2)}
                         </p>
-                        <p className="text-[10px] text-[var(--foreground-muted)] uppercase font-medium">Transactions</p>
+                        <p className="text-[10px] text-[var(--foreground-muted)] uppercase font-medium">Pending Earnings</p>
                     </div>
                 )}
             </div>
+
+            {/* Pending earnings detail — referee only, only if there's anything pending */}
+            {isReferee && pendingBookings.length > 0 && (
+                <div className="card overflow-hidden mb-6">
+                    <div className="p-4 border-b border-[var(--border-color)] bg-[var(--neutral-50)]">
+                        <h2 className="text-sm font-bold uppercase tracking-wider text-[var(--foreground-muted)]">
+                            Pending Releases
+                        </h2>
+                    </div>
+                    <ul className="divide-y divide-[var(--border-color)]">
+                        {pendingBookings.map((b) => {
+                            const net = Math.max(0, (b.escrow_amount_pence ?? 0) - BOOKING_FEE_PENCE)
+                            const release = expectedReleaseDate(b)
+                            const reasonText = (() => {
+                                switch (release.reason) {
+                                    case 'mutual':
+                                        return 'Both parties confirmed — releases'
+                                    case 'fallback-coach':
+                                        return 'Coach confirmed — auto-release'
+                                    case 'fallback-ref':
+                                        return 'You confirmed — auto-release if coach is silent'
+                                    case 'awaiting':
+                                        return 'Awaiting confirmation after match'
+                                }
+                            })()
+                            return (
+                                <li key={b.id} className="flex items-center gap-3 p-4">
+                                    <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-amber-100 dark:bg-amber-900/30">
+                                        <Hourglass className="w-4 h-4 text-amber-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <Link href={`/app/bookings/${b.id}`} className="block">
+                                            <p className="font-medium text-sm text-[var(--foreground)] truncate hover:underline">
+                                                {b.ground_name || b.location_postcode}
+                                            </p>
+                                        </Link>
+                                        <p className="text-[11px] text-[var(--foreground-muted)] mt-0.5">
+                                            {reasonText}{release.reason !== 'awaiting' ? ` ${release.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+                                        </p>
+                                    </div>
+                                    <span className="font-bold text-sm flex-shrink-0 text-amber-600">
+                                        &pound;{(net / 100).toFixed(2)}
+                                    </span>
+                                </li>
+                            )
+                        })}
+                    </ul>
+                </div>
+            )}
 
             {/* Action Button */}
             <div className="mb-6">

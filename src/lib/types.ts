@@ -121,6 +121,12 @@ export interface Booking {
     deleted_at: string | null
     escrow_amount_pence: number | null
     escrow_released_at: string | null
+    /** Phase 2 dual-confirmation: when the coach clicked "Confirm match completion". Null = not yet. */
+    coach_marked_complete_at: string | null
+    /** Phase 2 dual-confirmation: when the assigned ref clicked "Confirm match completion". */
+    referee_marked_complete_at: string | null
+    /** Set the moment the second party confirms. Cron uses this + 48h to gate release. */
+    both_confirmed_at: string | null
     created_at: string
     updated_at: string
 }

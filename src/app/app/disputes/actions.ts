@@ -39,13 +39,28 @@ export async function raiseDispute(bookingId: string, reason: string): Promise<{
 
     const { data: booking } = await supabase
         .from('bookings')
-        .select('id, coach_id, status, booking_assignments(referee_id)')
+        .select('id, coach_id, status, both_confirmed_at, escrow_released_at, booking_assignments(referee_id)')
         .eq('id', bookingId)
-        .eq('status', 'confirmed')
+        .in('status', ['confirmed', 'completed'])
         .single()
 
     if (!booking) {
-        return { error: 'Booking not found or not in confirmed status' }
+        return { error: 'Booking not found or no longer disputable' }
+    }
+
+    // Phase 2 dispute window: confirmed bookings are always disputable until
+    // escrow releases. Completed bookings (both parties confirmed) are
+    // disputable for 48h after `both_confirmed_at` — the cooling-off window
+    // before the cron releases. Once escrow has released, no disputes.
+    if (booking.escrow_released_at) {
+        return { error: 'Cannot dispute — payment has already been released' }
+    }
+    if (booking.status === 'completed' && booking.both_confirmed_at) {
+        const confirmedAt = new Date(booking.both_confirmed_at).getTime()
+        const fortyEightHours = 48 * 60 * 60 * 1000
+        if (Date.now() - confirmedAt > fortyEightHours) {
+            return { error: 'Dispute window has closed (48 hours after both parties confirmed).' }
+        }
     }
 
     const assignment = (booking.booking_assignments as unknown as { referee_id: string }[])[0]

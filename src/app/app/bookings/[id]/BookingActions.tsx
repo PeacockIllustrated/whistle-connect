@@ -257,29 +257,97 @@ export function BookingActions({
                     </a>
                 )}
 
-                {/* Mark as Completed — available after kickoff time */}
-                {booking.status === 'confirmed' && hasKickoffPassed() && (
-                    <>
-                        <Button
-                            fullWidth
-                            variant="success"
-                            onClick={() => setShowCompleteDialog(true)}
-                            loading={completing}
-                        >
-                            <CheckCircle className="w-5 h-5 mr-2" />
-                            Mark as Completed
-                        </Button>
-                        <ConfirmDialog
-                            isOpen={showCompleteDialog}
-                            onClose={() => setShowCompleteDialog(false)}
-                            onConfirm={handleComplete}
-                            title="Mark as Completed"
-                            message="Confirm that this match has been completed?"
-                            confirmLabel="Yes, Complete"
-                            variant="primary"
-                        />
-                    </>
-                )}
+                {/* Mark as Completed — Phase 2 dual confirmation flow.
+                    Hide once the calling user has already marked. Show
+                    a state banner above the button that explains what's
+                    happening and what's at stake. */}
+                {(() => {
+                    if (!hasKickoffPassed()) return null
+                    if (booking.status !== 'confirmed' && booking.status !== 'completed') return null
+                    if (!isCoach && !isReferee) return null
+                    if (booking.escrow_released_at) return null
+
+                    const youMarked = isCoach
+                        ? !!booking.coach_marked_complete_at
+                        : !!booking.referee_marked_complete_at
+                    const otherMarked = isCoach
+                        ? !!booking.referee_marked_complete_at
+                        : !!booking.coach_marked_complete_at
+                    const otherLabel = isCoach
+                        ? (booking.assignment?.referee?.full_name || 'The referee')
+                        : (booking.coach?.full_name || 'The coach')
+                    const youAction = isCoach ? 'release' : 'receive'
+                    const escrowDisplay = booking.escrow_amount_pence != null
+                        ? `£${(booking.escrow_amount_pence / 100).toFixed(2)}`
+                        : 'the match fee'
+
+                    // Both confirmed — show release-pending banner, hide button
+                    if (booking.both_confirmed_at) {
+                        return (
+                            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <p className="text-sm font-semibold text-emerald-900">Both parties confirmed</p>
+                                        <p className="text-xs text-emerald-800 mt-0.5">
+                                            {escrowDisplay} releases to {isCoach ? 'the referee' : 'your wallet'} 48 hours after both parties confirmed. Raise a dispute now if there&apos;s a problem.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    // You marked, waiting for the other side — show banner, hide button
+                    if (youMarked && !otherMarked) {
+                        return (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <p className="text-sm font-semibold text-amber-900">You confirmed — waiting on {otherLabel}</p>
+                                        <p className="text-xs text-amber-800 mt-0.5">
+                                            We&apos;ll auto-release {escrowDisplay} if {otherLabel.toLowerCase()} doesn&apos;t respond within 72 hours.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    }
+
+                    // Other marked, you haven't yet — show "confirm now" prompt
+                    const buttonLabel = otherMarked
+                        ? `${otherLabel} confirmed — confirm to ${youAction} ${escrowDisplay} now`
+                        : `Confirm match — ${youAction} ${escrowDisplay}`
+                    const dialogMessage = otherMarked
+                        ? `${otherLabel} has confirmed completion. Confirming will start the 48-hour release window for ${escrowDisplay}.`
+                        : `Confirming locks in ${escrowDisplay} ${
+                            isCoach ? `to release to ${otherLabel}` : 'to come to your wallet'
+                          } once ${otherLabel.toLowerCase()} also confirms (or 72h after if they don't respond).`
+
+                    return (
+                        <>
+                            <Button
+                                fullWidth
+                                variant="success"
+                                onClick={() => setShowCompleteDialog(true)}
+                                loading={completing}
+                            >
+                                <CheckCircle className="w-5 h-5 mr-2" />
+                                {buttonLabel}
+                            </Button>
+                            <ConfirmDialog
+                                isOpen={showCompleteDialog}
+                                onClose={() => setShowCompleteDialog(false)}
+                                onConfirm={handleComplete}
+                                title="Confirm match completion"
+                                message={dialogMessage}
+                                confirmLabel="Yes, confirm"
+                                variant="primary"
+                            />
+                        </>
+                    )
+                })()}
 
                 {/* Cancel button — BOTH coach and referee can cancel confirmed bookings */}
                 {booking.status === 'confirmed' && (isCoach || isReferee) && (
@@ -308,26 +376,41 @@ export function BookingActions({
                     </>
                 )}
 
-                {/* Raise Dispute — confirmed bookings */}
-                {booking.status === 'confirmed' && (
-                    <button
-                        onClick={async () => {
-                            const reason = prompt('Please describe the issue (minimum 10 characters):')
-                            if (reason && reason.length >= 10) {
-                                const { raiseDispute } = await import('@/app/app/disputes/actions')
-                                const result = await raiseDispute(booking.id, reason)
-                                if (result.error) {
-                                    showToast({ message: result.error, type: 'error' })
-                                } else {
-                                    showToast({ message: 'Dispute raised. An admin will review it.', type: 'success' })
+                {/* Raise Dispute — confirmed bookings always; completed
+                    bookings only within the 48h cooling-off window (matches
+                    the gate in raiseDispute server action). Hidden once
+                    escrow has actually released. */}
+                {(() => {
+                    if (booking.escrow_released_at) return null
+                    if (!isCoach && !isReferee) return null
+
+                    let withinDisputeWindow = booking.status === 'confirmed'
+                    if (booking.status === 'completed' && booking.both_confirmed_at) {
+                        const elapsed = Date.now() - new Date(booking.both_confirmed_at).getTime()
+                        withinDisputeWindow = elapsed < 48 * 60 * 60 * 1000
+                    }
+                    if (!withinDisputeWindow) return null
+
+                    return (
+                        <button
+                            onClick={async () => {
+                                const reason = prompt('Please describe the issue (minimum 10 characters):')
+                                if (reason && reason.length >= 10) {
+                                    const { raiseDispute } = await import('@/app/app/disputes/actions')
+                                    const result = await raiseDispute(booking.id, reason)
+                                    if (result.error) {
+                                        showToast({ message: result.error, type: 'error' })
+                                    } else {
+                                        showToast({ message: 'Dispute raised. An admin will review it.', type: 'success' })
+                                    }
                                 }
-                            }
-                        }}
-                        className="w-full rounded-lg border border-red-300 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                    >
-                        Raise Dispute
-                    </button>
-                )}
+                            }}
+                            className="w-full rounded-lg border border-red-300 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+                        >
+                            Raise Dispute
+                        </button>
+                    )
+                })()}
 
                 {/* Rate Referee — coach only, completed bookings */}
                 {isCoach && booking.status === 'completed' && booking.assignment?.referee && !hasRated && (

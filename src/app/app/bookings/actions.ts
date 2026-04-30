@@ -1,5 +1,6 @@
 'use server'
 
+import * as Sentry from '@sentry/nextjs'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
@@ -524,6 +525,20 @@ export async function cancelBooking(bookingId: string) {
     return { success: true }
 }
 
+/**
+ * Mark a booking as completed by the calling user (coach or assigned ref).
+ * Phase 2 dual-confirmation flow:
+ *   - first to mark sets their timestamp; the OTHER side gets a nudge.
+ *   - second to mark also sets booking.status = 'completed' and
+ *     both_confirmed_at; both sides get a "release scheduled" notification.
+ *
+ * The cron at /api/cron/escrow-release reads both_confirmed_at and applies
+ * the 48h cooling-off window before releasing escrow.
+ *
+ * All authz / status / dispute / kickoff checks live inside the
+ * mark_booking_complete RPC (single transaction, FOR UPDATE lock on the
+ * booking row to prevent races between concurrent clicks).
+ */
 export async function completeBooking(bookingId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -532,10 +547,11 @@ export async function completeBooking(bookingId: string) {
         return { error: 'Unauthorized' }
     }
 
-    // Get booking with assignment
+    // Pull the booking + escrow amount up-front so we can craft notifications
+    // with the actual money figure, not just a generic "match completed".
     const { data: booking } = await supabase
         .from('bookings')
-        .select('*, assignments:booking_assignments(referee_id)')
+        .select('coach_id, escrow_amount_pence, ground_name, location_postcode, match_date, kickoff_time, assignments:booking_assignments(referee_id)')
         .eq('id', bookingId)
         .is('deleted_at', null)
         .single()
@@ -544,58 +560,75 @@ export async function completeBooking(bookingId: string) {
         return { error: 'Booking not found' }
     }
 
-    // Check authorization: user must be the coach OR the assigned referee
-    const isCoach = booking.coach_id === user.id
     const assignments = Array.isArray(booking.assignments)
         ? booking.assignments
         : booking.assignments ? [booking.assignments] : []
-    const isAssignedReferee = assignments.some(
-        (a: { referee_id: string }) => a.referee_id === user.id
-    )
+    const refereeId = assignments[0]?.referee_id as string | undefined
 
-    if (!isCoach && !isAssignedReferee) {
-        return { error: 'Unauthorized' }
-    }
+    // Atomic mark via RPC. Returns the resulting state so we can drive
+    // the notification copy correctly.
+    const { data: rpcResult, error: rpcError } = await supabase.rpc('mark_booking_complete', {
+        p_booking_id: bookingId,
+    })
 
-    if (booking.status !== 'confirmed') {
-        return { error: 'Only confirmed bookings can be marked as completed' }
-    }
-
-    // Time check: kickoff must have passed
-    const kickoff = new Date(`${booking.match_date}T${booking.kickoff_time}`)
-    if (new Date() <= kickoff) {
-        return { error: 'The match has not started yet' }
-    }
-
-    // Update status to completed
-    const { error } = await supabase
-        .from('bookings')
-        .update({ status: 'completed' })
-        .eq('id', bookingId)
-
-    if (error) {
-        return { error: error.message }
-    }
-
-    // Notify the other party
-    const notifyUserId = isCoach
-        ? assignments[0]?.referee_id
-        : booking.coach_id
-    const notifyLabel = isCoach ? 'The coach' : 'The referee'
-
-    if (notifyUserId) {
-        await createNotification({
-            userId: notifyUserId,
-            title: 'Match Completed',
-            message: `${notifyLabel} has marked the booking for ${booking.ground_name || booking.location_postcode} as completed.`,
-            type: 'success',
-            link: `/app/bookings/${bookingId}`
+    if (rpcError) {
+        Sentry.captureException(rpcError, {
+            tags: { 'booking.flow': 'mark_complete' },
+            user: { id: user.id },
+            extra: { bookingId },
         })
+        return { error: rpcError.message }
+    }
+
+    if (rpcResult?.error) {
+        return { error: rpcResult.error }
+    }
+
+    const yourRole = rpcResult?.your_role as 'coach' | 'referee' | undefined
+    const bothConfirmed = rpcResult?.both_confirmed === true
+    const alreadyMarked = rpcResult?.already_marked === true
+
+    // Notification logic — only fire on a state-changing call (not idempotent
+    // re-clicks) so users don't get spammed.
+    if (!alreadyMarked) {
+        const venue = booking.ground_name || booking.location_postcode
+        const escrowDisplay = booking.escrow_amount_pence != null
+            ? `£${(booking.escrow_amount_pence / 100).toFixed(2)}`
+            : 'the match fee'
+
+        if (bothConfirmed) {
+            // Second confirmer just clicked. Notify both sides that
+            // the release timer has started.
+            const otherUserId = yourRole === 'coach' ? refereeId : booking.coach_id
+            if (otherUserId) {
+                await createNotification({
+                    userId: otherUserId,
+                    title: 'Match Confirmed',
+                    message: `Both parties have confirmed the match at ${venue}. ${escrowDisplay} releases to the referee in 48 hours.`,
+                    type: 'success',
+                    link: `/app/bookings/${bookingId}`,
+                })
+            }
+        } else {
+            // First confirmer. Nudge the other side to confirm.
+            const otherUserId = yourRole === 'coach' ? refereeId : booking.coach_id
+            const youLabel = yourRole === 'coach' ? 'The coach' : 'The referee'
+            const ctaLabel = yourRole === 'coach' ? 'Confirm to release' : 'Confirm to receive'
+            if (otherUserId) {
+                await createNotification({
+                    userId: otherUserId,
+                    title: 'Confirm match completion',
+                    message: `${youLabel} has confirmed the match at ${venue}. ${ctaLabel} ${escrowDisplay} — auto-release if no response within 72 hours.`,
+                    type: 'info',
+                    link: `/app/bookings/${bookingId}`,
+                })
+            }
+        }
     }
 
     revalidatePath(`/app/bookings/${bookingId}`)
     revalidatePath('/app/bookings')
-    return { success: true }
+    return { success: true, both_confirmed: bothConfirmed, your_role: yourRole, already_marked: alreadyMarked }
 }
 
 export async function acceptOffer(offerId: string) {
