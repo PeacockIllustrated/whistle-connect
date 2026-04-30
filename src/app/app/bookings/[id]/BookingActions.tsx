@@ -11,7 +11,8 @@ import { BookingOffer, BookingWithDetails } from '@/lib/types'
 // Input no longer needed — referee doesn't set price
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { RatingModal } from '@/components/app/RatingModal'
-import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, Pencil, Search, Star } from 'lucide-react'
+import { DisputeFormModal } from '@/components/app/DisputeFormModal'
+import { Check, MessageCircle, CalendarDays, Clock, CheckCircle, XCircle, Ban, Pencil, Search, Star, AlertTriangle } from 'lucide-react'
 
 interface BookingActionsProps {
     booking: BookingWithDetails
@@ -45,6 +46,8 @@ export function BookingActions({
     } | null>(null)
     const [showRatingModal, setShowRatingModal] = useState(false)
     const [hasRated, setHasRated] = useState(false)
+    const [showDisputeModal, setShowDisputeModal] = useState(false)
+    const [disputeRaised, setDisputeRaised] = useState(false)
     // Wallet balance no longer needed here — escrow check happens server-side
 
     // ─── Referee: Accept offer (coach already set the price) ───
@@ -233,15 +236,21 @@ export function BookingActions({
     if (booking.status === 'confirmed' || booking.status === 'completed') {
         return (
             <div className="space-y-3">
-                {/* Message button */}
-                {threadId && (
-                    <Link href={`/app/messages/${threadId}`} className="block">
-                        <Button fullWidth variant="primary">
-                            <MessageCircle className="w-5 h-5 mr-2" />
-                            Message
-                        </Button>
-                    </Link>
-                )}
+                {/* Message button — explicitly names the other party so it
+                    reads as a clear next-action, not a generic icon row. */}
+                {threadId && (() => {
+                    const otherName = isCoach
+                        ? (booking.assignment?.referee?.full_name || 'the referee')
+                        : (booking.coach?.full_name || 'the coach')
+                    return (
+                        <Link href={`/app/messages/${threadId}`} className="block">
+                            <Button fullWidth variant="primary">
+                                <MessageCircle className="w-5 h-5 mr-2" />
+                                Message {otherName}
+                            </Button>
+                        </Link>
+                    )
+                })()}
 
                 {/* Calendar export — available to both coach and assigned referee */}
                 {booking.status === 'confirmed' && (isCoach || isReferee) && (
@@ -383,25 +392,36 @@ export function BookingActions({
                     if (booking.escrow_released_at) return null
                     if (!isCoach && !isReferee) return null
                     if (booking.status !== 'confirmed' && booking.status !== 'completed') return null
+                    if (disputeRaised) {
+                        return (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-800 flex items-start gap-2">
+                                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                                <span>Dispute submitted. An admin will review it shortly and contact both parties. Escrow is paused until resolution.</span>
+                            </div>
+                        )
+                    }
 
                     return (
-                        <button
-                            onClick={async () => {
-                                const reason = prompt('Please describe the issue (minimum 10 characters):')
-                                if (reason && reason.length >= 10) {
-                                    const { raiseDispute } = await import('@/app/app/disputes/actions')
-                                    const result = await raiseDispute(booking.id, reason)
-                                    if (result.error) {
-                                        showToast({ message: result.error, type: 'error' })
-                                    } else {
-                                        showToast({ message: 'Dispute raised. An admin will review it.', type: 'success' })
-                                    }
-                                }
-                            }}
-                            className="w-full rounded-lg border border-red-300 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
-                        >
-                            Raise Dispute
-                        </button>
+                        <>
+                            <button
+                                onClick={() => setShowDisputeModal(true)}
+                                className="w-full rounded-lg border border-red-300 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center justify-center gap-2"
+                            >
+                                <AlertTriangle className="w-4 h-4" />
+                                Raise Dispute
+                            </button>
+                            {showDisputeModal && (
+                                <DisputeFormModal
+                                    bookingId={booking.id}
+                                    onClose={() => setShowDisputeModal(false)}
+                                    onRaised={() => {
+                                        setShowDisputeModal(false)
+                                        setDisputeRaised(true)
+                                        router.refresh()
+                                    }}
+                                />
+                            )}
+                        </>
                     )
                 })()}
 
