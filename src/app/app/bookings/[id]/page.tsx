@@ -6,7 +6,7 @@ import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
 import { CoachInterestActions } from '@/components/app/CoachInterestActions'
 import { BookingOffer, Profile } from '@/lib/types'
-import { ChevronLeft, CalendarDays, MapPin } from 'lucide-react'
+import { ChevronLeft, CalendarDays, MapPin, MessageCircle } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
 
 export default async function BookingDetailPage({
@@ -181,7 +181,9 @@ export default async function BookingDetailPage({
                 </div>
             </div>
 
-            {/* Coach Info (for referees) */}
+            {/* Coach Info (for referees) — once the booking is confirmed,
+                surface a Message button right on the card so the ref can
+                reach the coach without scrolling to the actions block. */}
             {isReferee && booking.coach && (
                 <div className="card p-4 mb-4">
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">COACH</h3>
@@ -189,15 +191,25 @@ export default async function BookingDetailPage({
                         <div className="w-10 h-10 rounded-full bg-[var(--wc-coach-blue)] flex items-center justify-center text-white font-semibold">
                             {booking.coach.full_name.charAt(0)}
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <p className="font-medium">{booking.coach.full_name}</p>
                             {booking.club && <p className="text-sm text-[var(--foreground-muted)]">{booking.club.name}</p>}
                         </div>
                     </div>
+                    {thread?.id && (booking.status === 'confirmed' || booking.status === 'completed') && (
+                        <Link
+                            href={`/app/messages/${thread.id}`}
+                            className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-2.5 text-sm hover:opacity-90 transition-opacity"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                            Message {booking.coach.full_name}
+                        </Link>
+                    )}
                 </div>
             )}
 
-            {/* Assigned Referee (for coaches) */}
+            {/* Assigned Referee (for coaches) — same treatment: button to
+                message the assigned ref appears the moment they accept. */}
             {isCoach && assignment?.referee && (
                 <div className="card p-4 mb-4">
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">ASSIGNED REFEREE</h3>
@@ -211,6 +223,15 @@ export default async function BookingDetailPage({
                         </div>
                         <StatusChip status="verified" size="sm" />
                     </div>
+                    {thread?.id && (booking.status === 'confirmed' || booking.status === 'completed') && (
+                        <Link
+                            href={`/app/messages/${thread.id}`}
+                            className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-2.5 text-sm hover:opacity-90 transition-opacity"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                            Message {assignment.referee.full_name}
+                        </Link>
+                    )}
                 </div>
             )}
 

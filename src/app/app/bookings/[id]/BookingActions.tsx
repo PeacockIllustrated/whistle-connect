@@ -236,15 +236,21 @@ export function BookingActions({
     if (booking.status === 'confirmed' || booking.status === 'completed') {
         return (
             <div className="space-y-3">
-                {/* Message button */}
-                {threadId && (
-                    <Link href={`/app/messages/${threadId}`} className="block">
-                        <Button fullWidth variant="primary">
-                            <MessageCircle className="w-5 h-5 mr-2" />
-                            Message
-                        </Button>
-                    </Link>
-                )}
+                {/* Message button — explicitly names the other party so it
+                    reads as a clear next-action, not a generic icon row. */}
+                {threadId && (() => {
+                    const otherName = isCoach
+                        ? (booking.assignment?.referee?.full_name || 'the referee')
+                        : (booking.coach?.full_name || 'the coach')
+                    return (
+                        <Link href={`/app/messages/${threadId}`} className="block">
+                            <Button fullWidth variant="primary">
+                                <MessageCircle className="w-5 h-5 mr-2" />
+                                Message {otherName}
+                            </Button>
+                        </Link>
+                    )
+                })()}
 
                 {/* Calendar export — available to both coach and assigned referee */}
                 {booking.status === 'confirmed' && (isCoach || isReferee) && (
