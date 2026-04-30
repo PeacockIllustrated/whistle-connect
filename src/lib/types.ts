@@ -389,6 +389,10 @@ export interface Dispute {
     raised_by: string
     reason: string
     status: DisputeStatus
+    /** Phase 2 structured fields. Nullable for legacy rows raised before migration 0145. */
+    category: string | null
+    desired_outcome: string | null
+    incident_at: string | null
     admin_notes: string | null
     admin_user_id: string | null
     resolved_at: string | null

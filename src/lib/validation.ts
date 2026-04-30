@@ -132,7 +132,33 @@ export const withdrawSchema = z.object({
     amountPounds: z.number().min(5, 'Minimum withdrawal is £5').max(10000, 'Maximum withdrawal is £10,000'),
 })
 
+export const DISPUTE_CATEGORIES = [
+    'match_did_not_happen',
+    'referee_no_show',
+    'coach_no_show',
+    'fee_dispute',
+    'conduct_issue',
+    'service_quality',
+    'safety_concern',
+    'other',
+] as const
+
+export const DISPUTE_DESIRED_OUTCOMES = [
+    'refund_full',
+    'refund_partial',
+    'release_full',
+    'mediation',
+] as const
+
 export const disputeSchema = z.object({
     bookingId: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'Invalid booking ID'),
-    reason: z.string().min(10, 'Please provide at least 10 characters explaining the issue').max(1000),
+    category: z.enum(DISPUTE_CATEGORIES, { message: 'Pick a category that best describes the issue' }),
+    reason: z.string()
+        .min(50, 'Please describe the issue in at least 50 characters so an admin can investigate properly')
+        .max(2000, 'Please keep the description under 2000 characters'),
+    desiredOutcome: z.enum(DISPUTE_DESIRED_OUTCOMES, { message: 'Tell us what outcome you\'re seeking' }),
+    incidentAt: z.string().datetime({ offset: true }).optional().or(z.literal('')),
 })
+
+export type DisputeCategory = typeof DISPUTE_CATEGORIES[number]
+export type DisputeDesiredOutcome = typeof DISPUTE_DESIRED_OUTCOMES[number]

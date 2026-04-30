@@ -21,7 +21,28 @@ async function readPlatformFeePence(): Promise<number> {
     return Number.isFinite(parsed) && parsed >= 0 ? parsed : BOOKING_FEE_PENCE
 }
 
-export async function raiseDispute(bookingId: string, reason: string): Promise<{
+/** Human-readable label for each category — kept server-side so the
+ *  admin notification email + the admin UI both render consistently. */
+const CATEGORY_LABELS: Record<string, string> = {
+    match_did_not_happen: 'Match did not happen',
+    referee_no_show: 'Referee no-show',
+    coach_no_show: 'Coach / team no-show',
+    fee_dispute: 'Fee / payment dispute',
+    conduct_issue: 'Conduct issue',
+    service_quality: 'Service quality concern',
+    safety_concern: 'Safety concern',
+    other: 'Other',
+}
+
+export interface RaiseDisputeInput {
+    bookingId: string
+    category: string
+    reason: string
+    desiredOutcome: string
+    incidentAt?: string
+}
+
+export async function raiseDispute(input: RaiseDisputeInput): Promise<{
     success?: boolean
     error?: string
 }> {
@@ -32,14 +53,16 @@ export async function raiseDispute(bookingId: string, reason: string): Promise<{
         return { error: 'Unauthorized' }
     }
 
-    const validationError = validate(disputeSchema, { bookingId, reason })
+    const validationError = validate(disputeSchema, input)
     if (validationError) {
         return { error: validationError }
     }
 
+    const { bookingId, category, reason, desiredOutcome, incidentAt } = input
+
     const { data: booking } = await supabase
         .from('bookings')
-        .select('id, coach_id, status, both_confirmed_at, escrow_released_at, booking_assignments(referee_id)')
+        .select('id, coach_id, status, both_confirmed_at, escrow_released_at, ground_name, location_postcode, booking_assignments(referee_id)')
         .eq('id', bookingId)
         .in('status', ['confirmed', 'completed'])
         .single()
@@ -48,11 +71,6 @@ export async function raiseDispute(bookingId: string, reason: string): Promise<{
         return { error: 'Booking not found or no longer disputable' }
     }
 
-    // Dispute window: any booking is disputable until escrow_released_at is
-    // set. After mutual confirmation, the cron releases on its very next tick
-    // (within ~15 min) so the practical post-confirm dispute window is short
-    // — encouraging users to raise issues BEFORE confirming. Once escrow
-    // releases, disputes are locked.
     if (booking.escrow_released_at) {
         return { error: 'Cannot dispute — payment has already been released' }
     }
@@ -80,6 +98,9 @@ export async function raiseDispute(bookingId: string, reason: string): Promise<{
         .insert({
             booking_id: bookingId,
             raised_by: user.id,
+            category,
+            desired_outcome: desiredOutcome,
+            incident_at: incidentAt && incidentAt.length > 0 ? incidentAt : null,
             reason,
         })
 
@@ -94,13 +115,18 @@ export async function raiseDispute(bookingId: string, reason: string): Promise<{
             .select('id')
             .eq('role', 'admin')
 
+        const venue = booking.ground_name || booking.location_postcode
+        const categoryLabel = CATEGORY_LABELS[category] || category
+        const role = isCoach ? 'coach' : 'referee'
+        const reasonExcerpt = reason.length > 150 ? reason.substring(0, 150) + '…' : reason
+
         if (admins) {
             await Promise.allSettled(
                 admins.map(admin =>
                     createNotification({
                         userId: admin.id,
-                        title: 'New Dispute Raised',
-                        message: `A dispute has been raised for a booking. Reason: ${reason.substring(0, 100)}`,
+                        title: `Dispute: ${categoryLabel}`,
+                        message: `A ${role} raised a dispute for the match at ${venue}. ${reasonExcerpt}`,
                         type: 'warning',
                         link: '/app/disputes',
                     })
