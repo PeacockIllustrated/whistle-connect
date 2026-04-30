@@ -47,9 +47,12 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4" onClick={onClose}>
+        <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 pb-[calc(var(--bottom-nav-height,72px)+env(safe-area-inset-bottom,0px))] sm:p-4 sm:pb-4"
+            onClick={onClose}
+        >
             <div
-                className="w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl bg-[var(--background-elevated)] border border-[var(--border-color)] shadow-xl p-5 space-y-4"
+                className="w-full sm:max-w-sm rounded-2xl bg-[var(--background-elevated)] border border-[var(--border-color)] shadow-xl p-5 space-y-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
