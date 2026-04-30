@@ -84,9 +84,9 @@ export async function GET(req: NextRequest) {
                 await createNotification({
                     userId: admin.id,
                     title: 'Wallet Reconciliation Alert',
-                    message: alerts.join('. ') + '. Please review in admin dashboard.',
+                    message: alerts.join('. ') + '. Please review in the admin settings.',
                     type: 'warning',
-                    link: '/app/disputes',
+                    link: '/app/admin/settings',
                 })
             }
         }

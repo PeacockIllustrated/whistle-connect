@@ -604,7 +604,7 @@ export async function completeBooking(bookingId: string) {
                 await createNotification({
                     userId: otherUserId,
                     title: 'Match Confirmed',
-                    message: `Both parties have confirmed the match at ${venue}. ${escrowDisplay} is releasing now.`,
+                    message: `Both parties have confirmed the match at ${venue}. ${escrowDisplay} is releasing — funds typically appear within 15 minutes.`,
                     type: 'success',
                     link: `/app/bookings/${bookingId}`,
                 })
@@ -619,7 +619,7 @@ export async function completeBooking(bookingId: string) {
                     userId: otherUserId,
                     title: 'Confirm match completion',
                     message: `${youLabel} has confirmed the match at ${venue}. ${ctaLabel} ${escrowDisplay} — auto-release 48 hours after kickoff if no response.`,
-                    type: 'info',
+                    type: 'warning',
                     link: `/app/bookings/${bookingId}`,
                 })
             }
@@ -828,7 +828,7 @@ export async function declineOffer(offerId: string) {
     }
 
     // Get booking to notify coach
-    const { data: offerData } = await supabase.from('booking_offers').select('booking:bookings(coach_id, ground_name, location_postcode)').eq('id', offerId).single()
+    const { data: offerData } = await supabase.from('booking_offers').select('booking:bookings(id, coach_id, ground_name, location_postcode)').eq('id', offerId).single()
 
     // Handle Supabase join sometimes returning array
     const booking = offerData?.booking ? (Array.isArray(offerData.booking) ? offerData.booking[0] : offerData.booking) : null
@@ -839,7 +839,7 @@ export async function declineOffer(offerId: string) {
             title: 'Offer Declined',
             message: `A referee declined your booking request for ${booking.ground_name || booking.location_postcode}.`,
             type: 'info',
-            link: '/app/bookings'
+            link: `/app/bookings/${booking.id}`,
         })
     }
 
@@ -1014,8 +1014,8 @@ export async function coachDeclineInterest(offerId: string): Promise<{ success?:
 
     await createNotification({
         userId: offer.referee_id,
-        title: 'Offer Withdrawn',
-        message: `The coach passed on your availability for ${booking.ground_name || booking.location_postcode}.`,
+        title: 'Availability Declined',
+        message: `The coach declined your availability for ${booking.ground_name || booking.location_postcode}.`,
         type: 'info',
         link: `/app/feed`,
     })
@@ -1533,7 +1533,7 @@ export async function rateReferee(bookingId: string, refereeId: string, input: R
     // Verify the booking is completed and belongs to this coach
     const { data: booking } = await supabase
         .from('bookings')
-        .select('id, coach_id, status')
+        .select('id, coach_id, status, ground_name, location_postcode, match_date')
         .eq('id', bookingId)
         .single()
 
@@ -1567,10 +1567,12 @@ export async function rateReferee(bookingId: string, refereeId: string, input: R
     if (error) return { error: error.message }
 
     // Notify the referee
+    const ratingVenue = booking.ground_name || booking.location_postcode
+    const ratingDate = new Date(booking.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     await createNotification({
         userId: refereeId,
         title: 'New Rating Received',
-        message: `You received a ${input.rating}-star rating for your recent match.`,
+        message: `You received a ${input.rating}-star rating for your match at ${ratingVenue} on ${ratingDate}.`,
         type: 'success',
         link: '/app/profile',
     })

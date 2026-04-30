@@ -62,7 +62,7 @@ export async function raiseDispute(input: RaiseDisputeInput): Promise<{
 
     const { data: booking } = await supabase
         .from('bookings')
-        .select('id, coach_id, status, both_confirmed_at, escrow_released_at, ground_name, location_postcode, booking_assignments(referee_id)')
+        .select('id, coach_id, status, both_confirmed_at, escrow_released_at, ground_name, location_postcode, home_team, away_team, match_date, kickoff_time, booking_assignments(referee_id)')
         .eq('id', bookingId)
         .in('status', ['confirmed', 'completed'])
         .single()
@@ -120,12 +120,18 @@ export async function raiseDispute(input: RaiseDisputeInput): Promise<{
         const role = isCoach ? 'coach' : 'referee'
         const reasonExcerpt = reason.length > 150 ? reason.substring(0, 150) + '…' : reason
 
+        // Build a booking identifier admins can pattern-match on at a glance.
+        // Prefer team names when set, fall back to date + venue.
+        const bookingLabel = booking.home_team && booking.away_team
+            ? `${booking.home_team} v ${booking.away_team}`
+            : `${new Date(booking.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })} at ${venue}`
+
         if (admins) {
             await Promise.allSettled(
                 admins.map(admin =>
                     createNotification({
                         userId: admin.id,
-                        title: `Dispute: ${categoryLabel}`,
+                        title: `Dispute (${categoryLabel}) — ${bookingLabel}`,
                         message: `A ${role} raised a dispute for the match at ${venue}. ${reasonExcerpt}`,
                         type: 'warning',
                         link: '/app/disputes',
