@@ -48,19 +48,13 @@ export async function raiseDispute(bookingId: string, reason: string): Promise<{
         return { error: 'Booking not found or no longer disputable' }
     }
 
-    // Phase 2 dispute window: confirmed bookings are always disputable until
-    // escrow releases. Completed bookings (both parties confirmed) are
-    // disputable for 48h after `both_confirmed_at` — the cooling-off window
-    // before the cron releases. Once escrow has released, no disputes.
+    // Dispute window: any booking is disputable until escrow_released_at is
+    // set. After mutual confirmation, the cron releases on its very next tick
+    // (within ~15 min) so the practical post-confirm dispute window is short
+    // — encouraging users to raise issues BEFORE confirming. Once escrow
+    // releases, disputes are locked.
     if (booking.escrow_released_at) {
         return { error: 'Cannot dispute — payment has already been released' }
-    }
-    if (booking.status === 'completed' && booking.both_confirmed_at) {
-        const confirmedAt = new Date(booking.both_confirmed_at).getTime()
-        const fortyEightHours = 48 * 60 * 60 * 1000
-        if (Date.now() - confirmedAt > fortyEightHours) {
-            return { error: 'Dispute window has closed (48 hours after both parties confirmed).' }
-        }
     }
 
     const assignment = (booking.booking_assignments as unknown as { referee_id: string }[])[0]

@@ -597,14 +597,14 @@ export async function completeBooking(bookingId: string) {
             : 'the match fee'
 
         if (bothConfirmed) {
-            // Second confirmer just clicked. Notify both sides that
-            // the release timer has started.
+            // Second confirmer just clicked. Both parties are now confirmed —
+            // escrow releases on the next cron tick (within 15 min).
             const otherUserId = yourRole === 'coach' ? refereeId : booking.coach_id
             if (otherUserId) {
                 await createNotification({
                     userId: otherUserId,
                     title: 'Match Confirmed',
-                    message: `Both parties have confirmed the match at ${venue}. ${escrowDisplay} releases to the referee in 48 hours.`,
+                    message: `Both parties have confirmed the match at ${venue}. ${escrowDisplay} is releasing now.`,
                     type: 'success',
                     link: `/app/bookings/${bookingId}`,
                 })
@@ -618,7 +618,7 @@ export async function completeBooking(bookingId: string) {
                 await createNotification({
                     userId: otherUserId,
                     title: 'Confirm match completion',
-                    message: `${youLabel} has confirmed the match at ${venue}. ${ctaLabel} ${escrowDisplay} — auto-release if no response within 72 hours.`,
+                    message: `${youLabel} has confirmed the match at ${venue}. ${ctaLabel} ${escrowDisplay} — auto-release 48 hours after kickoff if no response.`,
                     type: 'info',
                     link: `/app/bookings/${bookingId}`,
                 })

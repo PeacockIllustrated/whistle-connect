@@ -281,7 +281,7 @@ export function BookingActions({
                         ? `£${(booking.escrow_amount_pence / 100).toFixed(2)}`
                         : 'the match fee'
 
-                    // Both confirmed — show release-pending banner, hide button
+                    // Both confirmed — escrow is releasing on the next cron tick. Hide button.
                     if (booking.both_confirmed_at) {
                         return (
                             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
@@ -290,7 +290,7 @@ export function BookingActions({
                                     <div className="flex-1">
                                         <p className="text-sm font-semibold text-emerald-900">Both parties confirmed</p>
                                         <p className="text-xs text-emerald-800 mt-0.5">
-                                            {escrowDisplay} releases to {isCoach ? 'the referee' : 'your wallet'} 48 hours after both parties confirmed. Raise a dispute now if there&apos;s a problem.
+                                            {escrowDisplay} is releasing to {isCoach ? 'the referee' : 'your wallet'} now. Raise a dispute immediately if there&apos;s a problem.
                                         </p>
                                     </div>
                                 </div>
@@ -307,7 +307,7 @@ export function BookingActions({
                                     <div className="flex-1">
                                         <p className="text-sm font-semibold text-amber-900">You confirmed — waiting on {otherLabel}</p>
                                         <p className="text-xs text-amber-800 mt-0.5">
-                                            We&apos;ll auto-release {escrowDisplay} if {otherLabel.toLowerCase()} doesn&apos;t respond within 72 hours.
+                                            {escrowDisplay} auto-releases 48 hours after kickoff if {otherLabel.toLowerCase()} doesn&apos;t confirm.
                                         </p>
                                     </div>
                                 </div>
@@ -320,10 +320,10 @@ export function BookingActions({
                         ? `${otherLabel} confirmed — confirm to ${youAction} ${escrowDisplay} now`
                         : `Confirm match — ${youAction} ${escrowDisplay}`
                     const dialogMessage = otherMarked
-                        ? `${otherLabel} has confirmed completion. Confirming will start the 48-hour release window for ${escrowDisplay}.`
+                        ? `${otherLabel} has confirmed completion. Confirming releases ${escrowDisplay} ${isCoach ? `to ${otherLabel}` : 'to your wallet'} immediately.`
                         : `Confirming locks in ${escrowDisplay} ${
                             isCoach ? `to release to ${otherLabel}` : 'to come to your wallet'
-                          } once ${otherLabel.toLowerCase()} also confirms (or 72h after if they don't respond).`
+                          }. ${otherLabel} must also confirm to release the funds — or escrow auto-releases 48 hours after kickoff.`
 
                     return (
                         <>
@@ -376,20 +376,13 @@ export function BookingActions({
                     </>
                 )}
 
-                {/* Raise Dispute — confirmed bookings always; completed
-                    bookings only within the 48h cooling-off window (matches
-                    the gate in raiseDispute server action). Hidden once
-                    escrow has actually released. */}
+                {/* Raise Dispute — any booking still holding escrow is
+                    disputable. Once escrow_released_at is set, the dispute
+                    flow is locked (matches the gate in raiseDispute). */}
                 {(() => {
                     if (booking.escrow_released_at) return null
                     if (!isCoach && !isReferee) return null
-
-                    let withinDisputeWindow = booking.status === 'confirmed'
-                    if (booking.status === 'completed' && booking.both_confirmed_at) {
-                        const elapsed = Date.now() - new Date(booking.both_confirmed_at).getTime()
-                        withinDisputeWindow = elapsed < 48 * 60 * 60 * 1000
-                    }
-                    if (!withinDisputeWindow) return null
+                    if (booking.status !== 'confirmed' && booking.status !== 'completed') return null
 
                     return (
                         <button

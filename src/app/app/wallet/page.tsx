@@ -73,31 +73,24 @@ export default async function WalletPage({
 
     /** Compute the expected release date for a single pending booking. */
     function expectedReleaseDate(b: PendingBooking): { date: Date; reason: 'mutual' | 'fallback-coach' | 'fallback-ref' | 'awaiting' } {
+        // Mutually confirmed → cron releases on the next tick (within ~15 min).
+        // Surface "now-ish" by using both_confirmed_at as the sort timestamp.
         if (b.both_confirmed_at) {
-            // Mutually confirmed → 48h after both_confirmed_at
             return {
-                date: new Date(new Date(b.both_confirmed_at).getTime() + 48 * 60 * 60 * 1000),
+                date: new Date(b.both_confirmed_at),
                 reason: 'mutual',
             }
         }
+        // Otherwise: kickoff + 48h is the absolute backstop, regardless of
+        // whether one party or neither has marked.
+        const backstop = new Date(new Date(`${b.match_date}T${b.kickoff_time}`).getTime() + 48 * 60 * 60 * 1000)
         if (b.coach_marked_complete_at && !b.referee_marked_complete_at) {
-            return {
-                date: new Date(new Date(b.coach_marked_complete_at).getTime() + 72 * 60 * 60 * 1000),
-                reason: 'fallback-coach',
-            }
+            return { date: backstop, reason: 'fallback-coach' }
         }
         if (b.referee_marked_complete_at && !b.coach_marked_complete_at) {
-            return {
-                date: new Date(new Date(b.referee_marked_complete_at).getTime() + 72 * 60 * 60 * 1000),
-                reason: 'fallback-ref',
-            }
+            return { date: backstop, reason: 'fallback-ref' }
         }
-        // Neither marked yet — show kickoff date as the earliest possible point;
-        // actual release won't happen until someone marks.
-        return {
-            date: new Date(`${b.match_date}T${b.kickoff_time}`),
-            reason: 'awaiting',
-        }
+        return { date: backstop, reason: 'awaiting' }
     }
 
     return (
@@ -204,13 +197,13 @@ export default async function WalletPage({
                             const reasonText = (() => {
                                 switch (release.reason) {
                                     case 'mutual':
-                                        return 'Both parties confirmed — releases'
+                                        return 'Both parties confirmed — releasing now'
                                     case 'fallback-coach':
-                                        return 'Coach confirmed — auto-release'
+                                        return 'Coach confirmed — auto-release at kickoff + 48h'
                                     case 'fallback-ref':
-                                        return 'You confirmed — auto-release if coach is silent'
+                                        return 'You confirmed — auto-release at kickoff + 48h if coach is silent'
                                     case 'awaiting':
-                                        return 'Awaiting confirmation after match'
+                                        return 'Awaiting confirmation — auto-release at kickoff + 48h'
                                 }
                             })()
                             return (
@@ -225,7 +218,12 @@ export default async function WalletPage({
                                             </p>
                                         </Link>
                                         <p className="text-[11px] text-[var(--foreground-muted)] mt-0.5">
-                                            {reasonText}{release.reason !== 'awaiting' ? ` ${release.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}` : ''}
+                                            {reasonText}
+                                            {release.reason !== 'mutual' && (
+                                                <>
+                                                    {' '}({release.date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})
+                                                </>
+                                            )}
                                         </p>
                                     </div>
                                     <span className="font-bold text-sm flex-shrink-0 text-amber-600">

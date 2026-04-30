@@ -5,25 +5,23 @@ import { createNotification } from '@/lib/notifications'
 import { BOOKING_FEE_PENCE } from '@/lib/constants'
 
 /**
- * Escrow release cron. Phase 2 — gating now requires explicit confirmation
- * by both parties (or one party + 72h fallback) instead of the legacy
- * kickoff+24h time gate.
+ * Escrow release cron. Two paths:
  *
- * Two release paths run in parallel:
+ *   A. Mutually confirmed: status='completed' AND both_confirmed_at IS NOT NULL
+ *      Releases on the very next cron tick after the second confirmation —
+ *      the user wants payment available immediately on mutual confirm,
+ *      no cooling-off.
  *
- *   A. Mutually confirmed: status='completed' AND both_confirmed_at < now - 48h
- *      The 48h window lets either party catch a problem and raise a dispute
- *      after the second click.
- *
- *   B. Stuck-confirmation fallback: status='confirmed' AND one party marked
- *      AND first_mark_at < now - 72h. Stops escrow being held forever by
- *      an inactive counterparty.
+ *   B. Time-based backstop: kickoff was >48h ago, no mutual confirmation
+ *      yet, no open dispute. Stops escrow being held forever if one or
+ *      both parties don't click confirm. Single 48h rule covers both
+ *      "one party silent" and "neither party confirmed" — the kickoff
+ *      timestamp is the absolute deadline.
  *
  * Both paths skip bookings with an open dispute (admin must resolve).
  *
- * Nudge notifications are repurposed: instead of a 6-hour auto-completion
- * warning, we now nudge the inactive party 24h after the FIRST mark to
- * remind them to confirm — they have 48h before auto-release at 72h.
+ * Nudges fire 24h after the FIRST mark to remind the inactive party that
+ * the kickoff+48h backstop is approaching.
  */
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get('authorization')
@@ -58,8 +56,8 @@ export async function GET(req: NextRequest) {
 
     // ------------------------------------------------------------------
     // 1. Nudges — first party marked complete >24h ago, other party hasn't.
-    //    Nudge the inactive party once. They have until 72h before fallback
-    //    auto-release fires.
+    //    Reminds the inactive party that the kickoff+48h backstop is
+    //    approaching. Sent once per booking.
     // ------------------------------------------------------------------
     const twentyFourHoursAgoIso = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString()
 
@@ -74,7 +72,6 @@ export async function GET(req: NextRequest) {
 
     if (nudgeBookings) {
         for (const booking of nudgeBookings) {
-            // Skip if open dispute
             const { data: dispute } = await supabase
                 .from('disputes')
                 .select('id')
@@ -83,7 +80,6 @@ export async function GET(req: NextRequest) {
                 .maybeSingle()
             if (dispute) continue
 
-            // Identify who's outstanding
             const coachMarked = !!booking.coach_marked_complete_at
             const refMarked = !!booking.referee_marked_complete_at
             if (coachMarked && refMarked) continue // both marked already (race), skip
@@ -101,7 +97,7 @@ export async function GET(req: NextRequest) {
             await createNotification({
                 userId: inactiveUserId,
                 title: 'Confirm match completion',
-                message: `${activeLabel} has confirmed the match at ${venue}. ${escrowDisplay} will release automatically in 48 hours if you don't respond.`,
+                message: `${activeLabel} has confirmed the match at ${venue}. ${escrowDisplay} will release automatically 48 hours after kickoff if you don't respond.`,
                 type: 'warning',
                 link: `/app/bookings/${booking.id}`,
             })
@@ -116,11 +112,11 @@ export async function GET(req: NextRequest) {
     }
 
     // ------------------------------------------------------------------
-    // 2a. Path A — mutually confirmed releases (status='completed', both
-    //     confirmed >48h ago, no open dispute).
+    // 2a. Path A — mutually confirmed: release immediately. The user
+    //     wants payment available right after the second confirmation —
+    //     no cooling-off. Cron picks this up on the very next tick after
+    //     mark_booking_complete sets both_confirmed_at.
     // ------------------------------------------------------------------
-    const fortyEightHoursAgoIso = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString()
-
     const { data: mutualBookings } = await supabase
         .from('bookings')
         .select(`
@@ -132,7 +128,6 @@ export async function GET(req: NextRequest) {
         .not('escrow_amount_pence', 'is', null)
         .is('escrow_released_at', null)
         .not('both_confirmed_at', 'is', null)
-        .lte('both_confirmed_at', fortyEightHoursAgoIso)
 
     if (mutualBookings) {
         for (const booking of mutualBookings) {
@@ -142,26 +137,32 @@ export async function GET(req: NextRequest) {
     }
 
     // ------------------------------------------------------------------
-    // 2b. Path B — stuck-confirmation fallback (status='confirmed', exactly
-    //     one side marked, first mark was >72h ago).
+    // 2b. Path B — kickoff + 48h backstop. Single rule covering "one
+    //     party silent" and "neither party confirmed" — both result in
+    //     the same auto-release at kickoff+48h, with no open dispute.
+    //     The kickoff timestamp is the absolute deadline.
     // ------------------------------------------------------------------
-    const seventyTwoHoursAgoIso = new Date(now.getTime() - 72 * 60 * 60 * 1000).toISOString()
+    const fortyEightHoursAgoIso = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString()
 
     const { data: fallbackBookings } = await supabase
         .from('bookings')
         .select(`
             id, coach_id, ground_name, location_postcode,
             escrow_amount_pence, coach_marked_complete_at, referee_marked_complete_at,
+            match_date, kickoff_time,
             booking_assignments!inner(referee_id)
         `)
         .eq('status', 'confirmed')
         .not('escrow_amount_pence', 'is', null)
         .is('escrow_released_at', null)
         .is('both_confirmed_at', null)
-        .or(`coach_marked_complete_at.lte.${seventyTwoHoursAgoIso},referee_marked_complete_at.lte.${seventyTwoHoursAgoIso}`)
 
     if (fallbackBookings) {
         for (const booking of fallbackBookings) {
+            // Compute kickoff in JS — Postgres can't combine date + time + timezone
+            // cleanly via .lte() on a synthesised column.
+            const kickoffAt = new Date(`${booking.match_date}T${booking.kickoff_time}`)
+            if (kickoffAt > new Date(fortyEightHoursAgoIso)) continue
             const released = await releaseEscrowFor(booking, 'fallback', platformFeePence, supabase, results)
             if (released) results.releases_fallback++
         }
@@ -179,7 +180,7 @@ export async function GET(req: NextRequest) {
 /**
  * Release escrow for a single booking. Skips on open dispute.
  * Path determines the notification copy ("released after both confirmed"
- * vs "released because the [coach|referee] did not respond within 72 hours").
+ * vs "released because kickoff was 48h ago and confirmation was incomplete").
  */
 type ReleaseBooking = {
     id: string
@@ -189,6 +190,8 @@ type ReleaseBooking = {
     escrow_amount_pence: number | null
     coach_marked_complete_at?: string | null
     referee_marked_complete_at?: string | null
+    match_date?: string
+    kickoff_time?: string
     booking_assignments: { referee_id: string }[] | { referee_id: string }
 }
 
@@ -243,17 +246,25 @@ async function releaseEscrowFor(
     const venue = booking.ground_name || booking.location_postcode
 
     // Path-aware copy: be explicit about WHY this released so users understand
-    // the trigger.
+    // the trigger. Backstop path explains it was a time-based auto-release.
     const reasonForCoach = path === 'mutual'
         ? `Both parties confirmed completion of your match at ${venue}.`
-        : `Your match at ${venue} auto-completed because ${
-            booking.coach_marked_complete_at ? 'the referee' : 'you'
-          } did not confirm within 72 hours.`
+        : `Your match at ${venue} auto-completed (48 hours after kickoff${
+            booking.coach_marked_complete_at && !booking.referee_marked_complete_at
+                ? ', referee did not confirm'
+                : !booking.coach_marked_complete_at && booking.referee_marked_complete_at
+                ? ', you did not confirm'
+                : ''
+          }).`
     const reasonForRef = path === 'mutual'
         ? `Both parties confirmed completion of the match at ${venue}.`
-        : `The match at ${venue} auto-completed after ${
-            booking.referee_marked_complete_at ? 'the coach' : 'you'
-          } did not confirm within 72 hours.`
+        : `The match at ${venue} auto-completed (48 hours after kickoff${
+            booking.referee_marked_complete_at && !booking.coach_marked_complete_at
+                ? ', coach did not confirm'
+                : !booking.referee_marked_complete_at && booking.coach_marked_complete_at
+                ? ', you did not confirm'
+                : ''
+          }).`
 
     await Promise.allSettled([
         createNotification({
