@@ -266,6 +266,20 @@ async function releaseEscrowFor(
                 : ''
           }).`
 
+    // Loud failure if the assignment join didn't surface a referee_id —
+    // the booking is paid out but the recipient never finds out via push.
+    // Sentry-capture so we know to investigate, even though the escrow
+    // RPC would normally have already failed if there was no assignment.
+    if (!refereeId) {
+        const msg = `Escrow released for booking ${booking.id} but no referee_id on the assignment row — referee Payment Received notification was skipped.`
+        console.error(`[escrow-release] ${msg}`)
+        Sentry.captureMessage(msg, {
+            level: 'error',
+            tags: { 'escrow.flow': 'release-notify', 'escrow.path': path },
+            extra: { bookingId: booking.id, coachId: booking.coach_id },
+        })
+    }
+
     await Promise.allSettled([
         createNotification({
             userId: booking.coach_id,

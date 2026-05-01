@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
+import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { checkBookingRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
@@ -604,7 +605,7 @@ export async function completeBooking(bookingId: string) {
                 await createNotification({
                     userId: otherUserId,
                     title: 'Match Confirmed',
-                    message: `Both parties have confirmed the match at ${venue}. ${escrowDisplay} is releasing now.`,
+                    message: `Both parties have confirmed the match at ${venue}. ${escrowDisplay} is releasing — funds typically appear within 15 minutes.`,
                     type: 'success',
                     link: `/app/bookings/${bookingId}`,
                 })
@@ -619,7 +620,7 @@ export async function completeBooking(bookingId: string) {
                     userId: otherUserId,
                     title: 'Confirm match completion',
                     message: `${youLabel} has confirmed the match at ${venue}. ${ctaLabel} ${escrowDisplay} — auto-release 48 hours after kickoff if no response.`,
-                    type: 'info',
+                    type: 'warning',
                     link: `/app/bookings/${bookingId}`,
                 })
             }
@@ -712,54 +713,25 @@ export async function acceptOffer(offerId: string) {
         console.error('Failed to withdraw competing offers:', withdrawError)
     }
 
-    // Create or get a thread for communication
-    let { data: thread } = await supabase
-        .from('threads')
-        .select('id')
-        .eq('booking_id', offer.booking_id)
-        .maybeSingle()
-
-    if (!thread) {
-        const { data: newThread, error: threadError } = await supabase
-            .from('threads')
-            .insert({
-                booking_id: offer.booking_id,
-                title: `Booking: ${offer.booking.ground_name || offer.booking.location_postcode}`,
-            })
-            .select()
-            .single()
-
-        if (threadError || !newThread) {
-            console.error('Thread creation error:', threadError)
-        } else {
-            thread = newThread
-        }
-    }
-
-    if (thread) {
-        const { error: participantError } = await supabase
-            .from('thread_participants')
-            .upsert([
-                { thread_id: thread.id, profile_id: offer.booking.coach_id },
-                { thread_id: thread.id, profile_id: offer.referee_id },
-            ], { onConflict: 'thread_id, profile_id' })
-
-        if (participantError) {
-            console.error('Failed to add thread participants:', participantError)
-        }
-
-        const { error: messageError } = await supabase
-            .from('messages')
-            .insert({
-                thread_id: thread.id,
-                sender_id: null,
-                kind: 'system',
-                body: 'Booking confirmed. Use chat to finalise details.',
-            })
-
-        if (messageError) {
-            console.error('Failed to add system message:', messageError)
-        }
+    // Create or get the messaging thread for this booking. The helper is
+    // idempotent + uses the service-role client so transient RLS / timing
+    // hiccups don't leave a confirmed booking without a chat surface.
+    // Failures here are logged to Sentry but don't unwind the booking —
+    // the coach + ref are paid up and assigned; messaging is recoverable
+    // by re-hitting the booking page later.
+    const threadResult = await ensureBookingThread({
+        bookingId: offer.booking_id,
+        coachId: offer.booking.coach_id,
+        refereeId: offer.referee_id,
+        venueLabel: offer.booking.ground_name || offer.booking.location_postcode,
+    })
+    const threadId = threadResult.threadId
+    if (threadResult.error) {
+        Sentry.captureMessage(`acceptOffer: thread creation degraded for booking ${offer.booking_id}: ${threadResult.error}`, {
+            level: 'warning',
+            tags: { 'msg.flow': 'accept-offer' },
+            extra: { bookingId: offer.booking_id, offerId },
+        })
     }
 
     // Notify Coach that referee accepted
@@ -799,7 +771,7 @@ export async function acceptOffer(offerId: string) {
     revalidatePath('/app/wallet')
     revalidatePath('/app/offers')
 
-    return { success: true, threadId: thread?.id }
+    return { success: true, threadId }
 }
 
 // confirmPrice is no longer needed — referee acceptance now triggers
@@ -828,7 +800,7 @@ export async function declineOffer(offerId: string) {
     }
 
     // Get booking to notify coach
-    const { data: offerData } = await supabase.from('booking_offers').select('booking:bookings(coach_id, ground_name, location_postcode)').eq('id', offerId).single()
+    const { data: offerData } = await supabase.from('booking_offers').select('booking:bookings(id, coach_id, ground_name, location_postcode)').eq('id', offerId).single()
 
     // Handle Supabase join sometimes returning array
     const booking = offerData?.booking ? (Array.isArray(offerData.booking) ? offerData.booking[0] : offerData.booking) : null
@@ -839,7 +811,7 @@ export async function declineOffer(offerId: string) {
             title: 'Offer Declined',
             message: `A referee declined your booking request for ${booking.ground_name || booking.location_postcode}.`,
             type: 'info',
-            link: '/app/bookings'
+            link: `/app/bookings/${booking.id}`,
         })
     }
 
@@ -920,41 +892,21 @@ export async function coachConfirmInterest(
         .eq('booking_id', offer.booking_id)
         .neq('id', offerId)
 
-    // Create / find thread and add participants (mirrors acceptOffer flow)
-    let { data: thread } = await supabase
-        .from('threads')
-        .select('id')
-        .eq('booking_id', offer.booking_id)
-        .maybeSingle()
-
-    if (!thread) {
-        const { data: newThread } = await supabase
-            .from('threads')
-            .insert({
-                booking_id: offer.booking_id,
-                title: `Booking: ${booking.ground_name || booking.location_postcode}`,
-            })
-            .select('id')
-            .single()
-        thread = newThread ?? null
-    }
-
-    if (thread) {
-        await supabase
-            .from('thread_participants')
-            .upsert([
-                { thread_id: thread.id, profile_id: booking.coach_id },
-                { thread_id: thread.id, profile_id: offer.referee_id },
-            ], { onConflict: 'thread_id, profile_id' })
-
-        await supabase
-            .from('messages')
-            .insert({
-                thread_id: thread.id,
-                sender_id: null,
-                kind: 'system',
-                body: 'Booking confirmed. Use chat to finalise details.',
-            })
+    // Create / find thread via the shared helper (idempotent, service-role,
+    // surfaces failures to Sentry without unwinding the booking).
+    const threadResult = await ensureBookingThread({
+        bookingId: offer.booking_id,
+        coachId: booking.coach_id,
+        refereeId: offer.referee_id,
+        venueLabel: booking.ground_name || booking.location_postcode,
+    })
+    const threadId = threadResult.threadId
+    if (threadResult.error) {
+        Sentry.captureMessage(`coach-accept-availability: thread creation degraded for booking ${offer.booking_id}: ${threadResult.error}`, {
+            level: 'warning',
+            tags: { 'msg.flow': 'coach-accept-availability' },
+            extra: { bookingId: offer.booking_id, offerId },
+        })
     }
 
     // Notify the referee that the coach accepted their availability
@@ -963,13 +915,13 @@ export async function coachConfirmInterest(
         title: 'You\'re Booked In!',
         message: `The coach confirmed you for ${booking.ground_name || booking.location_postcode}. Open the chat to finalise details.`,
         type: 'success',
-        link: thread ? `/app/messages/${thread.id}` : `/app/bookings/${offer.booking_id}`,
+        link: threadId ? `/app/messages/${threadId}` : `/app/bookings/${offer.booking_id}`,
     })
 
     revalidatePath(`/app/bookings/${offer.booking_id}`)
     revalidatePath('/app/bookings')
 
-    return { success: true, threadId: thread?.id }
+    return { success: true, threadId }
 }
 
 /**
@@ -1014,8 +966,8 @@ export async function coachDeclineInterest(offerId: string): Promise<{ success?:
 
     await createNotification({
         userId: offer.referee_id,
-        title: 'Offer Withdrawn',
-        message: `The coach passed on your availability for ${booking.ground_name || booking.location_postcode}.`,
+        title: 'Availability Declined',
+        message: `The coach declined your availability for ${booking.ground_name || booking.location_postcode}.`,
         type: 'info',
         link: `/app/feed`,
     })
@@ -1533,7 +1485,7 @@ export async function rateReferee(bookingId: string, refereeId: string, input: R
     // Verify the booking is completed and belongs to this coach
     const { data: booking } = await supabase
         .from('bookings')
-        .select('id, coach_id, status')
+        .select('id, coach_id, status, ground_name, location_postcode, match_date')
         .eq('id', bookingId)
         .single()
 
@@ -1567,10 +1519,12 @@ export async function rateReferee(bookingId: string, refereeId: string, input: R
     if (error) return { error: error.message }
 
     // Notify the referee
+    const ratingVenue = booking.ground_name || booking.location_postcode
+    const ratingDate = new Date(booking.match_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
     await createNotification({
         userId: refereeId,
         title: 'New Rating Received',
-        message: `You received a ${input.rating}-star rating for your recent match.`,
+        message: `You received a ${input.rating}-star rating for your match at ${ratingVenue} on ${ratingDate}.`,
         type: 'success',
         link: '/app/profile',
     })

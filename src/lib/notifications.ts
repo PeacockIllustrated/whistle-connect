@@ -131,7 +131,7 @@ async function sendWebPush(
         const webPush = (await import('web-push')).default
 
         webPush.setVapidDetails(
-            process.env.VAPID_SUBJECT || 'mailto:donking1801@gmail.com',
+            process.env.VAPID_SUBJECT || 'mailto:tom@onesignanddigital.co.uk',
             process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!,
             process.env.VAPID_PRIVATE_KEY!
         )

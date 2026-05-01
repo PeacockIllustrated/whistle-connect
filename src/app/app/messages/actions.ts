@@ -61,11 +61,23 @@ export async function sendMessage(threadId: string, body: string) {
         .neq('profile_id', user.id)
 
     if (otherParticipants && otherParticipants.length > 0) {
+        // Resolve sender's display name so the notification reads as "Tom: hi"
+        // rather than the previous anonymous "You have a new message: hi".
+        // Falls back to "New Message" if the lookup fails for any reason.
+        const { data: sender } = await supabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single()
+        const senderName = sender?.full_name || 'Someone'
+
+        const preview = body.length > 80 ? body.substring(0, 80) + '…' : body
+
         const notificationPromises = otherParticipants.map((p) =>
             createNotification({
                 userId: p.profile_id,
-                title: 'New Message',
-                message: `You have a new message: ${body.substring(0, 50)}${body.length > 50 ? '...' : ''}`,
+                title: senderName,
+                message: preview,
                 type: 'info',
                 link: `/app/messages/${threadId}`
             })

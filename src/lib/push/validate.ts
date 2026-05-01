@@ -76,38 +76,17 @@ export function validateVapidKeys(): ValidationResult {
         return cached
     }
 
-    // Derive the public key from the private and assert it matches.
-    // P-256 raw private key → Node crypto KeyObject → exported uncompressed point.
+    // Derive the public key from the private alone via ECDH on P-256, then
+    // compare against the supplied public key. Constructing a JWK with both
+    // d/x/y trusts the supplied x/y verbatim (no derivation happens), so
+    // ECDH is the correct primitive here. Mismatched keys → derived bytes
+    // won't equal supplied bytes → MISMATCH.
     try {
-        const keyObject = crypto.createPrivateKey({
-            key: {
-                kty: 'EC',
-                crv: 'P-256',
-                d: privateKey.replace(/=+$/, ''),
-                x: publicKey.replace(/=+$/, '').slice(0, 43),
-                y: publicKey.replace(/=+$/, '').slice(43, 86),
-            },
-            format: 'jwk',
-        })
+        const ecdh = crypto.createECDH('prime256v1')
+        ecdh.setPrivateKey(privateBytes)
+        const derivedPublic = ecdh.getPublicKey()  // 65-byte uncompressed point
 
-        // Export as JWK so we can compare derived x/y to the supplied public key.
-        const jwk = keyObject.export({ format: 'jwk' }) as { x?: string; y?: string }
-        if (!jwk.x || !jwk.y) {
-            cached = {
-                ok: false,
-                reason: 'VAPID private key did not export usable JWK coordinates.',
-                code: 'MALFORMED',
-            }
-            return cached
-        }
-
-        // Re-encode supplied public key x/y for comparison.
-        const suppliedX = publicBytes.subarray(1, 33)
-        const suppliedY = publicBytes.subarray(33, 65)
-        const derivedX = decodeBase64Url(jwk.x)
-        const derivedY = decodeBase64Url(jwk.y)
-
-        if (!suppliedX.equals(derivedX) || !suppliedY.equals(derivedY)) {
+        if (!derivedPublic.equals(publicBytes)) {
             cached = {
                 ok: false,
                 reason: 'VAPID public key does not match private key — they were not generated as a pair. One of the two env vars is wrong.',
