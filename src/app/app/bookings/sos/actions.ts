@@ -1,8 +1,10 @@
 'use server'
 
+import * as Sentry from '@sentry/nextjs'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
+import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { validate, bookingSchema } from '@/lib/validation'
 import { toLocalDateString } from '@/lib/utils'
@@ -146,13 +148,34 @@ export async function claimSOSBooking(bookingId: string) {
         .eq('id', user.id)
         .single()
 
+    let threadId: string | undefined
     if (booking) {
+        // The claim_sos_booking RPC confirms the booking + creates an
+        // assignment in one atomic step but does NOT create a chat thread.
+        // Without this call, the coach + ref would land on the booking
+        // page with the assignment visible but no Message button (the
+        // button only renders when a thread row exists).
+        const threadResult = await ensureBookingThread({
+            bookingId,
+            coachId: booking.coach_id,
+            refereeId: user.id,
+            venueLabel: booking.ground_name || booking.location_postcode,
+        })
+        threadId = threadResult.threadId
+        if (threadResult.error) {
+            Sentry.captureMessage(`claim-sos: thread creation degraded for booking ${bookingId}: ${threadResult.error}`, {
+                level: 'warning',
+                tags: { 'msg.flow': 'claim-sos' },
+                extra: { bookingId, refereeId: user.id },
+            })
+        }
+
         await createNotification({
             userId: booking.coach_id,
             title: 'SOS Claimed!',
-            message: `${referee?.full_name || 'A referee'} has claimed your SOS match at ${booking.ground_name || booking.location_postcode}.`,
+            message: `${referee?.full_name || 'A referee'} has claimed your SOS match at ${booking.ground_name || booking.location_postcode}. Open the chat to finalise details.`,
             type: 'success',
-            link: `/app/bookings/${bookingId}`,
+            link: threadId ? `/app/messages/${threadId}` : `/app/bookings/${bookingId}`,
             urgency: 'sos',
         })
     }
@@ -160,6 +183,7 @@ export async function claimSOSBooking(bookingId: string) {
     revalidatePath(`/app/bookings/${bookingId}`)
     revalidatePath('/app/bookings')
     revalidatePath('/app/feed')
+    revalidatePath('/app/messages')
 
-    return { success: true }
+    return { success: true, threadId }
 }
