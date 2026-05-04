@@ -859,23 +859,18 @@ export async function coachConfirmInterest(
         return { error: 'This offer is no longer pending' }
     }
 
-    // Set the price on the offer (overwrite if previously null) so confirm_booking has a price.
+    // Atomic confirm via RPC (handles price-set, escrow, assignment, booking status).
+    // p_price_pence is passed into the RPC rather than UPDATEd here first because
+    // booking_offers RLS only allows the referee to update their own row — a coach
+    // UPDATE used to be silently dropped (zero rows, no error), then confirm_booking
+    // read price_pence as NULL and returned "Offer has no valid price". The RPC
+    // runs SECURITY DEFINER and re-checks the caller is the booking's coach.
     const pricePence = Math.round(pricePounds * 100)
-    const { error: priceError } = await supabase
-        .from('booking_offers')
-        .update({ price_pence: pricePence })
-        .eq('id', offerId)
-
-    if (priceError) {
-        return { error: 'Failed to set price: ' + priceError.message }
-    }
-
-    // Atomic confirm via RPC (handles escrow, assignment, booking status).
-    // Platform booking fee is held on top so the ref's gross stays equal to price_pence.
     const platformFeePence = await getBookingFeePence()
     const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
         p_offer_id: offerId,
         p_platform_fee_pence: platformFeePence,
+        p_price_pence: pricePence,
     })
 
     if (rpcError) {
