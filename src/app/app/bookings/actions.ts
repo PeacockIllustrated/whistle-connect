@@ -1550,28 +1550,13 @@ export async function getRating(bookingId: string) {
 // it from their dashboard, ref's view is unaffected (and vice versa).
 // Distinct from bookings.deleted_at, which is the coach's "withdraw a
 // pre-confirmation booking" soft-delete and removes from BOTH sides.
-// Only allow archive on completed/cancelled bookings.
-
-async function assertArchivableStatus(supabase: Awaited<ReturnType<typeof createClient>>, bookingId: string) {
-    const { data } = await supabase
-        .from('bookings')
-        .select('status')
-        .eq('id', bookingId)
-        .maybeSingle()
-    if (!data) return { error: 'Booking not found' as const }
-    if (data.status !== 'completed' && data.status !== 'cancelled') {
-        return { error: 'Only completed or cancelled bookings can be archived' as const }
-    }
-    return { error: null }
-}
+// No status gate — users can archive any booking they have access to,
+// including upcoming ones, to clear stale items from their list.
 
 export async function archiveBookingAsCoach(bookingId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
-
-    const check = await assertArchivableStatus(supabase, bookingId)
-    if (check.error) return { error: check.error }
 
     const { error } = await supabase
         .from('bookings')
@@ -1605,9 +1590,6 @@ export async function archiveBookingAsReferee(bookingId: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
 
-    const check = await assertArchivableStatus(supabase, bookingId)
-    if (check.error) return { error: check.error }
-
     const { error, count } = await supabase
         .from('booking_assignments')
         .update({ archived_at: new Date().toISOString() }, { count: 'exact' })
@@ -1616,6 +1598,48 @@ export async function archiveBookingAsReferee(bookingId: string) {
 
     if (error) return { error: error.message }
     if (!count) return { error: 'No assignment to archive' }
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+// ─── Per-user archive on booking_offers ──────────────────────────────────
+// Hides the offer from the caller's awaiting/list view. Doesn't change
+// offer state — counterparty's view is unaffected. Goes through the
+// archive_offer_as_* RPCs (SECURITY DEFINER) since booking_offers RLS
+// only lets the referee UPDATE; the coach archive path needs a way through.
+
+export async function archiveOfferAsReferee(offerId: string, archived: boolean = true) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { data, error } = await supabase.rpc('archive_offer_as_referee', {
+        p_offer_id: offerId,
+        p_archived: archived,
+    })
+
+    if (error) return { error: error.message }
+    const result = data as { success?: boolean; error?: string }
+    if (result?.error) return { error: result.error }
+
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+export async function archiveOfferAsCoach(offerId: string, archived: boolean = true) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { data, error } = await supabase.rpc('archive_offer_as_coach', {
+        p_offer_id: offerId,
+        p_archived: archived,
+    })
+
+    if (error) return { error: error.message }
+    const result = data as { success?: boolean; error?: string }
+    if (result?.error) return { error: result.error }
+
     revalidatePath('/app/bookings')
     return { success: true }
 }

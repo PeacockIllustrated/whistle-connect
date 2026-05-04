@@ -171,8 +171,48 @@ export function BookingActions({
 
     // ═══════════════════════════════════════════════
     //  SCENARIO 1: Referee has a pending offer (sent)
+    //
+    //  Two sub-flows:
+    //   1a. Coach-priced — offer has price_pence set. Show the fee panel +
+    //       Accept / Decline. Accepting goes straight to confirmed.
+    //   1b. Referee-initiated ("I'm Available" via the nearby feed). Offer
+    //       has no price yet — coach must confirm with a fee. Show a
+    //       waiting state and hide the Accept button. (If we showed Accept
+    //       here, acceptOffer would call confirm_booking with no price and
+    //       fail with "Offer has no valid price".)
     // ═══════════════════════════════════════════════
     if (isReferee && userOffer?.status === 'sent') {
+        const hasOfferedFee = (userOffer.price_pence ?? 0) > 0
+
+        // 1b — waiting on coach to confirm + set the fee
+        if (!hasOfferedFee) {
+            return (
+                <div className="space-y-3">
+                    <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
+                        <div className="flex justify-center mb-2">
+                            <Clock className="w-8 h-8 text-amber-500" />
+                        </div>
+                        <p className="text-sm font-semibold text-amber-800">
+                            Waiting for the coach to confirm
+                        </p>
+                        <p className="text-xs text-amber-700 mt-1">
+                            You tapped &quot;I&apos;m Available&quot;. The coach will confirm the fee and book you in. You&apos;ll be notified.
+                        </p>
+                    </div>
+
+                    <Button
+                        fullWidth
+                        variant="outline"
+                        onClick={handleDecline}
+                        loading={declining}
+                    >
+                        Withdraw availability
+                    </Button>
+                </div>
+            )
+        }
+
+        // 1a — coach has set a price, ref can accept
         const displayPrice = (userOffer.price_pence || 0) / 100
         return (
             <div className="space-y-3">
