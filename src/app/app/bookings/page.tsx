@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { BookingCard } from '@/components/app/BookingCard'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { CoachAwaitingAction, RefereeAwaitingAction } from '@/components/app/AwaitingAction'
+import { LocalStorageArchiveMigration } from '@/components/app/LocalStorageArchiveMigration'
 import { AdminBookingsView } from '@/components/app/AdminBookingsView'
 import type { AdminBooking } from '@/components/app/AdminBookingsView'
 import { BookingStatus, BookingWithDetails } from '@/lib/types'
@@ -74,18 +75,30 @@ interface DeclinedOfferItem {
     declinedAt: string
 }
 
-const statusFilters: { value: BookingStatus | 'all'; label: string }[] = [
+// Coach status pills shown only inside the Upcoming tab. Confirmed-only fixtures
+// after kickoff but before completion are still "Upcoming" workflow-wise.
+const upcomingStatusFilters: { value: BookingStatus | 'all'; label: string }[] = [
     { value: 'all', label: 'All' },
     { value: 'pending', label: 'Pending' },
     { value: 'offered', label: 'Offered' },
     { value: 'confirmed', label: 'Confirmed' },
-    { value: 'completed', label: 'Completed' },
 ]
+
+type ListTab = 'upcoming' | 'past' | 'archived'
+
+const tabs: { value: ListTab; label: string }[] = [
+    { value: 'upcoming', label: 'Upcoming' },
+    { value: 'past', label: 'Past' },
+    { value: 'archived', label: 'Archived' },
+]
+
+const UPCOMING_STATUSES: BookingStatus[] = ['draft', 'pending', 'offered', 'confirmed']
+const PAST_STATUSES: BookingStatus[] = ['completed', 'cancelled']
 
 export default async function BookingsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ status?: string; page?: string }>
+    searchParams: Promise<{ status?: string; page?: string; tab?: string }>
 }) {
     const params = await searchParams
     const supabase = await createClient()
@@ -103,10 +116,11 @@ export default async function BookingsPage({
     const isReferee = profile?.role === 'referee'
     const isAdmin = profile?.role === 'admin'
     const statusFilter = params.status as BookingStatus | 'all' | undefined
+    const tab: ListTab = (params.tab === 'past' || params.tab === 'archived') ? params.tab : 'upcoming'
     const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1)
     const offset = (currentPage - 1) * PAGE_SIZE
 
-    let bookings: BookingWithDetails[] = []
+    let bookings: (BookingWithDetails & { archivedForViewer?: boolean })[] = []
     let totalBookings = 0
 
     // ── Admin bookings data ───────────────────────────────
@@ -237,15 +251,23 @@ export default async function BookingsPage({
     }
 
     if (isCoach) {
-        // First get total count for pagination
+        // Tab filter: Upcoming = active workflow + not archived; Past = completed/cancelled + not archived;
+        // Archived = coach_archived_at IS NOT NULL. deleted_at always excluded (that's the pre-confirmation withdraw path).
         let countQuery = supabase
             .from('bookings')
             .select('id', { count: 'exact', head: true })
             .eq('coach_id', user.id)
             .is('deleted_at', null)
 
-        if (statusFilter && statusFilter !== 'all') {
-            countQuery = countQuery.eq('status', statusFilter)
+        if (tab === 'archived') {
+            countQuery = countQuery.not('coach_archived_at', 'is', null)
+        } else {
+            countQuery = countQuery
+                .is('coach_archived_at', null)
+                .in('status', tab === 'past' ? PAST_STATUSES : UPCOMING_STATUSES)
+            if (tab === 'upcoming' && statusFilter && statusFilter !== 'all') {
+                countQuery = countQuery.eq('status', statusFilter)
+            }
         }
 
         const { count } = await countQuery
@@ -254,54 +276,93 @@ export default async function BookingsPage({
         let query = supabase
             .from('bookings')
             .select(`
-        *,
-        coach:profiles!bookings_coach_id_fkey(*),
-        assignment:booking_assignments(*, referee:profiles(*)),
-        thread:threads(*)
-      `)
+                *,
+                coach:profiles!bookings_coach_id_fkey(*),
+                assignment:booking_assignments(*, referee:profiles(*)),
+                thread:threads(*)
+            `)
             .eq('coach_id', user.id)
             .is('deleted_at', null)
-            .order('match_date', { ascending: true })
+            .order('match_date', { ascending: tab === 'upcoming' })
             .range(offset, offset + PAGE_SIZE - 1)
 
-        if (statusFilter && statusFilter !== 'all') {
-            query = query.eq('status', statusFilter)
+        if (tab === 'archived') {
+            query = query.not('coach_archived_at', 'is', null)
+        } else {
+            query = query
+                .is('coach_archived_at', null)
+                .in('status', tab === 'past' ? PAST_STATUSES : UPCOMING_STATUSES)
+            if (tab === 'upcoming' && statusFilter && statusFilter !== 'all') {
+                query = query.eq('status', statusFilter)
+            }
         }
 
         const { data } = await query
-        bookings = data || []
+        bookings = (data || []).map(b => ({ ...b, archivedForViewer: tab === 'archived' }))
     } else if (isReferee) {
-        // Get bookings via offers or assignments
+        // Refs see bookings via two paths: open offers (sent/accepted_priced) and
+        // assignments (after offer accepted). Past also includes declined/withdrawn
+        // offers — they're history. Archive flag lives on the assignment row.
         const { data: offers } = await supabase
             .from('booking_offers')
             .select(`
-        *,
-        booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*), thread:threads(*))
-      `)
+                *,
+                booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*), thread:threads(*))
+            `)
             .eq('referee_id', user.id)
 
         const { data: assignments } = await supabase
             .from('booking_assignments')
             .select(`
-        *,
-        booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*), thread:threads(*))
-      `)
+                *,
+                booking:bookings(*, coach:profiles!bookings_coach_id_fkey(*), thread:threads(*))
+            `)
             .eq('referee_id', user.id)
 
-        // Combine and deduplicate
-        const offerBookings = (offers || []).map(o => ({ ...o.booking, offer_status: o.status }))
-        const assignedBookings = (assignments || []).map(a => ({ ...a.booking, is_assigned: true }))
-
-        const bookingMap = new Map()
-        assignedBookings.forEach(b => bookingMap.set(b.id, b))
-        offerBookings.forEach(b => {
-            if (!bookingMap.has(b.id)) {
-                bookingMap.set(b.id, b)
-            }
+        // Build an index of which assignments are archived.
+        const assignmentByBooking = new Map<string, { archived_at: string | null }>()
+        ;(assignments || []).forEach((a: { booking?: { id?: string }; archived_at: string | null }) => {
+            const bid = a.booking?.id
+            if (bid) assignmentByBooking.set(bid, { archived_at: a.archived_at })
         })
 
-        bookings = Array.from(bookingMap.values())
-            .sort((a, b) => new Date(a.match_date).getTime() - new Date(b.match_date).getTime())
+        const offerBookings = (offers || [])
+            .filter(o => o.booking)
+            .map(o => ({ ...o.booking, offer_status: o.status }))
+        const assignedBookings = (assignments || [])
+            .filter(a => a.booking)
+            .map(a => ({ ...a.booking, is_assigned: true }))
+
+        const bookingMap = new Map<string, BookingWithDetails & { offer_status?: string; is_assigned?: boolean; archivedForViewer?: boolean }>()
+        assignedBookings.forEach(b => bookingMap.set(b.id, b))
+        offerBookings.forEach(b => {
+            if (!bookingMap.has(b.id)) bookingMap.set(b.id, b)
+        })
+
+        // Decorate each entry with the viewer's archive flag.
+        bookingMap.forEach((b, id) => {
+            b.archivedForViewer = assignmentByBooking.get(id)?.archived_at != null
+        })
+
+        const all = Array.from(bookingMap.values())
+        const filtered = all.filter(b => {
+            if (tab === 'archived') return b.archivedForViewer === true
+            if (b.archivedForViewer) return false
+            const isPastStatus = b.status === 'completed' || b.status === 'cancelled'
+            const isDeadOffer = !b.is_assigned && (b.offer_status === 'declined' || b.offer_status === 'withdrawn')
+            if (tab === 'past') return isPastStatus || isDeadOffer
+            // upcoming
+            return !isPastStatus && !isDeadOffer
+        })
+
+        filtered.sort((a, b) => {
+            const ta = new Date(a.match_date).getTime()
+            const tb = new Date(b.match_date).getTime()
+            return tab === 'upcoming' ? ta - tb : tb - ta
+        })
+
+        totalBookings = filtered.length
+        bookings = filtered.slice(offset, offset + PAGE_SIZE)
     }
 
     // ── Awaiting Action data ────────────────────────────
@@ -444,6 +505,9 @@ export default async function BookingsPage({
                 />
             )}
 
+            {/* One-shot migration: flush localStorage-based ref archive into the DB */}
+            {isReferee && <LocalStorageArchiveMigration />}
+
             {/* Awaiting Action — real-time updates */}
             {isCoach && <CoachAwaitingAction initialItems={coachActionItems} />}
             {isReferee && <RefereeAwaitingAction initialItems={refereeActionItems} />}
@@ -492,21 +556,49 @@ export default async function BookingsPage({
                 </section>
             )}
 
-            {/* Status Filters */}
-            {isCoach && (
+            {/* Top-level tabs (Upcoming / Past / Archived) — both roles */}
+            {!isAdmin && (
+                <div className="flex gap-2 mb-3" role="tablist">
+                    {tabs.map((t) => {
+                        const isActive = tab === t.value
+                        const href = t.value === 'upcoming' ? '/app/bookings' : `/app/bookings?tab=${t.value}`
+                        return (
+                            <Link
+                                key={t.value}
+                                href={href}
+                                role="tab"
+                                aria-selected={isActive}
+                                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${isActive
+                                    ? 'bg-[var(--brand-navy)] text-white'
+                                    : 'bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]'
+                                    }`}
+                            >
+                                {t.label}
+                            </Link>
+                        )
+                    })}
+                </div>
+            )}
+
+            {/* Coach status pills — only inside Upcoming */}
+            {isCoach && tab === 'upcoming' && (
                 <div className="flex gap-2 overflow-x-auto pb-3 mb-4 -mx-4 px-4">
-                    {statusFilters.map((filter) => (
-                        <Link
-                            key={filter.value}
-                            href={filter.value === 'all' ? '/app/bookings' : `/app/bookings?status=${filter.value}`}
-                            className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${(statusFilter === filter.value) || (!statusFilter && filter.value === 'all')
-                                ? 'bg-[var(--brand-navy)] text-white'
-                                : 'bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]'
-                                }`}
-                        >
-                            {filter.label}
-                        </Link>
-                    ))}
+                    {upcomingStatusFilters.map((filter) => {
+                        const isActive = (statusFilter === filter.value) || (!statusFilter && filter.value === 'all')
+                        const href = filter.value === 'all' ? '/app/bookings' : `/app/bookings?status=${filter.value}`
+                        return (
+                            <Link
+                                key={filter.value}
+                                href={href}
+                                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${isActive
+                                    ? 'bg-[var(--brand-navy)] text-white'
+                                    : 'bg-[var(--neutral-100)] text-[var(--neutral-600)] hover:bg-[var(--neutral-200)]'
+                                    }`}
+                            >
+                                {filter.label}
+                            </Link>
+                        )
+                    })}
                 </div>
             )}
 
@@ -521,45 +613,58 @@ export default async function BookingsPage({
                                     booking={booking}
                                     showCoach={isReferee}
                                     showReferee={isCoach && !!booking.assignment?.referee}
+                                    archivedForViewer={booking.archivedForViewer}
                                 />
                             ))}
 
-                            {isCoach && (
-                                <Pagination
-                                    currentPage={currentPage}
-                                    totalItems={totalBookings}
-                                    pageSize={PAGE_SIZE}
-                                    basePath="/app/bookings"
-                                    params={statusFilter && statusFilter !== 'all' ? { status: statusFilter } : {}}
-                                />
-                            )}
+                            <Pagination
+                                currentPage={currentPage}
+                                totalItems={totalBookings}
+                                pageSize={PAGE_SIZE}
+                                basePath="/app/bookings"
+                                params={{
+                                    ...(tab !== 'upcoming' ? { tab } : {}),
+                                    ...(tab === 'upcoming' && statusFilter && statusFilter !== 'all' ? { status: statusFilter } : {}),
+                                }}
+                            />
                         </div>
                     ) : (
                         <EmptyState
                             icon={
                                 <CalendarDays className="w-12 h-12" strokeWidth={1.5} />
                             }
-                            title={isCoach ? 'No bookings yet' : 'No offers yet'}
-                            description={isCoach
-                                ? 'Create your first booking to find a referee for your match'
-                                : 'Set your availability to start receiving match offers'
+                            title={
+                                tab === 'archived' ? 'No archived bookings'
+                                    : tab === 'past' ? 'No past bookings'
+                                        : isCoach ? 'No upcoming bookings' : 'No upcoming offers'
+                            }
+                            description={
+                                tab === 'archived'
+                                    ? 'Bookings you archive will appear here.'
+                                    : tab === 'past'
+                                        ? 'Once matches are completed or cancelled, they will appear here.'
+                                        : isCoach
+                                            ? 'Create your first booking to find a referee for your match'
+                                            : 'Set your availability to start receiving match offers'
                             }
                             action={
-                                isCoach ? (
-                                    <Link
-                                        href="/app/bookings/new"
-                                        className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm transition-colors"
-                                    >
-                                        Create Booking
-                                    </Link>
-                                ) : (
-                                    <Link
-                                        href="/app/availability"
-                                        className="inline-flex items-center px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium text-sm"
-                                    >
-                                        Set Availability
-                                    </Link>
-                                )
+                                tab === 'upcoming' ? (
+                                    isCoach ? (
+                                        <Link
+                                            href="/app/bookings/new"
+                                            className="inline-flex items-center px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium text-sm transition-colors"
+                                        >
+                                            Create Booking
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            href="/app/availability"
+                                            className="inline-flex items-center px-4 py-2 bg-[var(--color-primary)] text-white rounded-lg font-medium text-sm"
+                                        >
+                                            Set Availability
+                                        </Link>
+                                    )
+                                ) : null
                             }
                         />
                     )}

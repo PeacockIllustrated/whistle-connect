@@ -1,57 +1,37 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { cn, formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { BookingWithDetails, BookingStatus } from '@/lib/types'
-import { deleteBooking, cancelBooking } from '@/app/app/bookings/actions'
+import {
+    deleteBooking,
+    cancelBooking,
+    archiveBookingAsCoach,
+    unarchiveBookingAsCoach,
+    archiveBookingAsReferee,
+    unarchiveBookingAsReferee,
+} from '@/app/app/bookings/actions'
 import { useToast } from '@/components/ui/Toast'
-import { Archive, MessageCircle, CalendarDays, Clock, XCircle } from 'lucide-react'
-
-const ARCHIVE_STORAGE_KEY = 'wc:refereeArchivedBookings'
-
-function readArchivedIds(): Set<string> {
-    if (typeof window === 'undefined') return new Set()
-    try {
-        const raw = window.localStorage.getItem(ARCHIVE_STORAGE_KEY)
-        if (!raw) return new Set()
-        const arr = JSON.parse(raw)
-        return Array.isArray(arr) ? new Set(arr.filter((v): v is string => typeof v === 'string')) : new Set()
-    } catch {
-        return new Set()
-    }
-}
-
-function writeArchivedIds(ids: Set<string>) {
-    if (typeof window === 'undefined') return
-    try {
-        window.localStorage.setItem(ARCHIVE_STORAGE_KEY, JSON.stringify(Array.from(ids)))
-    } catch {
-        // localStorage may be disabled — silent
-    }
-}
+import { Archive, ArchiveRestore, MessageCircle, CalendarDays, Clock, XCircle } from 'lucide-react'
 
 export interface BookingCardProps {
     booking: BookingWithDetails & { offer_status?: string }
     /** When the current viewer is a referee. Misnamed historically — name reflects "show coach info on the card". */
     showCoach?: boolean
     showReferee?: boolean
+    /** True when this card is rendered inside the Archived tab — flips Archive → Unarchive. */
+    archivedForViewer?: boolean
     className?: string
 }
 
-export function BookingCard({ booking, showCoach, showReferee, className }: BookingCardProps) {
+export function BookingCard({ booking, showCoach, showReferee, archivedForViewer, className }: BookingCardProps) {
     const [isLoading, setIsLoading] = useState(false)
-    const [archived, setArchived] = useState(false)
     const { showToast } = useToast()
 
     const isReferee = !!showCoach
-    const canArchive = isReferee && (booking.status === 'cancelled' || booking.status === 'completed')
-
-    // After mount, hide if previously archived (referee view only).
-    useEffect(() => {
-        if (!isReferee) return
-        if (readArchivedIds().has(booking.id)) setArchived(true)
-    }, [isReferee, booking.id])
+    const isCoachView = !showCoach
+    const canArchive = !archivedForViewer && (booking.status === 'cancelled' || booking.status === 'completed')
 
     // Determine status to show
     // If user is referee (showCoach is true), show their specific offer status if not confirmed/completed
@@ -77,16 +57,39 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
         }
     }
 
-    const handleArchive = (e: React.MouseEvent) => {
+    const handleArchive = async (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!confirm('Archive this booking? It will be hidden from your list.')) return
+        if (!confirm('Archive this booking? It will move to your Archived tab.')) return
 
-        const ids = readArchivedIds()
-        ids.add(booking.id)
-        writeArchivedIds(ids)
-        setArchived(true)
-        showToast({ message: 'Booking archived', type: 'success' })
+        setIsLoading(true)
+        try {
+            const action = isReferee ? archiveBookingAsReferee : archiveBookingAsCoach
+            const result = await action(booking.id)
+            if (result.error) throw new Error(result.error)
+            showToast({ message: 'Booking archived', type: 'success' })
+        } catch (err) {
+            showToast({ message: err instanceof Error ? err.message : 'Failed to archive booking', type: 'error' })
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleUnarchive = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+
+        setIsLoading(true)
+        try {
+            const action = isReferee ? unarchiveBookingAsReferee : unarchiveBookingAsCoach
+            const result = await action(booking.id)
+            if (result.error) throw new Error(result.error)
+            showToast({ message: 'Booking restored', type: 'success' })
+        } catch (err) {
+            showToast({ message: err instanceof Error ? err.message : 'Failed to restore booking', type: 'error' })
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     const handleCancel = async (e: React.MouseEvent) => {
@@ -106,9 +109,6 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
         }
     }
 
-    // Referee view: hide if previously archived (post-mount, prevents hydration mismatch).
-    if (archived) return null
-
     return (
         <Link
             href={`/app/bookings/${booking.id}`}
@@ -117,6 +117,7 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                 'transition-all duration-200',
                 'hover:shadow-md active:scale-[0.99]',
                 getStatusCardStyle(effectiveStatus),
+                archivedForViewer && 'opacity-75',
                 className
             )}
         >
@@ -199,9 +200,9 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
             )}
 
             {/* Actions */}
-            <div className="mt-3 flex justify-end">
-                {/* Coach Actions: Delete if pending/offered */}
-                {!showCoach && (booking.status === 'pending' || booking.status === 'offered' || booking.status === 'cancelled') && (
+            <div className="mt-3 flex justify-end gap-3">
+                {/* Coach Actions: Delete pre-confirmation bookings */}
+                {isCoachView && !archivedForViewer && (booking.status === 'pending' || booking.status === 'offered') && (
                     <button
                         onClick={handleDelete}
                         disabled={isLoading}
@@ -211,14 +212,27 @@ export function BookingCard({ booking, showCoach, showReferee, className }: Book
                     </button>
                 )}
 
-                {/* Referee Actions: Archive if cancelled or completed */}
+                {/* Archive (both roles) on completed / cancelled */}
                 {canArchive && (
                     <button
                         onClick={handleArchive}
-                        className="inline-flex items-center gap-1 text-xs text-[var(--foreground-muted)] font-medium hover:text-[var(--foreground)] hover:underline"
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1 text-xs text-[var(--foreground-muted)] font-medium hover:text-[var(--foreground)] hover:underline disabled:opacity-50"
                     >
                         <Archive className="w-3.5 h-3.5" />
                         Archive
+                    </button>
+                )}
+
+                {/* Unarchive (both roles) when viewing the Archived tab */}
+                {archivedForViewer && (
+                    <button
+                        onClick={handleUnarchive}
+                        disabled={isLoading}
+                        className="inline-flex items-center gap-1 text-xs text-[var(--foreground-muted)] font-medium hover:text-[var(--foreground)] hover:underline disabled:opacity-50"
+                    >
+                        <ArchiveRestore className="w-3.5 h-3.5" />
+                        Restore
                     </button>
                 )}
 

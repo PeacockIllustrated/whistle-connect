@@ -859,23 +859,18 @@ export async function coachConfirmInterest(
         return { error: 'This offer is no longer pending' }
     }
 
-    // Set the price on the offer (overwrite if previously null) so confirm_booking has a price.
+    // Atomic confirm via RPC (handles price-set, escrow, assignment, booking status).
+    // p_price_pence is passed into the RPC rather than UPDATEd here first because
+    // booking_offers RLS only allows the referee to update their own row — a coach
+    // UPDATE used to be silently dropped (zero rows, no error), then confirm_booking
+    // read price_pence as NULL and returned "Offer has no valid price". The RPC
+    // runs SECURITY DEFINER and re-checks the caller is the booking's coach.
     const pricePence = Math.round(pricePounds * 100)
-    const { error: priceError } = await supabase
-        .from('booking_offers')
-        .update({ price_pence: pricePence })
-        .eq('id', offerId)
-
-    if (priceError) {
-        return { error: 'Failed to set price: ' + priceError.message }
-    }
-
-    // Atomic confirm via RPC (handles escrow, assignment, booking status).
-    // Platform booking fee is held on top so the ref's gross stays equal to price_pence.
     const platformFeePence = await getBookingFeePence()
     const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
         p_offer_id: offerId,
         p_platform_fee_pence: platformFeePence,
+        p_price_pence: pricePence,
     })
 
     if (rpcError) {
@@ -1548,4 +1543,122 @@ export async function getRating(bookingId: string) {
 
     if (error) return { error: error.message, data: null }
     return { data, error: null }
+}
+
+// ─── Per-user archive ─────────────────────────────────────────────────────
+// Archiving is independent per side: a coach archiving a booking only hides
+// it from their dashboard, ref's view is unaffected (and vice versa).
+// Distinct from bookings.deleted_at, which is the coach's "withdraw a
+// pre-confirmation booking" soft-delete and removes from BOTH sides.
+// Only allow archive on completed/cancelled bookings.
+
+async function assertArchivableStatus(supabase: Awaited<ReturnType<typeof createClient>>, bookingId: string) {
+    const { data } = await supabase
+        .from('bookings')
+        .select('status')
+        .eq('id', bookingId)
+        .maybeSingle()
+    if (!data) return { error: 'Booking not found' as const }
+    if (data.status !== 'completed' && data.status !== 'cancelled') {
+        return { error: 'Only completed or cancelled bookings can be archived' as const }
+    }
+    return { error: null }
+}
+
+export async function archiveBookingAsCoach(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const check = await assertArchivableStatus(supabase, bookingId)
+    if (check.error) return { error: check.error }
+
+    const { error } = await supabase
+        .from('bookings')
+        .update({ coach_archived_at: new Date().toISOString() })
+        .eq('id', bookingId)
+        .eq('coach_id', user.id)
+
+    if (error) return { error: error.message }
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+export async function unarchiveBookingAsCoach(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { error } = await supabase
+        .from('bookings')
+        .update({ coach_archived_at: null })
+        .eq('id', bookingId)
+        .eq('coach_id', user.id)
+
+    if (error) return { error: error.message }
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+export async function archiveBookingAsReferee(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const check = await assertArchivableStatus(supabase, bookingId)
+    if (check.error) return { error: check.error }
+
+    const { error, count } = await supabase
+        .from('booking_assignments')
+        .update({ archived_at: new Date().toISOString() }, { count: 'exact' })
+        .eq('booking_id', bookingId)
+        .eq('referee_id', user.id)
+
+    if (error) return { error: error.message }
+    if (!count) return { error: 'No assignment to archive' }
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+export async function unarchiveBookingAsReferee(bookingId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { error } = await supabase
+        .from('booking_assignments')
+        .update({ archived_at: null })
+        .eq('booking_id', bookingId)
+        .eq('referee_id', user.id)
+
+    if (error) return { error: error.message }
+    revalidatePath('/app/bookings')
+    return { success: true }
+}
+
+/**
+ * One-shot migration helper for refs whose archives currently live in
+ * localStorage. Bulk-archives every booking ID the client passes that the
+ * caller has an assignment row for. Silently no-ops on IDs they don't own —
+ * the localStorage key on the client gets cleared after a successful call.
+ */
+export async function migrateRefereeArchiveFromLocalStorage(bookingIds: string[]) {
+    if (!Array.isArray(bookingIds) || bookingIds.length === 0) {
+        return { success: true, migrated: 0 }
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { error, count } = await supabase
+        .from('booking_assignments')
+        .update({ archived_at: new Date().toISOString() }, { count: 'exact' })
+        .eq('referee_id', user.id)
+        .is('archived_at', null)
+        .in('booking_id', bookingIds)
+
+    if (error) return { error: error.message }
+    revalidatePath('/app/bookings')
+    return { success: true, migrated: count ?? 0 }
 }
