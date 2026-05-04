@@ -13,6 +13,7 @@ import {
     unarchiveBookingAsReferee,
 } from '@/app/app/bookings/actions'
 import { useToast } from '@/components/ui/Toast'
+import { SwipeableCard } from '@/components/ui/SwipeableCard'
 import { Archive, ArchiveRestore, MessageCircle, CalendarDays, Clock, XCircle } from 'lucide-react'
 
 export interface BookingCardProps {
@@ -31,7 +32,7 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
 
     const isReferee = !!showCoach
     const isCoachView = !showCoach
-    const canArchive = !archivedForViewer && (booking.status === 'cancelled' || booking.status === 'completed')
+    const canArchive = !archivedForViewer
 
     // Determine status to show
     // If user is referee (showCoach is true), show their specific offer status if not confirmed/completed
@@ -57,11 +58,10 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
         }
     }
 
-    const handleArchive = async (e: React.MouseEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (!confirm('Archive this booking? It will move to your Archived tab.')) return
-
+    // Direct archive — no confirm dialog. The swipe gesture is itself the
+    // confirmation, and the inline button is a fallback for desktop / a11y;
+    // unarchive is one click away from the Archived tab.
+    const doArchive = async () => {
         setIsLoading(true)
         try {
             const action = isReferee ? archiveBookingAsReferee : archiveBookingAsCoach
@@ -73,6 +73,12 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
         } finally {
             setIsLoading(false)
         }
+    }
+
+    const handleArchive = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        await doArchive()
     }
 
     const handleUnarchive = async (e: React.MouseEvent) => {
@@ -110,6 +116,7 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
     }
 
     return (
+        <SwipeableCard onArchive={doArchive} disabled={archivedForViewer}>
         <Link
             href={`/app/bookings/${booking.id}`}
             className={cn(
@@ -248,6 +255,7 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
                 )}
             </div>
         </Link>
+        </SwipeableCard>
     )
 }
 

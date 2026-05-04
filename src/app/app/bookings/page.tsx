@@ -39,6 +39,7 @@ interface CoachOfferResult {
 interface RefereeOfferResult {
     id: string
     status: string
+    price_pence: number | null
     booking: OfferBookingJoin | OfferBookingJoin[]
     created_at: string
 }
@@ -63,6 +64,7 @@ interface RefereeActionItem {
     matchDate: string
     kickoffTime: string
     venue: string
+    price: number | null
 }
 
 interface DeclinedOfferItem {
@@ -371,22 +373,49 @@ export default async function BookingsPage({
     let coachDeclinedItems: DeclinedOfferItem[] = []
 
     if (isCoach) {
-        const { data: awaitingOffers } = await supabase
-            .from('booking_offers')
-            .select(`
-                id, status, price_pence,
-                booking:bookings!inner(
-                    id, status, match_date, kickoff_time,
-                    ground_name, location_postcode, address_text, coach_id
-                ),
-                referee:profiles!booking_offers_referee_id_fkey(full_name)
-            `)
-            .eq('status', 'accepted_priced')
-            .eq('bookings.coach_id', user.id)
-            .neq('bookings.status', 'cancelled')
-            .order('created_at', { ascending: false })
+        // Coach awaiting action covers two flows:
+        // 1. Legacy accepted_priced — ref proposed a price, coach must confirm
+        // 2. New: sent + price_pence IS NULL — ref tapped "I'm Available" via the
+        //    nearby feed, coach must set a fee and confirm via the detail page.
+        // Both filtered by coach_archived_at IS NULL so the swipe-to-archive
+        // pattern hides items the coach has dismissed.
+        const [{ data: awaitingPriced }, { data: awaitingUnpriced }] = await Promise.all([
+            supabase
+                .from('booking_offers')
+                .select(`
+                    id, status, price_pence,
+                    booking:bookings!inner(
+                        id, status, match_date, kickoff_time,
+                        ground_name, location_postcode, address_text, coach_id
+                    ),
+                    referee:profiles!booking_offers_referee_id_fkey(full_name)
+                `)
+                .eq('status', 'accepted_priced')
+                .is('coach_archived_at', null)
+                .eq('bookings.coach_id', user.id)
+                .neq('bookings.status', 'cancelled')
+                .order('created_at', { ascending: false }),
+            supabase
+                .from('booking_offers')
+                .select(`
+                    id, status, price_pence,
+                    booking:bookings!inner(
+                        id, status, match_date, kickoff_time,
+                        ground_name, location_postcode, address_text, coach_id
+                    ),
+                    referee:profiles!booking_offers_referee_id_fkey(full_name)
+                `)
+                .eq('status', 'sent')
+                .is('price_pence', null)
+                .is('coach_archived_at', null)
+                .eq('bookings.coach_id', user.id)
+                .neq('bookings.status', 'cancelled')
+                .order('created_at', { ascending: false }),
+        ])
 
-        if (awaitingOffers) {
+        const awaitingOffers = [...(awaitingPriced || []), ...(awaitingUnpriced || [])]
+
+        if (awaitingOffers.length > 0) {
             coachActionItems = (awaitingOffers as CoachOfferResult[]).map((o) => {
                 const booking = Array.isArray(o.booking) ? o.booking[0] : o.booking
                 const referee = Array.isArray(o.referee) ? o.referee[0] : o.referee
@@ -451,10 +480,15 @@ export default async function BookingsPage({
     }
 
     if (isReferee) {
+        // Referee awaiting covers both:
+        //   - priced sent offers (coach posted a fee → ref must respond)
+        //   - unpriced sent offers (ref tapped "I'm Available" → ref is waiting)
+        // The component splits these into "New Offers" and "Awaiting Coach"
+        // sections internally based on price_pence.
         const { data: sentOffers } = await supabase
             .from('booking_offers')
             .select(`
-                id, status,
+                id, status, price_pence,
                 booking:bookings!inner(
                     id, status, match_date, kickoff_time,
                     ground_name, location_postcode, address_text
@@ -462,6 +496,7 @@ export default async function BookingsPage({
             `)
             .eq('referee_id', user.id)
             .eq('status', 'sent')
+            .is('referee_archived_at', null)
             .order('created_at', { ascending: false })
 
         if (sentOffers) {
@@ -475,6 +510,7 @@ export default async function BookingsPage({
                     matchDate: booking.match_date,
                     kickoffTime: booking.kickoff_time,
                     venue: booking.address_text || booking.ground_name || booking.location_postcode,
+                    price: o.price_pence ?? null,
                 }
             })
         }
