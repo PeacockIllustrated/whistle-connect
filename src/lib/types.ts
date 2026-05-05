@@ -288,6 +288,14 @@ export interface RegisterFormData {
     phone?: string
     postcode?: string
     fa_number?: string
+    /**
+     * Both must be true at the moment of signup. The schema rejects anything
+     * else. The auth action stamps `terms_accepted_at` and `privacy_accepted_at`
+     * (separately) into user_metadata so we have a server-recorded audit trail
+     * of each consent.
+     */
+    terms_accepted: boolean
+    privacy_accepted: boolean
 }
 
 // ============================================

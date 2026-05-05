@@ -45,6 +45,13 @@ export const signUpSchema = z.object({
         .regex(/^\d{8,10}$/, 'FA number must be 8-10 digits')
         .optional()
         .or(z.literal('')),
+    // Both must be exactly true. z.literal(true) rejects false / undefined / "true" string.
+    terms_accepted: z.literal(true, {
+        message: 'You must accept the Terms of Service to create an account',
+    }),
+    privacy_accepted: z.literal(true, {
+        message: 'You must accept the Privacy Policy and FA safeguarding consent to create an account',
+    }),
 })
 
 // ── Booking schemas ──────────────────────────────────────────────────────
