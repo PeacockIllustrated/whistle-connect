@@ -29,6 +29,8 @@ export default function RegisterPage() {
     const [phone, setPhone] = useState('')
     const [postcode, setPostcode] = useState('')
     const [faNumber, setFaNumber] = useState('')
+    const [termsAccepted, setTermsAccepted] = useState(false)
+    const [privacyAccepted, setPrivacyAccepted] = useState(false)
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [celebration, setCelebration] = useState<{ redirectTo: string } | null>(null)
@@ -58,6 +60,18 @@ export default function RegisterPage() {
             return
         }
 
+        if (!termsAccepted) {
+            setError('Please accept the Terms of Service to continue')
+            setLoading(false)
+            return
+        }
+
+        if (!privacyAccepted) {
+            setError('Please accept the Privacy Policy and FA safeguarding consent to continue')
+            setLoading(false)
+            return
+        }
+
         try {
             const result = await signUp({
                 email,
@@ -67,6 +81,8 @@ export default function RegisterPage() {
                 phone: phone || undefined,
                 postcode: postcode || undefined,
                 fa_number: faNumber || undefined,
+                terms_accepted: termsAccepted,
+                privacy_accepted: privacyAccepted,
             }, returnTo)
             if (result?.error) {
                 setError(result.error)
@@ -206,11 +222,71 @@ export default function RegisterPage() {
                             />
                         )}
 
+                        {/* Two separate consents — Terms and Privacy/FA-safeguarding —
+                            so the user records explicit agreement to each. Both must
+                            be ticked for submit to enable; both are validated server-side. */}
+                        <div className="pt-2 space-y-3">
+                            <label className="flex items-start gap-3 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    className="mt-1 w-4 h-4 rounded border-[var(--border-color)] text-[var(--color-primary)] focus:ring-2 focus:ring-[var(--border-focus)] flex-shrink-0 cursor-pointer"
+                                    aria-describedby="terms-description"
+                                    required
+                                />
+                                <span
+                                    id="terms-description"
+                                    className="text-sm text-[var(--foreground-muted)] leading-relaxed"
+                                >
+                                    I agree to the{' '}
+                                    <Link
+                                        href="/terms"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[var(--color-primary)] font-medium hover:underline"
+                                    >
+                                        Terms of Service
+                                    </Link>
+                                    .
+                                </span>
+                            </label>
+
+                            <label className="flex items-start gap-3 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={privacyAccepted}
+                                    onChange={(e) => setPrivacyAccepted(e.target.checked)}
+                                    className="mt-1 w-4 h-4 rounded border-[var(--border-color)] text-[var(--color-primary)] focus:ring-2 focus:ring-[var(--border-focus)] flex-shrink-0 cursor-pointer"
+                                    aria-describedby="privacy-description"
+                                    required
+                                />
+                                <span
+                                    id="privacy-description"
+                                    className="text-sm text-[var(--foreground-muted)] leading-relaxed"
+                                >
+                                    I agree to the{' '}
+                                    <Link
+                                        href="/privacy"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[var(--color-primary)] font-medium hover:underline"
+                                    >
+                                        Privacy Policy
+                                    </Link>
+                                    , and consent to Whistle Connect sharing my
+                                    registration and match data with The Football
+                                    Association for safeguarding purposes.
+                                </span>
+                            </label>
+                        </div>
+
                         <div className="pt-2">
                             <Button
                                 type="submit"
                                 fullWidth
                                 loading={loading}
+                                disabled={!termsAccepted || !privacyAccepted}
                                 size="lg"
                                 variant="success"
                             >
