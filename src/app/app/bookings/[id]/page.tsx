@@ -5,6 +5,7 @@ import { StatusChip } from '@/components/ui/StatusChip'
 import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
 import { CoachInterestActions } from '@/components/app/CoachInterestActions'
+import { SOSStatusPanel } from '@/components/app/SOSStatusPanel'
 import { BookingOffer, Profile } from '@/lib/types'
 import { ChevronLeft, CalendarDays, MapPin, MessageCircle } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
@@ -233,6 +234,19 @@ export default async function BookingDetailPage({
                         </Link>
                     )}
                 </div>
+            )}
+
+            {/* SOS broadcast status — replaces the (misleading) OFFERS list for
+                SOS bookings. Shows broadcast count + a live countdown to
+                sos_expires_at while waiting for a ref to claim. Once an
+                assignment exists, the ASSIGNED REFEREE section above takes over. */}
+            {isCoach && booking.is_sos && !assignment && (
+                <SOSStatusPanel
+                    expiresAt={booking.sos_expires_at ?? null}
+                    broadcastCount={
+                        booking.offers?.filter((o: BookingOffer) => o.status === 'sent').length ?? 0
+                    }
+                />
             )}
 
             {/* Actions */}
