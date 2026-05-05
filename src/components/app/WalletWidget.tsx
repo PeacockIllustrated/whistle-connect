@@ -37,9 +37,6 @@ export default function WalletWidget({ userRole }: WalletWidgetProps) {
                             <Wallet className="w-3.5 h-3.5 text-white" />
                         </div>
                         <span className="font-semibold text-sm text-white">Wallet</span>
-                        <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-white/20 text-white">
-                            Trial
-                        </span>
                     </div>
                     <Link href="/app/wallet" className="text-xs text-white/70 hover:text-white transition-colors">
                         View all &rarr;
