@@ -114,6 +114,69 @@ export async function markThreadAsRead(threadId: string) {
         .eq('profile_id', user.id)
 }
 
+/**
+ * Archive a thread for the current user only. Mirrors the per-user booking
+ * archive pattern (migration 0149/0151). The other participant's view is not
+ * affected. Idempotent — running it twice on an already-archived thread is a
+ * no-op (we don't bump the timestamp).
+ */
+export async function archiveThread(threadId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const { error, count } = await supabase
+        .from('thread_participants')
+        .update(
+            { archived_at: new Date().toISOString() },
+            { count: 'exact' }
+        )
+        .eq('thread_id', threadId)
+        .eq('profile_id', user.id)
+        .is('archived_at', null)
+
+    if (error) {
+        return { error: error.message }
+    }
+    if (!count) {
+        // Either not a participant or already archived — both are fine to
+        // surface as success to the caller (idempotent).
+        return { success: true, alreadyArchived: true }
+    }
+
+    revalidatePath('/app/messages')
+    return { success: true }
+}
+
+/**
+ * Restore an archived thread for the current user. Sets archived_at back to
+ * null on the viewer's thread_participants row.
+ */
+export async function unarchiveThread(threadId: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const { error } = await supabase
+        .from('thread_participants')
+        .update({ archived_at: null })
+        .eq('thread_id', threadId)
+        .eq('profile_id', user.id)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/app/messages')
+    return { success: true }
+}
+
 export async function getThreads(limit = 30, offset = 0) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
