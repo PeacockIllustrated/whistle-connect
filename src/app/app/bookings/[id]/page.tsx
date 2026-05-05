@@ -244,8 +244,19 @@ export default async function BookingDetailPage({
                 threadId={thread?.id}
             />
 
-            {/* Offers List (for coaches) — always show when offers exist and no assignment yet */}
-            {isCoach && booking.offers && booking.offers.length > 0 && !assignment && (
+            {/* Offers List (for coaches) — always show when offers exist and no
+                assignment yet.
+
+                Hidden for SOS bookings: createSOSBooking inserts a status='sent'
+                booking_offers row for every broadcast-notified referee (up to 15)
+                with no price_pence. Those rows are visually indistinguishable
+                from a ref-initiated "I'm Available" offer in this list, so the
+                coach was seeing 15 strangers labelled as if they had personally
+                tapped accept — misleading. SOS resolution happens atomically via
+                claim_sos_booking → assignment, so there's never a meaningful
+                OFFERS view for an SOS booking; the Find Referees CTA in
+                BookingActions remains as the manual fallback. */}
+            {isCoach && !booking.is_sos && booking.offers && booking.offers.length > 0 && !assignment && (
                 <div className="card p-4 mt-4">
                     <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">
                         OFFERS ({booking.offers.length})
