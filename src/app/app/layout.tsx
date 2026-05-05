@@ -8,7 +8,6 @@ import { InstallPrompt } from '@/components/app/InstallPrompt'
 import { UnreadMessagesProvider } from '@/components/app/UnreadMessagesProvider'
 import { BookingUpdatesProvider } from '@/components/app/BookingUpdatesProvider'
 import SplashScreen from '@/components/ui/SplashScreen'
-import { DevBanner } from '@/components/app/DevBanner'
 
 export default async function AppLayout({
     children,
@@ -90,8 +89,6 @@ export default async function AppLayout({
                         <AppHeader
                             userRole={profile?.role}
                         />
-
-                        <DevBanner />
 
                         <PushNotificationManager />
                         <InstallPrompt />
