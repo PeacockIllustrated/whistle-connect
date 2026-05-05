@@ -117,7 +117,20 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
         }
     }
 
-    // Create auth user with metadata
+    // Server-side belt-and-braces — the schema also enforces these, but reject
+    // here too in case any caller bypasses validation.
+    if (!data.terms_accepted) {
+        return { error: 'You must accept the Terms of Service to create an account' }
+    }
+    if (!data.privacy_accepted) {
+        return { error: 'You must accept the Privacy Policy and FA safeguarding consent to create an account' }
+    }
+
+    // Create auth user with metadata. The *_accepted_at fields give us
+    // server-stamped records of each consent (a client timestamp would be
+    // untrusted) — useful for safeguarding audit trails when sharing data
+    // with the FA.
+    const consentAcceptedAt = new Date().toISOString()
     const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
         password: data.password,
@@ -127,6 +140,8 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                 full_name: data.full_name,
                 phone: data.phone || null,
                 postcode: data.postcode || null,
+                terms_accepted_at: consentAcceptedAt,
+                privacy_accepted_at: consentAcceptedAt,
             },
         },
     })

@@ -1,16 +1,21 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { useUnreadMessages } from '@/components/app/UnreadMessagesProvider'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { SwipeableCard } from '@/components/ui/SwipeableCard'
 import { formatDate, truncate } from '@/lib/utils'
-import { MessageCircle } from 'lucide-react'
+import { archiveThread, unarchiveThread } from '@/app/app/messages/actions'
+import { MessageCircle, Archive, RotateCcw } from 'lucide-react'
 
 export interface ThreadListItem {
     id: string
     updated_at: string
+    /** Viewer's per-user archive timestamp from thread_participants. */
+    archived_at?: string | null
     booking: {
         id: string
         ground_name: string | null
@@ -36,29 +41,35 @@ export interface ThreadListItem {
 interface ThreadListClientProps {
     initialThreads: ThreadListItem[]
     currentUserId: string
+    view?: 'active' | 'archived'
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function ThreadListClient({ initialThreads, currentUserId: _currentUserId }: ThreadListClientProps) {
+export function ThreadListClient({ initialThreads, currentUserId: _currentUserId, view = 'active' }: ThreadListClientProps) {
+    const router = useRouter()
     const [threads, setThreads] = useState<ThreadListItem[]>(initialThreads)
+    const [, startTransition] = useTransition()
     const { getThreadUnread, subscribeToNewMessages } = useUnreadMessages()
 
-    // Sync with initial data when it changes (e.g. navigation)
+    // Sync with initial data when it changes (e.g. navigation between tabs)
     useEffect(() => {
         setThreads(initialThreads)
     }, [initialThreads])
 
-    // Subscribe to new messages for live updates
+    // Subscribe to new messages for live updates — only matters on the
+    // active view (archived threads stay in the archive even if a new
+    // message lands; the user explicitly chose to hide them).
     useEffect(() => {
+        if (view !== 'active') return
+
         const unsubscribe = subscribeToNewMessages((newMsg) => {
-            setThreads(prev => {
-                const threadIndex = prev.findIndex(t => t.id === newMsg.thread_id)
+            setThreads((prev) => {
+                const threadIndex = prev.findIndex((t) => t.id === newMsg.thread_id)
                 if (threadIndex === -1) return prev
 
                 const updated = [...prev]
                 const thread = { ...updated[threadIndex] }
 
-                // Update the last message preview
                 thread.last_message = {
                     id: newMsg.id,
                     body: newMsg.body,
@@ -68,7 +79,6 @@ export function ThreadListClient({ initialThreads, currentUserId: _currentUserId
                 }
                 thread.updated_at = newMsg.created_at
 
-                // Remove from current position and move to top
                 updated.splice(threadIndex, 1)
                 updated.unshift(thread)
 
@@ -77,16 +87,48 @@ export function ThreadListClient({ initialThreads, currentUserId: _currentUserId
         })
 
         return unsubscribe
-    }, [subscribeToNewMessages])
+    }, [subscribeToNewMessages, view])
+
+    async function handleArchive(threadId: string) {
+        // Optimistic — drop the thread immediately so the swipe-out animation
+        // settles to an empty space, then call the server. If it fails, we
+        // re-fetch via router.refresh() which restores the row.
+        setThreads((prev) => prev.filter((t) => t.id !== threadId))
+        const result = await archiveThread(threadId)
+        if (result?.error) {
+            console.error('archiveThread failed:', result.error)
+            startTransition(() => router.refresh())
+        } else {
+            // Refresh to update the count badges in the parent server component.
+            startTransition(() => router.refresh())
+        }
+    }
+
+    async function handleUnarchive(threadId: string) {
+        setThreads((prev) => prev.filter((t) => t.id !== threadId))
+        const result = await unarchiveThread(threadId)
+        if (result?.error) {
+            console.error('unarchiveThread failed:', result.error)
+        }
+        startTransition(() => router.refresh())
+    }
 
     if (threads.length === 0) {
         return (
             <EmptyState
                 icon={
-                    <MessageCircle className="w-12 h-12" strokeWidth={1.5} />
+                    view === 'archived' ? (
+                        <Archive className="w-12 h-12" strokeWidth={1.5} />
+                    ) : (
+                        <MessageCircle className="w-12 h-12" strokeWidth={1.5} />
+                    )
                 }
-                title="No messages yet"
-                description="Messages will appear here when you have confirmed bookings with referees or coaches"
+                title={view === 'archived' ? 'No archived threads' : 'No messages yet'}
+                description={
+                    view === 'archived'
+                        ? 'Archived conversations land here. You can restore any of them back to your active list.'
+                        : 'Messages will appear here when you have confirmed bookings with referees or coaches'
+                }
             />
         )
     }
@@ -95,10 +137,10 @@ export function ThreadListClient({ initialThreads, currentUserId: _currentUserId
         <div className="space-y-2">
             {threads.map((thread) => {
                 const unreadCount = getThreadUnread(thread.id)
+                const isArchived = view === 'archived'
 
-                return (
+                const card = (
                     <Link
-                        key={thread.id}
                         href={`/app/messages/${thread.id}`}
                         className="block card p-4 hover:shadow-md transition-shadow"
                     >
@@ -134,16 +176,14 @@ export function ThreadListClient({ initialThreads, currentUserId: _currentUserId
                                     )}
                                 </div>
 
-                                {/* Match reference */}
                                 {thread.booking && (
                                     <p className="text-xs text-[var(--foreground-muted)]">
                                         {thread.booking.ground_name || thread.booking.location_postcode} &bull; {formatDate(thread.booking.match_date)}
                                     </p>
                                 )}
 
-                                {/* Last message preview */}
                                 {thread.last_message && (
-                                    <p className={`text-sm mt-1 truncate ${unreadCount > 0 ? 'font-medium text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>
+                                    <p className={`text-sm mt-1 truncate ${unreadCount > 0 && !isArchived ? 'font-medium text-[var(--foreground)]' : 'text-[var(--foreground-muted)]'}`}>
                                         {thread.last_message.kind === 'system' ? (
                                             <span className="italic">{truncate(thread.last_message.body, 50)}</span>
                                         ) : (
@@ -151,16 +191,48 @@ export function ThreadListClient({ initialThreads, currentUserId: _currentUserId
                                         )}
                                     </p>
                                 )}
+
+                                {isArchived && (
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            handleUnarchive(thread.id)
+                                        }}
+                                        className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-[var(--color-primary)] hover:underline"
+                                    >
+                                        <RotateCcw className="w-3 h-3" />
+                                        Restore
+                                    </button>
+                                )}
                             </div>
 
-                            {/* Unread indicator */}
-                            {unreadCount > 0 && (
+                            {/* Unread indicator (active view only) */}
+                            {!isArchived && unreadCount > 0 && (
                                 <div className="flex-shrink-0 w-5 h-5 rounded-full bg-[var(--color-primary)] text-white text-xs font-bold flex items-center justify-center">
                                     {unreadCount > 9 ? '9+' : unreadCount}
                                 </div>
                             )}
                         </div>
                     </Link>
+                )
+
+                // Active threads support swipe-to-archive (mirrors BookingCard).
+                // Archived threads use the inline "Restore" button instead — no
+                // swipe wrapping so the row reads as obviously inert until acted on.
+                if (isArchived) {
+                    return <div key={thread.id}>{card}</div>
+                }
+
+                return (
+                    <SwipeableCard
+                        key={thread.id}
+                        onArchive={() => handleArchive(thread.id)}
+                        actionLabel="Archive"
+                    >
+                        {card}
+                    </SwipeableCard>
                 )
             })}
         </div>
