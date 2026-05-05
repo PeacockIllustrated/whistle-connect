@@ -103,9 +103,6 @@ export default async function WalletPage({
                 <div className="flex-1">
                     <div className="flex items-center gap-2">
                         <h1 className="text-lg font-semibold text-[var(--foreground)]">Wallet</h1>
-                        <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300">
-                            Trial
-                        </span>
                     </div>
                     <p className="text-sm text-[var(--foreground-muted)]">
                         Manage your funds
