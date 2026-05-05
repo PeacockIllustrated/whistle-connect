@@ -351,48 +351,65 @@ export async function createStripeConnectLink(): Promise<{
 
     let connectId = wallet?.stripe_connect_id
 
-    if (!connectId) {
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('full_name, email')
-            .eq('id', user.id)
-            .single()
+    try {
+        if (!connectId) {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('full_name, email')
+                .eq('id', user.id)
+                .single()
 
-        // Idempotency key collapses retries to a single Connect Express
-        // account per user. Without this, a network blip during onboarding
-        // could leave orphan acct_* records in Stripe.
-        const account = await stripe.accounts.create(
-            {
-                type: 'express',
-                country: 'GB',
-                email: profile?.email ?? user.email,
-                capabilities: {
-                    transfers: { requested: true },
+            // Idempotency key collapses retries to a single Connect Express
+            // account per user. Without this, a network blip during onboarding
+            // could leave orphan acct_* records in Stripe.
+            const account = await stripe.accounts.create(
+                {
+                    type: 'express',
+                    country: 'GB',
+                    email: profile?.email ?? user.email,
+                    capabilities: {
+                        transfers: { requested: true },
+                    },
+                    metadata: { supabase_user_id: user.id },
                 },
-                metadata: { supabase_user_id: user.id },
-            },
-            { idempotencyKey: `connect:${user.id}` }
-        )
+                { idempotencyKey: `connect:${user.id}` }
+            )
 
-        connectId = account.id
+            connectId = account.id
 
-        const { createAdminClient } = await import('@/lib/supabase/server')
-        const adminSupabase = createAdminClient()
+            const { createAdminClient } = await import('@/lib/supabase/server')
+            const adminSupabase = createAdminClient()
 
-        await adminSupabase?.from('wallets').upsert({
-            user_id: user.id,
-            stripe_connect_id: connectId,
-            balance_pence: 0,
-            escrow_pence: 0,
-        }, { onConflict: 'user_id' })
+            await adminSupabase?.from('wallets').upsert({
+                user_id: user.id,
+                stripe_connect_id: connectId,
+                balance_pence: 0,
+                escrow_pence: 0,
+            }, { onConflict: 'user_id' })
+        }
+
+        const accountLink = await stripe.accountLinks.create({
+            account: connectId,
+            refresh_url: `${siteUrl}/app/wallet/withdraw?connect=refresh`,
+            return_url: `${siteUrl}/app/wallet/withdraw?connect=complete`,
+            type: 'account_onboarding',
+        })
+
+        return { url: accountLink.url }
+    } catch (err) {
+        // Without this guard, a Stripe failure (e.g. platform hasn't enabled
+        // Connect yet) bubbles past the 'use server' boundary and crashes the
+        // server-component render of /app/wallet/withdraw.
+        const errMessage = err instanceof Error ? err.message : String(err)
+        console.error('[StripeConnect] onboarding link failed:', errMessage)
+        Sentry.captureException(err, {
+            tags: { 'wallet.flow': 'connect-onboarding' },
+            user: { id: user.id },
+        })
+
+        if (errMessage.includes('signed up for Connect')) {
+            return { error: 'Withdrawals are temporarily unavailable. The team has been notified.' }
+        }
+        return { error: 'Could not start withdrawal setup. Please try again in a moment.' }
     }
-
-    const accountLink = await stripe.accountLinks.create({
-        account: connectId,
-        refresh_url: `${siteUrl}/app/wallet/withdraw?connect=refresh`,
-        return_url: `${siteUrl}/app/wallet/withdraw?connect=complete`,
-        type: 'account_onboarding',
-    })
-
-    return { url: accountLink.url }
 }
