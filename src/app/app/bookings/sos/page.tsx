@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { useToast } from '@/components/ui/Toast'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
-import { ChevronLeft, Siren, MapPin, Clock, Users, Banknote } from 'lucide-react'
+import { ChevronLeft, Siren, MapPin, Clock, Users, Banknote, Shield } from 'lucide-react'
 
 const AGE_GROUPS = [
     'Under 7', 'Under 8', 'Under 9', 'Under 10', 'Under 11', 'Under 12',
@@ -36,6 +36,8 @@ export default function SOSPage() {
     const [format, setFormat] = useState('')
     const [fee, setFee] = useState('')
     const [groundName, setGroundName] = useState('')
+    const [homeTeam, setHomeTeam] = useState('')
+    const [awayTeam, setAwayTeam] = useState('')
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -53,6 +55,8 @@ export default function SOSPage() {
                 format: format || undefined,
                 budget_pounds: fee ? parseInt(fee) : undefined,
                 ground_name: groundName || undefined,
+                home_team: homeTeam.trim() || undefined,
+                away_team: awayTeam.trim() || undefined,
             })
 
             if (result.error) {
@@ -96,7 +100,7 @@ export default function SOSPage() {
             {/* Urgency notice */}
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
                 <p className="text-sm text-red-700 font-medium">
-                    This sends an urgent notification to all available referees near your location. The first referee to accept will be automatically assigned.
+                    This sends an urgent notification to all available referees near your location. Refs who accept will appear under SOS RESPONSES on the booking page — pick one to confirm and you&apos;ll go straight into a chat with them.
                 </p>
             </div>
 
@@ -140,6 +144,33 @@ export default function SOSPage() {
                             onChange={(e) => setGroundName(e.target.value)}
                             placeholder="e.g. Victoria Park Pitch 3"
                         />
+                    </div>
+
+                    {/* Home + Away teams — optional, but reads much better than
+                        "<ground> @ 14:00" on the feed and detail pages when set. */}
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs font-bold text-[var(--foreground-muted)] uppercase mb-2 flex items-center gap-1.5">
+                                <Shield className="w-3.5 h-3.5" />
+                                Home Team
+                            </label>
+                            <Input
+                                value={homeTeam}
+                                onChange={(e) => setHomeTeam(e.target.value)}
+                                placeholder="e.g. Reds U12"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs font-bold text-[var(--foreground-muted)] uppercase mb-2 flex items-center gap-1.5">
+                                <Shield className="w-3.5 h-3.5" />
+                                Away Team
+                            </label>
+                            <Input
+                                value={awayTeam}
+                                onChange={(e) => setAwayTeam(e.target.value)}
+                                placeholder="e.g. Blues U12"
+                            />
+                        </div>
                     </div>
                 </div>
 

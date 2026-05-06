@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { StatusChip } from '@/components/ui/StatusChip'
 import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
-import { CoachInterestActions } from '@/components/app/CoachInterestActions'
 import { SOSStatusPanel } from '@/components/app/SOSStatusPanel'
+import { CoachOfferRow } from '@/components/app/CoachOfferRow'
 import { BookingOffer, Profile } from '@/lib/types'
 import { ChevronLeft, CalendarDays, MapPin, MessageCircle } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
@@ -270,52 +270,47 @@ export default async function BookingDetailPage({
                 claim_sos_booking → assignment, so there's never a meaningful
                 OFFERS view for an SOS booking; the Find Referees CTA in
                 BookingActions remains as the manual fallback. */}
-            {isCoach && !booking.is_sos && booking.offers && booking.offers.length > 0 && !assignment && (
-                <div className="card p-4 mt-4">
-                    <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">
-                        OFFERS ({booking.offers.length})
-                    </h3>
-                    <div className="space-y-3">
-                        {booking.offers.map((offer: BookingOffer & { referee: Profile | null }) => {
-                            // A ref-initiated "I'm Available" offer = status sent + no price set yet
-                            const isRefInitiated = offer.status === 'sent' && !offer.price_pence
-                            return (
-                                <div
+            {isCoach && booking.offers && (() => {
+                // OFFERS list filtering rules:
+                //  - Always exclude per-coach archived rows (migration 0151).
+                //  - For SOS bookings: only show offers where responded_at IS NOT
+                //    NULL. SOS broadcasts pre-insert a passive "you were
+                //    notified" row for every nearby ref (status='sent',
+                //    responded_at=null). Those would otherwise appear as 15
+                //    strangers labelled "ref-initiated" — misleading. Once a
+                //    ref taps "Accept SOS Call", expressInterest stamps
+                //    responded_at and the row appears here for the coach to
+                //    confirm.
+                //  - For non-SOS bookings: show all non-archived offers.
+                const offers = booking.offers as (BookingOffer & {
+                    referee: Profile | null
+                    coach_archived_at: string | null
+                    responded_at: string | null
+                })[]
+                const visibleOffers = offers.filter((o) => {
+                    if (o.coach_archived_at) return false
+                    if (booking.is_sos && !o.responded_at) return false
+                    return true
+                })
+                if (visibleOffers.length === 0 || assignment) return null
+                const heading = booking.is_sos ? 'SOS RESPONSES' : 'OFFERS'
+                return (
+                    <div className="card p-4 mt-4">
+                        <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">
+                            {heading} ({visibleOffers.length})
+                        </h3>
+                        <div className="space-y-3">
+                            {visibleOffers.map((offer) => (
+                                <CoachOfferRow
                                     key={offer.id}
-                                    className={`p-2 rounded-lg ${getStatusCardStyle(offer.status) || 'bg-[var(--neutral-50)]'}`}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] flex items-center justify-center text-white text-sm font-semibold">
-                                            {offer.referee?.full_name?.charAt(0) || '?'}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="text-sm font-medium">{offer.referee?.full_name || 'Unknown'}</p>
-                                            {offer.status === 'accepted_priced' && offer.price_pence && (
-                                                <p className="text-xs text-green-600 font-medium">
-                                                    Quoted: &pound;{(offer.price_pence / 100).toFixed(2)}
-                                                </p>
-                                            )}
-                                            {isRefInitiated && (
-                                                <p className="text-xs text-amber-700 font-medium">
-                                                    Tapped &quot;I&apos;m Available&quot; — needs your response
-                                                </p>
-                                            )}
-                                        </div>
-                                        <StatusChip status={offer.status} size="sm" />
-                                    </div>
-                                    {isRefInitiated && (
-                                        <CoachInterestActions
-                                            offerId={offer.id}
-                                            refereeName={offer.referee?.full_name || 'this referee'}
-                                            defaultPricePounds={booking.budget_pounds ?? null}
-                                        />
-                                    )}
-                                </div>
-                            )
-                        })}
+                                    offer={offer}
+                                    bookingFeePounds={booking.budget_pounds ?? null}
+                                />
+                            ))}
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            })()}
         </div>
     )
 }

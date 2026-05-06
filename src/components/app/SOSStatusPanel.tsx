@@ -83,8 +83,9 @@ export function SOSStatusPanel({ expiresAt, broadcastCount }: SOSStatusPanelProp
                         <span className="font-semibold text-[var(--foreground)]">
                             {broadcastCount}
                         </span>{' '}
-                        nearby {broadcastCount === 1 ? 'referee' : 'referees'}. The first to
-                        accept gets the booking.
+                        nearby {broadcastCount === 1 ? 'referee' : 'referees'}. When one
+                        accepts, they&apos;ll appear under SOS RESPONSES &mdash; confirm
+                        them to go straight into chat.
                     </p>
                 </div>
             </div>

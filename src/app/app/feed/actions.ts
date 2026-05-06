@@ -214,7 +214,7 @@ export async function expressInterest(bookingId: string): Promise<{ success?: bo
     // Check booking exists and is still available
     const { data: booking } = await supabase
         .from('bookings')
-        .select('id, coach_id, status, ground_name, location_postcode, match_date')
+        .select('id, coach_id, status, ground_name, location_postcode, match_date, is_sos')
         .eq('id', bookingId)
         .is('deleted_at', null)
         .single()
@@ -224,26 +224,46 @@ export async function expressInterest(bookingId: string): Promise<{ success?: bo
         return { error: 'This match is no longer available' }
     }
 
-    // Check no existing offer
+    // Look up any existing offer for this ref + booking. SOS bookings
+    // auto-insert an "I notified you" offer for every nearby ref at broadcast
+    // time (createSOSBooking) — we treat that as a passive invitation, with
+    // responded_at = null. When the ref taps "Accept SOS Call" we want to
+    // promote that row to actively-accepted (responded_at = now()) rather
+    // than insert a duplicate.
     const { data: existing } = await supabase
         .from('booking_offers')
-        .select('id')
+        .select('id, responded_at')
         .eq('booking_id', bookingId)
         .eq('referee_id', user.id)
         .maybeSingle()
 
-    if (existing) return { error: 'You have already expressed interest in this match' }
-
-    // Create the offer (same pattern as coach-initiated offers)
-    const { error: offerError } = await supabase
-        .from('booking_offers')
-        .insert({
-            booking_id: bookingId,
-            referee_id: user.id,
-            status: 'sent',
-        })
-
-    if (offerError) return { error: offerError.message }
+    if (existing) {
+        if (existing.responded_at) {
+            return { error: 'You have already expressed interest in this match' }
+        }
+        // Promote the passive auto-broadcast offer to actively-accepted by
+        // stamping responded_at. The coach OFFERS list filters on
+        // responded_at IS NOT NULL for SOS bookings to surface only
+        // actively-engaged refs.
+        const { error: promoteError } = await supabase
+            .from('booking_offers')
+            .update({ status: 'sent', responded_at: new Date().toISOString() })
+            .eq('id', existing.id)
+        if (promoteError) return { error: promoteError.message }
+    } else {
+        // No prior offer → fresh ref-initiated express-interest. Stamping
+        // responded_at on insert keeps the "ref has acted on this offer"
+        // invariant consistent with the SOS-promotion path above.
+        const { error: offerError } = await supabase
+            .from('booking_offers')
+            .insert({
+                booking_id: bookingId,
+                referee_id: user.id,
+                status: 'sent',
+                responded_at: new Date().toISOString(),
+            })
+        if (offerError) return { error: offerError.message }
+    }
 
     // Update booking status to 'offered' if still pending
     if (booking.status === 'pending') {

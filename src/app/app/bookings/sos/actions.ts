@@ -17,6 +17,8 @@ interface SOSBookingData {
     budget_pounds?: number
     ground_name?: string
     notes?: string
+    home_team?: string
+    away_team?: string
 }
 
 export async function createSOSBooking(data: SOSBookingData) {
@@ -57,6 +59,8 @@ export async function createSOSBooking(data: SOSBookingData) {
             format: data.format || null,
             budget_pounds: data.budget_pounds || null,
             notes: data.notes || null,
+            home_team: data.home_team || null,
+            away_team: data.away_team || null,
             is_sos: true,
             sos_expires_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 hours
             latitude,
