@@ -34,7 +34,10 @@ export default function AvailabilityPage() {
     const [allAvailability, setAllAvailability] = useState<RefereeDateAvailability[]>([])
     const [accordionOpen, setAccordionOpen] = useState(false)
     const [celebration, setCelebration] = useState<{ title: string; subtitle: string } | null>(null)
-    const [isAvailable, setIsAvailable] = useState(false)
+    // Default to TRUE so the toggle reads as Available during the brief load
+    // flash (matches the DB column default flipped in migration 0146). The
+    // value is overwritten the moment getRefereeProfile resolves below.
+    const [isAvailable, setIsAvailable] = useState(true)
     const [travelRadius, setTravelRadius] = useState(15)
 
     useEffect(() => {
@@ -68,7 +71,7 @@ export default function AvailabilityPage() {
             setInitialOptIn(profileResult.data.central_venue_opt_in)
             setCounty(profileResult.data.county || '')
             setInitialCounty(profileResult.data.county || '')
-            setIsAvailable(profileResult.data.is_available ?? false)
+            setIsAvailable(profileResult.data.is_available ?? true)
             setTravelRadius(profileResult.data.travel_radius_km ?? 15)
         }
 

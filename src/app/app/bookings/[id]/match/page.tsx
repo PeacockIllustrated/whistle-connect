@@ -8,7 +8,7 @@ import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCar
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { BOOKING_FEE_PENCE } from '@/lib/constants'
 import Image from 'next/image'
-import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, Receipt, Banknote, Pencil, Radar, AlertTriangle } from 'lucide-react'
+import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, Receipt, Banknote, Pencil, Radar, AlertTriangle, Megaphone } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -164,22 +164,35 @@ export default function BookingMatchPage({ params }: Props) {
                         booking is also discoverable on the referee feed. */}
                     {!isLoading && feedVisible !== null && (
                         feedVisible ? (
-                            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 flex items-start gap-3">
-                                <div className="w-9 h-9 rounded-lg bg-emerald-100 flex-shrink-0 flex items-center justify-center">
-                                    <Radar className="w-5 h-5 text-emerald-700" />
+                            <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-9 h-9 rounded-lg bg-emerald-100 flex-shrink-0 flex items-center justify-center">
+                                        <Radar className="w-5 h-5 text-emerald-700" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-emerald-900">
+                                            Live on the referee feed
+                                        </p>
+                                        <p className="text-xs text-emerald-800/90 mt-0.5">
+                                            This match is showing for referees within their travel
+                                            radius. They&apos;ll tap{' '}
+                                            <span className="font-semibold">I&apos;m Available</span> and
+                                            appear under Offers — or pick someone yourself below.
+                                        </p>
+                                    </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-bold text-emerald-900">
-                                        Live on the referee feed
-                                    </p>
-                                    <p className="text-xs text-emerald-800/90 mt-0.5">
-                                        This match is now showing for referees within their travel
-                                        radius. They&apos;ll tap{' '}
-                                        <span className="font-semibold">I&apos;m Available</span> and
-                                        you&apos;ll see them appear under Offers — or pick a referee
-                                        yourself from the search below.
-                                    </p>
-                                </div>
+                                {/* "Post and wait" — escape hatch for coaches who
+                                    don't want to manually outreach. The booking is
+                                    already on the feed (geocoded), so this is a
+                                    pure UX shortcut: take me back to the booking
+                                    and surface me when refs express interest. */}
+                                <Link
+                                    href={`/app/bookings/${id}`}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Megaphone className="w-4 h-4" />
+                                    Post and wait for referees
+                                </Link>
                             </div>
                         ) : (
                             <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 flex items-start gap-3">

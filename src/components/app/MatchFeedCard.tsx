@@ -119,7 +119,9 @@ export function MatchFeedCard({ booking, onExpressInterest }: MatchFeedCardProps
                 )}
                 {expressed ? (
                     <div className="text-center py-2 text-sm font-semibold text-emerald-600">
-                        Interest sent — awaiting coach response
+                        {booking.is_sos
+                            ? 'SOS accepted — awaiting coach confirmation'
+                            : 'Interest sent — awaiting coach response'}
                     </div>
                 ) : (
                     <Button
@@ -129,7 +131,7 @@ export function MatchFeedCard({ booking, onExpressInterest }: MatchFeedCardProps
                         loading={isPending}
                         variant={booking.is_sos ? 'danger' : 'primary'}
                     >
-                        {booking.is_sos ? "I'm Available (Urgent)" : "I'm Available"}
+                        {booking.is_sos ? 'Accept SOS Call' : "I'm Available"}
                     </Button>
                 )}
             </div>

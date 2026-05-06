@@ -197,7 +197,10 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
             if (insertError) {
                 console.error('Admin profile insert failed:', insertError)
             } else {
-                // If referee, create referee_profile
+                // If referee, create referee_profile.
+                // is_available: true documented in code rather than relying
+                // solely on the DB default (migration 0146) — keeps the signup
+                // contract explicit and survives column-default changes.
                 if (data.role === 'referee') {
                     await adminClient
                         .from('referee_profiles')
@@ -205,6 +208,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                             profile_id: authData.user.id,
                             fa_id: data.fa_number || null,
                             fa_verification_status: data.fa_number ? 'pending' : 'not_provided',
+                            is_available: true,
                         })
                 } else if (data.fa_number) {
                     // Store FA number in user metadata for coaches
@@ -229,7 +233,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                 console.error('Manual profile insert failed:', insertError)
             }
 
-            // If referee, create referee_profile
+            // If referee, create referee_profile (see comment above re: is_available).
             if (data.role === 'referee') {
                 await supabase
                     .from('referee_profiles')
@@ -237,6 +241,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                         profile_id: authData.user.id,
                         fa_id: data.fa_number || null,
                         fa_verification_status: data.fa_number ? 'pending' : 'not_provided',
+                        is_available: true,
                     })
             }
         }
