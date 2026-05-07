@@ -9,7 +9,7 @@ import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { checkBookingRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
-import { requiresDBS, BOOKING_FEE_PENCE } from '@/lib/constants'
+import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE } from '@/lib/constants'
 
 /** Fetch the current travel cost rate from platform settings */
 export async function getTravelRate(): Promise<number> {
@@ -674,7 +674,14 @@ export async function acceptOffer(offerId: string) {
     // Confirm booking atomically: accept offer → escrow hold → create assignment.
     // Platform booking fee is held alongside price_pence so the coach is charged
     // (price + fee) into escrow; on release the fee goes to the platform, not the ref.
-    const platformFeePence = await getBookingFeePence()
+    //
+    // SOS bookings additionally pool the SOS premium fee into the platform-fee
+    // figure, so the £1.99 lands in escrow with everything else and is only
+    // realised once the booking is confirmed (rather than the previous upfront
+    // wallet debit at broadcast time).
+    const offerBooking = Array.isArray(offer.booking) ? offer.booking[0] : offer.booking
+    const isSosBooking = !!offerBooking?.is_sos
+    const platformFeePence = (await getBookingFeePence()) + (isSosBooking ? SOS_FEE_PENCE : 0)
     const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
         p_offer_id: offerId,
         p_platform_fee_pence: platformFeePence,
@@ -842,7 +849,7 @@ export async function coachConfirmInterest(
 
     const { data: offer, error: offerError } = await supabase
         .from('booking_offers')
-        .select('id, booking_id, referee_id, status, price_pence, booking:bookings(id, coach_id, ground_name, location_postcode, match_date, kickoff_time)')
+        .select('id, booking_id, referee_id, status, price_pence, booking:bookings(id, coach_id, ground_name, location_postcode, match_date, kickoff_time, is_sos)')
         .eq('id', offerId)
         .single()
 
@@ -865,8 +872,12 @@ export async function coachConfirmInterest(
     // UPDATE used to be silently dropped (zero rows, no error), then confirm_booking
     // read price_pence as NULL and returned "Offer has no valid price". The RPC
     // runs SECURITY DEFINER and re-checks the caller is the booking's coach.
+    //
+    // SOS bookings pool the £1.99 premium fee into the platform fee so it
+    // lands in escrow alongside the booking fee, match fee, and travel —
+    // released to the platform only when the booking actually confirms.
     const pricePence = Math.round(pricePounds * 100)
-    const platformFeePence = await getBookingFeePence()
+    const platformFeePence = (await getBookingFeePence()) + (booking.is_sos ? SOS_FEE_PENCE : 0)
     const { data: rpcResult, error: rpcError } = await supabase.rpc('confirm_booking', {
         p_offer_id: offerId,
         p_platform_fee_pence: platformFeePence,

@@ -8,7 +8,6 @@ import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { validate, bookingSchema } from '@/lib/validation'
 import { toLocalDateString } from '@/lib/utils'
-import { SOS_FEE_PENCE } from '@/lib/constants'
 
 interface SOSBookingData {
     location_postcode: string
@@ -37,29 +36,11 @@ export async function createSOSBooking(data: SOSBookingData) {
     })
     if (validationError) return { error: validationError }
 
-    // ── Premium fee pre-flight check ──────────────────────────────────────
-    // SOS broadcasts page every nearby available ref with an urgent push, so
-    // we charge a small per-broadcast fee to gate spam / accidental presses.
-    // We probe the wallet first so the user gets a clean error before any
-    // side effect (booking insert, geocoding, broadcast) — much better UX
-    // than charging then rolling back. The atomic charge_sos_fee RPC below
-    // re-checks balance under FOR UPDATE so this isn't a TOCTOU bug; it's
-    // just for friendlier UX in the common case.
-    const { data: wallet } = await supabase
-        .from('wallets')
-        .select('balance_pence')
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-    const balancePence = wallet?.balance_pence ?? 0
-    if (balancePence < SOS_FEE_PENCE) {
-        return {
-            error: `Broadcasting an SOS costs £${(SOS_FEE_PENCE / 100).toFixed(2)} but your wallet has £${(balancePence / 100).toFixed(2)}. Top up to continue.`,
-            code: 'INSUFFICIENT_FUNDS',
-            requiredPence: SOS_FEE_PENCE,
-            currentBalancePence: balancePence,
-        }
-    }
+    // The £1.99 SOS fee is no longer charged upfront — it's bundled into the
+    // booking's platform fee (alongside the £0.99 booking fee) when the
+    // coach confirms a referee, so it's held in escrow with the rest of the
+    // total and only realised once a referee actually accepts. See
+    // acceptOffer / coachConfirmInterest for the platform-fee bump.
 
     // Geocode the postcode
     let latitude: number | null = null
@@ -95,52 +76,6 @@ export async function createSOSBooking(data: SOSBookingData) {
         .single()
 
     if (bookingError) return { error: bookingError.message }
-
-    // ── Atomic premium-fee debit ──────────────────────────────────────────
-    // Booking row exists; now charge the £1.99 fee under FOR UPDATE on the
-    // wallet (migration 0154). If this fails (race with a concurrent debit
-    // that just drained the wallet), we delete the booking we just inserted
-    // so the user isn't left with a stuck SOS draft they didn't pay for.
-    const { data: chargeResult, error: chargeRpcError } = await supabase.rpc('charge_sos_fee', {
-        p_user_id: user.id,
-        p_amount_pence: SOS_FEE_PENCE,
-        p_booking_id: booking.id,
-    })
-
-    const chargeOk =
-        !chargeRpcError &&
-        (chargeResult as { success?: boolean; error?: string } | null)?.success === true
-
-    if (!chargeOk) {
-        // Roll back the booking via soft-delete (deleted_at). The rest of
-        // the app uses the same pattern — RLS allows the coach to UPDATE
-        // their own booking row but blocks hard DELETE, so an earlier
-        // version of this rollback (.delete()) silently failed and left
-        // orphan SOS draft rows the user had to manually cancel.
-        const { error: deleteError } = await supabase
-            .from('bookings')
-            .update({ deleted_at: new Date().toISOString() })
-            .eq('id', booking.id)
-            .eq('coach_id', user.id)
-
-        if (deleteError) {
-            Sentry.captureException(deleteError, {
-                tags: { 'sos.fee': 'rollback-failed' },
-                user: { id: user.id },
-                extra: { bookingId: booking.id },
-                level: 'fatal',
-            })
-        }
-
-        const charge = chargeResult as { error?: string; code?: string } | null
-        return {
-            error:
-                charge?.error ||
-                chargeRpcError?.message ||
-                'Could not charge the SOS fee. Please try again.',
-            code: charge?.code,
-        }
-    }
 
     // Find nearby available referees and create offers + notify
     if (latitude && longitude) {
