@@ -8,8 +8,11 @@ import { ActionCard } from '@/components/app/ActionCard'
 import { BookingCardCompact } from '@/components/app/BookingCard'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { AdminTriagePanel } from '@/components/app/AdminTriagePanel'
+import { AdminAuditPanel } from '@/components/app/AdminAuditPanel'
 import type { StatItem } from '@/components/app/DashboardStats'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
+import type { AdminTriage } from '@/app/app/admin/actions'
 import {
     ShieldCheck, FileCheck, CalendarDays, Plus, Clock,
     ClipboardList, Siren, Banknote, Eye, Monitor, Users,
@@ -29,6 +32,7 @@ interface AdminDashboardProps {
         fa_verification_status: FAVerificationStatus
         county: string | null
     } | null
+    triage: AdminTriage | null
 }
 
 export function AdminDashboard({
@@ -38,6 +42,7 @@ export function AdminDashboard({
     refereeStats,
     recentBookings,
     refereeProfile,
+    triage,
 }: AdminDashboardProps) {
     const [activeView, setActiveView] = useState<ViewMode>('admin')
 
@@ -88,6 +93,10 @@ export function AdminDashboard({
             {/* Admin View */}
             {activeView === 'admin' && (
                 <>
+                    {triage && <AdminTriagePanel triage={triage} />}
+
+                    <AdminAuditPanel />
+
                     <div className="mb-6">
                         <DashboardStats stats={adminStats} />
                     </div>
