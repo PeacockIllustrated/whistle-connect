@@ -70,6 +70,12 @@ BEGIN
         updated_at    = NOW()
     WHERE id = v_wallet.id;
 
+    -- reference_type must be one of the values allowed by
+    -- wallet_transactions_reference_type_check ('booking', 'stripe_checkout',
+    -- 'stripe_payout', 'admin_action'). The SOS fee row uses 'booking'
+    -- because reference_id already points to the booking — reporting can
+    -- still discriminate via JOIN to bookings.is_sos and the description
+    -- field disambiguates visually.
     INSERT INTO wallet_transactions (
         wallet_id,
         type,
@@ -85,7 +91,7 @@ BEGIN
         p_amount_pence,
         'debit',
         v_wallet.balance_pence - p_amount_pence,
-        'sos_booking',
+        'booking',
         p_booking_id::TEXT,
         'SOS broadcast premium fee'
     );
