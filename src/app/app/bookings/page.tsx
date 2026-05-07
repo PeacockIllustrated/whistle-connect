@@ -321,11 +321,24 @@ export default async function BookingsPage({
             `)
             .eq('referee_id', user.id)
 
-        // Build an index of which assignments are archived.
+        // Build per-booking archive indexes for both archive surfaces a referee
+        // can use:
+        //   - booking_assignments.archived_at  — once the booking is confirmed
+        //   - booking_offers.referee_archived_at — when the ref only has an
+        //     offer on the booking (status sent / accepted_priced / declined /
+        //     withdrawn). archiveBookingAsReferee falls back to archiving the
+        //     offer row when no assignment exists, so we have to honour that
+        //     here or the booking won't actually disappear after the swipe.
         const assignmentByBooking = new Map<string, { archived_at: string | null }>()
         ;(assignments || []).forEach((a: { booking?: { id?: string }; archived_at: string | null }) => {
             const bid = a.booking?.id
             if (bid) assignmentByBooking.set(bid, { archived_at: a.archived_at })
+        })
+
+        const offerArchivedByBooking = new Map<string, string | null>()
+        ;(offers || []).forEach((o: { booking?: { id?: string }; referee_archived_at?: string | null }) => {
+            const bid = o.booking?.id
+            if (bid) offerArchivedByBooking.set(bid, o.referee_archived_at ?? null)
         })
 
         const offerBookings = (offers || [])
@@ -341,9 +354,16 @@ export default async function BookingsPage({
             if (!bookingMap.has(b.id)) bookingMap.set(b.id, b)
         })
 
-        // Decorate each entry with the viewer's archive flag.
+        // Decorate each entry with the viewer's archive flag. If the ref has
+        // an assignment for this booking, the assignment row's archived_at is
+        // canonical (the offer-side flag is only meaningful while the booking
+        // is offer-only). Otherwise fall back to the offer's flag.
         bookingMap.forEach((b, id) => {
-            b.archivedForViewer = assignmentByBooking.get(id)?.archived_at != null
+            if (assignmentByBooking.has(id)) {
+                b.archivedForViewer = assignmentByBooking.get(id)?.archived_at != null
+            } else {
+                b.archivedForViewer = offerArchivedByBooking.get(id) != null
+            }
         })
 
         const all = Array.from(bookingMap.values())
