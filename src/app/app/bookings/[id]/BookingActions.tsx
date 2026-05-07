@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/Button'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { useToast } from '@/components/ui/Toast'
 import { acceptOffer, declineOffer, cancelBooking, completeBooking } from '../actions'
+import { expressInterest } from '@/app/app/feed/actions'
+import { Siren } from 'lucide-react'
 import { BookingOffer, BookingWithDetails } from '@/lib/types'
 // Input no longer needed — referee doesn't set price
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
@@ -184,8 +186,66 @@ export function BookingActions({
     if (isReferee && userOffer?.status === 'sent') {
         const hasOfferedFee = (userOffer.price_pence ?? 0) > 0
 
-        // 1b — waiting on coach to confirm + set the fee
+        // 1b — no offered fee yet. Two distinct sub-cases differentiated by
+        // responded_at:
+        //
+        //   1b.i  responded_at IS NULL on a SOS booking → the offer was
+        //         pre-inserted by the SOS broadcast. The ref hasn't actually
+        //         engaged yet (e.g. they opened the SOS notification but
+        //         landed here without using the feed's Accept SOS Call
+        //         button). Render the Accept SOS Call button — calling
+        //         expressInterest will promote the offer (set responded_at)
+        //         and bring them into the actively-accepted state.
+        //
+        //   1b.ii responded_at IS SET → the ref tapped "I'm Available" via
+        //         the feed (or the SOS Call button on a previous visit) and
+        //         is now waiting for the coach to confirm. Render the
+        //         existing "Waiting for coach" copy.
         if (!hasOfferedFee) {
+            const isPassiveSosInvite = !!booking.is_sos && !userOffer.responded_at
+
+            if (isPassiveSosInvite) {
+                return (
+                    <div className="space-y-3">
+                        {errorMessage && (
+                            <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm text-center">
+                                {errorMessage}
+                            </div>
+                        )}
+
+                        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+                            <div className="flex items-center gap-2 mb-1">
+                                <Siren className="w-5 h-5 text-red-600 flex-shrink-0" />
+                                <p className="font-bold text-red-700">SOS Match</p>
+                            </div>
+                            <p className="text-sm text-red-700/90">
+                                A coach urgently needs a referee. Tap below to put yourself forward — the coach will confirm the fee and book you in.
+                            </p>
+                        </div>
+
+                        <Button
+                            fullWidth
+                            variant="danger"
+                            onClick={async () => {
+                                setAccepting(true)
+                                setErrorMessage('')
+                                const result = await expressInterest(booking.id)
+                                if (result.error) {
+                                    setErrorMessage(result.error)
+                                    setAccepting(false)
+                                } else {
+                                    router.refresh()
+                                }
+                            }}
+                            loading={accepting}
+                        >
+                            <Check className="w-5 h-5 mr-2" />
+                            Accept SOS Call
+                        </Button>
+                    </div>
+                )
+            }
+
             return (
                 <div className="space-y-3">
                     <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center">
