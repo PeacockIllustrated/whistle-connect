@@ -7,7 +7,7 @@ import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminDashboard } from '@/components/app/AdminDashboard'
 import { toLocalDateString } from '@/lib/utils'
-import { Plus, Clock, ClipboardList, Siren, Banknote } from 'lucide-react'
+import { Clock, ClipboardList, Siren, Banknote, CalendarDays, MapPin, Trophy } from 'lucide-react'
 import WalletWidget from '@/components/app/WalletWidget'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import type { StatItem } from '@/components/app/DashboardStats'
@@ -296,14 +296,39 @@ export default async function AppHomePage() {
             {/* Coach View */}
             {isCoach && (
                 <>
-                    {/* Quick Actions */}
+                    {/* Quick Actions — three-card booking chooser mirrors the
+                        pre-login /book page so coaches always have a clear path
+                        to Central Venue / Tournament without hunting for them. */}
                     <div className="space-y-3 mb-4">
                         <ActionCard
-                            href="/app/bookings/new"
-                            icon={<Plus className="w-6 h-6" />}
-                            title="Book a Referee"
-                            subtitle="Create a new booking request"
-                            variant="primary"
+                            href="/app/bookings/new?type=individual"
+                            icon={
+                                <div className="w-12 h-12 rounded-xl bg-[var(--wc-blue)]/10 flex items-center justify-center text-[var(--wc-blue)]">
+                                    <CalendarDays className="w-6 h-6" />
+                                </div>
+                            }
+                            title="Individual Game"
+                            subtitle="Book a referee for a single match"
+                        />
+                        <ActionCard
+                            href="/app/bookings/new?type=central"
+                            icon={
+                                <div className="w-12 h-12 rounded-xl bg-[var(--wc-red)]/10 flex items-center justify-center text-[var(--wc-red)]">
+                                    <MapPin className="w-6 h-6" />
+                                </div>
+                            }
+                            title="Central Venue"
+                            subtitle="Multiple games at one location"
+                        />
+                        <ActionCard
+                            href="/app/bookings/new?type=tournament"
+                            icon={
+                                <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                                    <Trophy className="w-6 h-6" />
+                                </div>
+                            }
+                            title="Tournament"
+                            subtitle="Cover a tournament across multiple matches"
                         />
                         <ActionCard
                             href="/app/bookings/sos"

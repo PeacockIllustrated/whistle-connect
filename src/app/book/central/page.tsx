@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { ChevronLeft } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { ChevronLeft, Banknote } from 'lucide-react'
 import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
@@ -16,6 +16,19 @@ import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 
 export default function CentralBookingPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    // ?type=tournament repurposes this same form for the third booking type.
+    // Tournament reuses the central-venue UX but tags the booking row with
+    // booking_type='tournament' so downstream surfaces can render it as a
+    // tournament rather than a generic central venue.
+    const isTournament = searchParams.get('type') === 'tournament'
+    const bookingType: 'central' | 'tournament' = isTournament ? 'tournament' : 'central'
+    const headingPageTitle = isTournament ? 'Tournament Booking' : 'Central Venue Booking'
+    const headingFormTitle = isTournament ? 'Tournament Details' : 'Event Details'
+    const headingFormSubtitle = isTournament
+        ? 'Enter the details for your tournament day to find available referees.'
+        : 'Enter the details for your central venue event to find available referees.'
+
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [celebration, setCelebration] = useState<{ bookingId: string } | null>(null)
@@ -26,6 +39,7 @@ export default function CentralBookingPage() {
         location_postcode: '',
         address_text: '',
         notes: '',
+        budget_pounds: '' as string,
     })
 
     const updateField = (field: string, value: string) => {
@@ -49,6 +63,13 @@ export default function CentralBookingPage() {
         setIsSubmitting(true)
         setError('')
 
+        // Match fee is collected up front so refs see it on the feed and the
+        // coach has it pre-set when sending offers — fixes the missing-price
+        // gap reported by Davey.
+        const budget = formData.budget_pounds.trim()
+            ? parseInt(formData.budget_pounds.trim(), 10)
+            : undefined
+
         try {
             const result = await createBooking({
                 match_date: formData.match_date,
@@ -58,7 +79,8 @@ export default function CentralBookingPage() {
                 ground_name: formData.address_text,
                 address_text: formData.address_text,
                 notes: formData.notes,
-                booking_type: 'central',
+                budget_pounds: budget,
+                booking_type: bookingType,
             })
             if (result?.error) {
                 setError(result.error)
@@ -90,16 +112,16 @@ export default function CentralBookingPage() {
                     <Link href="/book" className="p-2 -ml-2 hover:bg-white/10 rounded-lg transition-colors">
                         <ChevronLeft className="w-5 h-5" />
                     </Link>
-                    <h1 className="text-lg font-semibold tracking-tight">Central Venue Booking</h1>
+                    <h1 className="text-lg font-semibold tracking-tight">{headingPageTitle}</h1>
                 </div>
             </header>
 
             <main className="flex-1 max-w-[var(--content-max-width)] mx-auto w-full px-4 py-8">
                 <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 shadow-sm">
                     <div className="mb-8">
-                        <h2 className="text-2xl font-bold mb-2">Event Details</h2>
+                        <h2 className="text-2xl font-bold mb-2">{headingFormTitle}</h2>
                         <p className="text-[var(--foreground-muted)] text-sm">
-                            Enter the details for your central venue event to find available referees.
+                            {headingFormSubtitle}
                         </p>
                     </div>
 
@@ -160,6 +182,33 @@ export default function CentralBookingPage() {
                             {debouncedPostcode.length >= 5 && (
                                 <VenueMap postcode={debouncedPostcode} height={160} />
                             )}
+
+                            {/* Match fee — required so coaches can't accidentally
+                                ship a £0 listing onto the ref feed. Same shape
+                                as the post-login form's price field. */}
+                            <div>
+                                <label className="block text-sm font-medium text-[var(--foreground)] mb-1.5 flex items-center gap-1.5">
+                                    <Banknote className="w-4 h-4 text-emerald-600" />
+                                    Referee match fee
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">&pound;</span>
+                                    <input
+                                        type="number"
+                                        inputMode="decimal"
+                                        placeholder="0"
+                                        value={formData.budget_pounds}
+                                        onChange={(e) => updateField('budget_pounds', e.target.value)}
+                                        className="w-full pl-7 pr-3 py-2.5 min-h-[44px] text-base bg-white border border-[var(--border-color)] rounded-[var(--radius-md)] focus:outline-none focus:ring-2 focus:ring-[var(--border-focus)] focus:border-transparent transition-colors"
+                                        min="1"
+                                        max="500"
+                                        required
+                                    />
+                                </div>
+                                <p className="text-xs text-[var(--foreground-muted)] mt-1.5">
+                                    The amount you&apos;ll pay the referee. Travel costs and the booking fee are added on top when you send an offer.
+                                </p>
+                            </div>
 
                             <Input
                                 label="Notes (Optional)"
