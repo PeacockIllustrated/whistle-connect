@@ -10,6 +10,7 @@ import { Select } from '@/components/ui/Select'
 import { useToast } from '@/components/ui/Toast'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { ChevronLeft, Siren, MapPin, Clock, Users, Banknote, Shield } from 'lucide-react'
+import { SOS_FEE_PENCE } from '@/lib/constants'
 
 const AGE_GROUPS = [
     'Under 7', 'Under 8', 'Under 9', 'Under 10', 'Under 11', 'Under 12',
@@ -60,6 +61,14 @@ export default function SOSPage() {
             })
 
             if (result.error) {
+                // If the wallet can't cover the SOS fee, route the user
+                // straight to the wallet so they can top up — clearer CTA
+                // than just toasting the error.
+                if (result.code === 'INSUFFICIENT_FUNDS' || result.code === 'NO_WALLET') {
+                    showToast({ message: result.error, type: 'error' })
+                    router.push('/app/wallet')
+                    return
+                }
                 showToast({ message: result.error, type: 'error' })
             } else {
                 setCelebration(true)
@@ -69,6 +78,8 @@ export default function SOSPage() {
             }
         })
     }
+
+    const sosFeePounds = (SOS_FEE_PENCE / 100).toFixed(2)
 
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto pb-24">
@@ -97,11 +108,20 @@ export default function SOSPage() {
                 </div>
             </div>
 
-            {/* Urgency notice */}
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+            {/* Urgency notice + premium-fee disclosure. The fee makes this an
+                intentional, paid-for action: stops accidental spam and signals
+                to nearby refs that the broadcast is genuine. */}
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 space-y-3">
                 <p className="text-sm text-red-700 font-medium">
                     This sends an urgent notification to all available referees near your location. Refs who accept will appear under SOS RESPONSES on the booking page — pick one to confirm and you&apos;ll go straight into a chat with them.
                 </p>
+                <div className="flex items-start gap-2 pt-2 border-t border-red-200/70">
+                    <Banknote className="w-4 h-4 text-red-700 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700/90">
+                        <span className="font-semibold">Premium feature: &pound;{sosFeePounds} fee</span>
+                        {' '}charged to your wallet on broadcast. Non-refundable, even if no referee accepts.
+                    </p>
+                </div>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -228,11 +248,11 @@ export default function SOSPage() {
                     className="shadow-lg"
                 >
                     <Siren className="w-5 h-5 mr-2" />
-                    BROADCAST SOS
+                    BROADCAST SOS &middot; &pound;{sosFeePounds}
                 </Button>
 
                 <p className="text-[10px] text-center text-[var(--foreground-muted)]">
-                    * Nearby available referees within 30km will be notified immediately
+                    * Nearby available referees within 30km will be notified immediately. &pound;{sosFeePounds} debited from your wallet on broadcast — non-refundable.
                 </p>
             </form>
         </div>

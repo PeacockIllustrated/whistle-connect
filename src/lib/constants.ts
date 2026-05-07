@@ -60,3 +60,11 @@ export function requiresDBS(ageGroup: string | null | undefined): boolean {
 
 /** Platform booking fee added to coach's total per booking, in pence. */
 export const BOOKING_FEE_PENCE = 99
+
+/**
+ * Premium fee charged to the coach's wallet on SOS broadcast creation.
+ * Non-refundable — even if no referee accepts. The point is to gate
+ * casual / accidental SOS spam: SOS broadcasts page nearby refs urgently
+ * so the cost-of-attention is real.
+ */
+export const SOS_FEE_PENCE = 199
