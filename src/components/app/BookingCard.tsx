@@ -14,10 +14,20 @@ import {
 } from '@/app/app/bookings/actions'
 import { useToast } from '@/components/ui/Toast'
 import { SwipeableCard } from '@/components/ui/SwipeableCard'
-import { Archive, ArchiveRestore, MessageCircle, CalendarDays, Clock, XCircle } from 'lucide-react'
+import { Archive, ArchiveRestore, MessageCircle, CalendarDays, Clock, XCircle, AlertTriangle, Hourglass } from 'lucide-react'
 
 export interface BookingCardProps {
-    booking: BookingWithDetails & { offer_status?: string }
+    booking: BookingWithDetails & {
+        offer_status?: string
+        /** Set when the viewer's row in this booking comes via booking_offers
+         * (not booking_assignments). Lets the card distinguish between
+         * "coach has sent me a priced invite — I need to respond" and
+         * "I tapped I'm Available, waiting on the coach". */
+        offer_price_pence?: number | null
+        /** Decorated by the bookings page when an assignment row exists for
+         * this viewer — distinguishes confirmed bookings from offer-only ones. */
+        is_assigned?: boolean
+    }
     /** When the current viewer is a referee. Misnamed historically — name reflects "show coach info on the card". */
     showCoach?: boolean
     showReferee?: boolean
@@ -134,6 +144,29 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
                     <XCircle className="w-3 h-3" />
                     Cancelled{isReferee ? ' by coach' : ''}
                 </div>
+            )}
+
+            {/* Pending state banners for referees. Without these, an unaccepted
+                offer landed in Upcoming next to confirmed bookings with the
+                same visual weight, making it look like the ref had already been
+                booked in. Two sub-cases:
+
+                  - offer_status='sent' with a price → coach has sent a direct
+                    invite, ref needs to respond. AMBER, action-required.
+                  - offer_status='sent' with no price → ref tapped "I'm
+                    Available", awaiting the coach. NEUTRAL, just a heads-up. */}
+            {isReferee && booking.status !== 'cancelled' && booking.offer_status === 'sent' && !booking.is_assigned && (
+                (booking.offer_price_pence ?? 0) > 0 ? (
+                    <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider w-fit">
+                        <AlertTriangle className="w-3 h-3" />
+                        Action required &mdash; tap to respond
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md bg-[var(--neutral-100)] text-[var(--foreground-muted)] text-[10px] font-bold uppercase tracking-wider w-fit">
+                        <Hourglass className="w-3 h-3" />
+                        Awaiting coach response
+                    </div>
+                )
             )}
 
             {/* Header Row */}
