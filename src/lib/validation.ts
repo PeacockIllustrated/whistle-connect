@@ -75,7 +75,7 @@ export const bookingSchema = z.object({
     address_text: z.string().max(300, 'Address is too long').optional().or(z.literal('')),
     notes: z.string().max(1000, 'Notes are too long').optional().or(z.literal('')),
     budget_pounds: z.number().positive('Budget must be positive').max(500, 'Budget cannot exceed £500').optional(),
-    booking_type: z.enum(['individual', 'central']).optional(),
+    booking_type: z.enum(['individual', 'central', 'tournament']).optional(),
 })
 
 export const confirmPriceSchema = z.object({

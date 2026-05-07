@@ -49,9 +49,24 @@ export default function NewBookingPage() {
             address_text: params.get('address_text') || '',
             notes: params.get('notes') || '',
             budget_pounds: params.get('budget_pounds') ? parseInt(params.get('budget_pounds')!) : undefined,
-            booking_type: (params.get('type') as 'individual' | 'central') || 'individual',
+            booking_type:
+                (params.get('type') as 'individual' | 'central' | 'tournament') ||
+                'individual',
         }
     })
+
+    // Derived flags for the central + tournament variants. Both share the same
+    // core form but: (a) hide team-name inputs (no fixture-vs-fixture concept
+    // for these), (b) adapt the page heading copy.
+    const bookingType = formData.booking_type ?? 'individual'
+    const isCentral = bookingType === 'central'
+    const isTournament = bookingType === 'tournament'
+    const hideTeamNames = isCentral || isTournament
+    const pageHeading = isTournament
+        ? 'New Tournament Booking'
+        : isCentral
+            ? 'New Central Venue Booking'
+            : 'New Booking'
 
     // Determine if page was loaded WITH URL params (one-time check, not reactive).
     // Uses useState lazy initializer so the value is computed once on mount and
@@ -122,7 +137,7 @@ export default function NewBookingPage() {
                     <ChevronLeft className="w-5 h-5" />
                 </Link>
                 <h1 className="text-lg font-semibold">
-                    {isPreFilled ? 'Confirm Booking Details' : 'New Booking'}
+                    {isPreFilled ? 'Confirm Booking Details' : pageHeading}
                 </h1>
             </div>
 
@@ -159,12 +174,14 @@ export default function NewBookingPage() {
                                             <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)] mb-1">Match Date & Time</p>
                                             <p className="font-medium">{formData.match_date} @ {formData.kickoff_time}</p>
                                         </div>
-                                        <div className="p-3 bg-[var(--neutral-50)] rounded-xl border border-[var(--border-color)]">
-                                            <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)] mb-1">Teams</p>
-                                            <p className="font-medium">
-                                                {formData.home_team || 'Home'} vs {formData.away_team || 'Away'}
-                                            </p>
-                                        </div>
+                                        {!hideTeamNames && (
+                                            <div className="p-3 bg-[var(--neutral-50)] rounded-xl border border-[var(--border-color)]">
+                                                <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)] mb-1">Teams</p>
+                                                <p className="font-medium">
+                                                    {formData.home_team || 'Home'} vs {formData.away_team || 'Away'}
+                                                </p>
+                                            </div>
+                                        )}
                                         <div className="p-3 bg-[var(--neutral-50)] rounded-xl border border-[var(--border-color)]">
                                             <p className="text-[10px] uppercase font-bold text-[var(--neutral-400)] mb-1">Location</p>
                                             <p className="font-medium">{formData.address_text || formData.ground_name}</p>
@@ -228,20 +245,26 @@ export default function NewBookingPage() {
                                             />
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <Input
-                                                label="Home Team"
-                                                value={formData.home_team || ''}
-                                                onChange={(e) => updateField('home_team', e.target.value)}
-                                                placeholder="Optional"
-                                            />
-                                            <Input
-                                                label="Away Team"
-                                                value={formData.away_team || ''}
-                                                onChange={(e) => updateField('away_team', e.target.value)}
-                                                placeholder="Optional"
-                                            />
-                                        </div>
+                                        {/* Team name inputs only make sense for
+                                            Individual bookings — central venues
+                                            and tournaments cover multiple games
+                                            without a single home/away fixture. */}
+                                        {!hideTeamNames && (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <Input
+                                                    label="Home Team"
+                                                    value={formData.home_team || ''}
+                                                    onChange={(e) => updateField('home_team', e.target.value)}
+                                                    placeholder="Optional"
+                                                />
+                                                <Input
+                                                    label="Away Team"
+                                                    value={formData.away_team || ''}
+                                                    onChange={(e) => updateField('away_team', e.target.value)}
+                                                    placeholder="Optional"
+                                                />
+                                            </div>
+                                        )}
 
                                         <Input
                                             label="Address / Ground"

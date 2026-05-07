@@ -113,7 +113,7 @@ export interface Booking {
     address_text: string | null
     notes: string | null
     budget_pounds: number | null
-    booking_type: 'individual' | 'central'
+    booking_type: 'individual' | 'central' | 'tournament'
     latitude: number | null
     longitude: number | null
     is_sos: boolean
@@ -225,7 +225,7 @@ export interface BookingFormData {
     address_text?: string
     notes?: string
     budget_pounds?: number
-    booking_type?: 'individual' | 'central'
+    booking_type?: 'individual' | 'central' | 'tournament'
 }
 
 export interface SearchCriteria {

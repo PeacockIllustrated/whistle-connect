@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { ChevronLeft, CalendarDays, MapPin } from 'lucide-react'
+import { ChevronLeft, CalendarDays, MapPin, Trophy } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { ActionCard } from '@/components/app/ActionCard'
 import { RoleAccessDenied } from '@/components/app/RoleAccessDenied'
@@ -123,6 +123,17 @@ export default function BookInterstitialPage() {
                         icon={
                             <div className="w-12 h-12 rounded-xl bg-[var(--wc-red)]/10 flex items-center justify-center text-[var(--wc-red)]">
                                 <MapPin className="w-6 h-6" />
+                            </div>
+                        }
+                    />
+
+                    <ActionCard
+                        onClick={() => handleChoice('/book/central?type=tournament')}
+                        title="Tournament"
+                        subtitle="Cover a tournament day across multiple matches"
+                        icon={
+                            <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
+                                <Trophy className="w-6 h-6" />
                             </div>
                         }
                     />
