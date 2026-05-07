@@ -238,9 +238,25 @@ export function BookingActions({
                                 }
                             }}
                             loading={accepting}
+                            disabled={declining}
                         >
                             <Check className="w-5 h-5 mr-2" />
                             Accept SOS Call
+                        </Button>
+                        {/* Decline closes the SOS invite for this ref (offer
+                            status → declined). Mirrors the Accept/Decline pair
+                            shown in Scenario 1a, so the ref always has an
+                            explicit way to dismiss an SOS rather than leaving
+                            it pending in their list. */}
+                        <Button
+                            fullWidth
+                            variant="outline"
+                            onClick={handleDecline}
+                            loading={declining}
+                            disabled={accepting}
+                        >
+                            <XCircle className="w-5 h-5 mr-2" />
+                            Decline
                         </Button>
                     </div>
                 )
