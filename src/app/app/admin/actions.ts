@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
@@ -371,4 +371,117 @@ export async function updatePlatformSetting(
 
     revalidatePath('/app/admin/settings')
     return { success: true }
+}
+
+// ── Admin triage aggregator ──────────────────────────────────────────────
+
+export type AdminTriage = {
+    pendingFAVerifications: { count: number; oldestAgeHours: number | null; byCounty: Record<string, number> }
+    openDisputes: { count: number; oldestAgeHours: number | null }
+    stuckEscrow: { count: number }
+    failedOrPendingWithdrawals: { count: number }
+    dbsExpiringSoon: { count: number }
+    webhookFailures24h: { count: number }
+}
+
+function hoursSince(iso: string | null | undefined): number | null {
+    if (!iso) return null
+    const ms = Date.now() - new Date(iso).getTime()
+    return Math.max(0, Math.round(ms / (1000 * 60 * 60)))
+}
+
+/**
+ * Single round-trip aggregator for the admin home triage panel.
+ * Uses the service-role client so counts cross RLS-restricted tables
+ * (webhook_events, withdrawal_requests). Caller must already be admin —
+ * there is no role check here because this is invoked from a server
+ * page that has guarded the user before calling.
+ */
+export async function getAdminTriage(): Promise<{ data?: AdminTriage; error?: string }> {
+    const supabase = await createClient()
+    const user = await requireAdmin(supabase)
+    if (!user) return { error: 'Admin access required' }
+
+    const admin = createAdminClient()
+    if (!admin) return { error: 'Service role unavailable' }
+
+    const now = new Date()
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+    const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+    const thirtyDaysAhead = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
+    const todayStr = now.toISOString().slice(0, 10)
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().slice(0, 10)
+
+    const [
+        faPending,
+        disputesOpen,
+        stuckEscrowRows,
+        withdrawalsBad,
+        dbsExpiring,
+        webhookFails,
+    ] = await Promise.all([
+        admin
+            .from('fa_verification_requests')
+            .select('id, county, requested_at')
+            .eq('status', 'awaiting_fa_response'),
+        admin
+            .from('disputes')
+            .select('id, created_at')
+            .eq('status', 'open')
+            .order('created_at', { ascending: true }),
+        admin
+            .from('bookings')
+            .select('id', { count: 'exact', head: true })
+            .eq('status', 'confirmed')
+            .lt('match_date', sevenDaysAgoStr)
+            .is('escrow_released_at', null)
+            .is('deleted_at', null),
+        admin
+            .from('withdrawal_requests')
+            .select('id', { count: 'exact', head: true })
+            .in('status', ['failed', 'pending'])
+            .lt('created_at', oneHourAgo.toISOString()),
+        admin
+            .from('referee_profiles')
+            .select('profile_id', { count: 'exact', head: true })
+            .gte('dbs_expires_at', todayStr)
+            .lte('dbs_expires_at', thirtyDaysAhead.toISOString().slice(0, 10)),
+        admin
+            .from('webhook_events')
+            .select('id', { count: 'exact', head: true })
+            .gte('received_at', twentyFourHoursAgo.toISOString())
+            .not('error', 'is', null),
+    ])
+
+    const faRows = faPending.data || []
+    const byCounty: Record<string, number> = {}
+    let oldestFAAge: number | null = null
+    for (const r of faRows) {
+        const c = (r.county as string) || 'Unknown'
+        byCounty[c] = (byCounty[c] || 0) + 1
+        const age = hoursSince(r.requested_at as string | null)
+        if (age !== null && (oldestFAAge === null || age > oldestFAAge)) oldestFAAge = age
+    }
+
+    const disputeRows = disputesOpen.data || []
+    const oldestDisputeAge = disputeRows.length > 0 ? hoursSince(disputeRows[0].created_at as string | null) : null
+
+    return {
+        data: {
+            pendingFAVerifications: {
+                count: faRows.length,
+                oldestAgeHours: oldestFAAge,
+                byCounty,
+            },
+            openDisputes: {
+                count: disputeRows.length,
+                oldestAgeHours: oldestDisputeAge,
+            },
+            stuckEscrow: { count: stuckEscrowRows.count || 0 },
+            failedOrPendingWithdrawals: { count: withdrawalsBad.count || 0 },
+            dbsExpiringSoon: { count: dbsExpiring.count || 0 },
+            webhookFailures24h: { count: webhookFails.count || 0 },
+        },
+    }
 }

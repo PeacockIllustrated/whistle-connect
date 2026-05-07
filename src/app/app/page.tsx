@@ -6,6 +6,7 @@ import { StatsAccordion } from '@/components/app/StatsAccordion'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminDashboard } from '@/components/app/AdminDashboard'
+import { getAdminTriage, type AdminTriage } from '@/app/app/admin/actions'
 import { toLocalDateString } from '@/lib/utils'
 import { Clock, ClipboardList, Siren, Banknote, CalendarDays, MapPin, Trophy } from 'lucide-react'
 import WalletWidget from '@/components/app/WalletWidget'
@@ -182,8 +183,15 @@ export default async function AppHomePage() {
     let adminRefereeStats: StatItem[] = []
     let adminRecentBookings: BookingWithDetails[] = []
     let adminRefereeProfile: { verified: boolean; fa_verification_status: FAVerificationStatus; county: string | null } | null = null
+    let adminTriage: AdminTriage | null = null
 
     if (isAdmin) {
+        // Fan out the triage aggregator first — it's a single Promise.all under
+        // the hood and feeds the AdminTriagePanel tile counts. Doesn't block
+        // the stat fetches conceptually, just sequenced for readability.
+        const triageResult = await getAdminTriage()
+        adminTriage = triageResult.data ?? null
+
         const [
             { count: totalReferees },
             { count: totalCoaches },
@@ -424,6 +432,7 @@ export default async function AppHomePage() {
                     refereeStats={adminRefereeStats}
                     recentBookings={adminRecentBookings}
                     refereeProfile={adminRefereeProfile}
+                    triage={adminTriage}
                 />
             )}
         </div>

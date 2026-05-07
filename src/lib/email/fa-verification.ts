@@ -1,8 +1,9 @@
 import { Resend } from 'resend'
+import * as Sentry from '@sentry/nextjs'
 import { escapeHtml } from '@/lib/utils'
+import { createAdminClient } from '@/lib/supabase/server'
 
-// Override recipient for testing — swap to countyEmail for production
-const TEST_RECIPIENT = 'tom@onesignanddigital.com'
+const FALLBACK_RECIPIENT = 'tom@onesignanddigital.com'
 
 function getResend() {
     const apiKey = process.env.RESEND_API_KEY
@@ -11,10 +12,46 @@ function getResend() {
 }
 
 function getBaseUrl(): string {
-    // Vercel deployment URL
     if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
     if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
     return 'http://localhost:3000'
+}
+
+async function resolveRecipient(county?: string | null): Promise<{ to: string; isFallback: boolean }> {
+    if (!county) {
+        Sentry.captureMessage('FA verification email falling back: no county on referee', {
+            level: 'warning',
+            tags: { 'fa.email.fallback': 'no-county' },
+        })
+        return { to: FALLBACK_RECIPIENT, isFallback: true }
+    }
+
+    const admin = createAdminClient()
+    if (!admin) {
+        Sentry.captureMessage('FA verification email falling back: SUPABASE_SERVICE_ROLE_KEY missing', {
+            level: 'warning',
+            tags: { 'fa.email.fallback': 'no-service-role' },
+            extra: { county },
+        })
+        return { to: FALLBACK_RECIPIENT, isFallback: true }
+    }
+
+    const { data, error } = await admin
+        .from('county_fa_contacts')
+        .select('email')
+        .eq('county_name', county)
+        .maybeSingle()
+
+    if (error || !data?.email) {
+        Sentry.captureMessage('FA verification email falling back: county not in county_fa_contacts', {
+            level: 'warning',
+            tags: { 'fa.email.fallback': 'county-not-in-table' },
+            extra: { county, error: error?.message },
+        })
+        return { to: FALLBACK_RECIPIENT, isFallback: true }
+    }
+
+    return { to: data.email, isFallback: false }
 }
 
 function buildVerificationEmail({
@@ -29,14 +66,12 @@ function buildVerificationEmail({
     responseToken?: string | null
 }): string {
     const year = new Date().getFullYear()
-    // Escape all user-supplied values before inserting into HTML
     const safeRefereeName = escapeHtml(refereeName)
     const safeFaId = escapeHtml(faId)
     const safeCounty = escapeHtml(county || 'County')
     const greeting = county ? `Dear ${safeCounty} Football Association,` : 'Dear Football Association,'
     const baseUrl = getBaseUrl()
 
-    // Build one-click response buttons if we have a token
     const hasButtons = !!responseToken
     const confirmUrl = hasButtons ? `${baseUrl}/api/fa-verify?token=${responseToken}&action=confirmed` : ''
     const rejectUrl = hasButtons ? `${baseUrl}/api/fa-verify?token=${responseToken}&action=rejected` : ''
@@ -205,10 +240,9 @@ function buildVerificationEmail({
 }
 
 /**
- * Send an FA verification email.
- * Used both at signup (no county yet) and by admin (with county).
- * When responseToken is provided, the email includes one-click Confirm/Reject buttons.
- * All emails go to TEST_RECIPIENT for now.
+ * Send an FA verification email to the County FA's registered address.
+ * Looks up county_fa_contacts by county; falls back to FALLBACK_RECIPIENT
+ * with a Sentry warning if the county is missing or not in the table.
  */
 export async function sendFAVerificationEmail({
     refereeName,
@@ -220,26 +254,29 @@ export async function sendFAVerificationEmail({
     faId: string
     county?: string | null
     responseToken?: string | null
-}): Promise<{ success: boolean; error?: string }> {
+}): Promise<{ success: boolean; error?: string; recipient?: string; isFallback?: boolean }> {
     try {
+        const { to, isFallback } = await resolveRecipient(county)
         const resend = getResend()
         const html = buildVerificationEmail({ refereeName, faId, county, responseToken })
 
         const { error } = await resend.emails.send({
             from: 'Whistle Connect <onboarding@resend.dev>',
-            to: [TEST_RECIPIENT],
+            to: [to],
             subject: `FA Number Verification Request — ${refereeName} (${faId})`,
             html,
         })
 
         if (error) {
             console.error('Resend error:', error)
+            Sentry.captureException(error, { tags: { 'fa.email.send': 'failed' } })
             return { success: false, error: 'Failed to send email' }
         }
 
-        return { success: true }
+        return { success: true, recipient: to, isFallback }
     } catch (err) {
         console.error('FA verification email error:', err)
+        Sentry.captureException(err, { tags: { 'fa.email.send': 'threw' } })
         return { success: false, error: String(err) }
     }
 }
