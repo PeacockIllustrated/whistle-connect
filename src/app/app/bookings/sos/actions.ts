@@ -112,11 +112,14 @@ export async function createSOSBooking(data: SOSBookingData) {
         (chargeResult as { success?: boolean; error?: string } | null)?.success === true
 
     if (!chargeOk) {
-        // Roll back the booking insert. Best-effort — if the delete also fails,
-        // a Sentry alert + reconcile sweep will surface the orphan.
+        // Roll back the booking via soft-delete (deleted_at). The rest of
+        // the app uses the same pattern — RLS allows the coach to UPDATE
+        // their own booking row but blocks hard DELETE, so an earlier
+        // version of this rollback (.delete()) silently failed and left
+        // orphan SOS draft rows the user had to manually cancel.
         const { error: deleteError } = await supabase
             .from('bookings')
-            .delete()
+            .update({ deleted_at: new Date().toISOString() })
             .eq('id', booking.id)
             .eq('coach_id', user.id)
 
