@@ -1590,14 +1590,45 @@ export async function archiveBookingAsReferee(bookingId: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
 
-    const { error, count } = await supabase
+    // Primary path — confirmed booking has a booking_assignments row for this
+    // referee. Archive that.
+    const { error: assignmentErr, count: assignmentCount } = await supabase
         .from('booking_assignments')
         .update({ archived_at: new Date().toISOString() }, { count: 'exact' })
         .eq('booking_id', bookingId)
         .eq('referee_id', user.id)
 
-    if (error) return { error: error.message }
-    if (!count) return { error: 'No assignment to archive' }
+    if (assignmentErr) return { error: assignmentErr.message }
+    if (assignmentCount && assignmentCount > 0) {
+        revalidatePath('/app/bookings')
+        return { success: true }
+    }
+
+    // Fallback — offer-only path. The ref expressed interest (booking_offers
+    // row exists with status 'sent' / 'accepted_priced' / 'declined' /
+    // 'withdrawn') but the coach hasn't confirmed an assignment yet, so the
+    // archive target lives on the offer row instead of the assignment row.
+    // Migration 0151 added booking_offers.referee_archived_at + the
+    // archive_offer_as_referee RPC for exactly this case.
+    const { data: offer } = await supabase
+        .from('booking_offers')
+        .select('id')
+        .eq('booking_id', bookingId)
+        .eq('referee_id', user.id)
+        .maybeSingle()
+
+    if (!offer) {
+        return { error: 'No matching booking to archive' }
+    }
+
+    const { data: rpcData, error: rpcError } = await supabase.rpc('archive_offer_as_referee', {
+        p_offer_id: offer.id,
+        p_archived: true,
+    })
+    if (rpcError) return { error: rpcError.message }
+    const result = rpcData as { success?: boolean; error?: string } | null
+    if (result?.error) return { error: result.error }
+
     revalidatePath('/app/bookings')
     return { success: true }
 }
@@ -1649,13 +1680,40 @@ export async function unarchiveBookingAsReferee(bookingId: string) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { error: 'Unauthorized' }
 
-    const { error } = await supabase
+    // Mirror archiveBookingAsReferee's two-path logic: confirmed bookings
+    // unarchive via the assignment row, offer-only ones via the offer row.
+    const { error: assignmentErr, count: assignmentCount } = await supabase
         .from('booking_assignments')
-        .update({ archived_at: null })
+        .update({ archived_at: null }, { count: 'exact' })
         .eq('booking_id', bookingId)
         .eq('referee_id', user.id)
 
-    if (error) return { error: error.message }
+    if (assignmentErr) return { error: assignmentErr.message }
+    if (assignmentCount && assignmentCount > 0) {
+        revalidatePath('/app/bookings')
+        return { success: true }
+    }
+
+    // Offer-only fallback path
+    const { data: offer } = await supabase
+        .from('booking_offers')
+        .select('id')
+        .eq('booking_id', bookingId)
+        .eq('referee_id', user.id)
+        .maybeSingle()
+
+    if (!offer) {
+        return { error: 'No matching booking to restore' }
+    }
+
+    const { data: rpcData, error: rpcError } = await supabase.rpc('archive_offer_as_referee', {
+        p_offer_id: offer.id,
+        p_archived: false,
+    })
+    if (rpcError) return { error: rpcError.message }
+    const result = rpcData as { success?: boolean; error?: string } | null
+    if (result?.error) return { error: result.error }
+
     revalidatePath('/app/bookings')
     return { success: true }
 }
