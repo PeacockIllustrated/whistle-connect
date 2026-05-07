@@ -10,7 +10,7 @@ import { getBooking, updateBooking } from '../../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
 import { use } from 'react'
-import { ChevronLeft, Banknote } from 'lucide-react'
+import { ChevronLeft, Banknote, Lock } from 'lucide-react'
 import { toLocalDateString } from '@/lib/utils'
 import { VenueMap } from '@/components/ui/VenueMap'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
@@ -25,6 +25,11 @@ export default function EditBookingPage({
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState('')
+    // Captured at load time so we can lock the form when the booking is past
+    // the pending/offered window. updateBooking server-side already rejects
+    // edits once the booking is confirmed, but without this gate the user
+    // could fill in the whole form before being told it can't be saved.
+    const [bookingStatus, setBookingStatus] = useState<string | null>(null)
 
     const [formData, setFormData] = useState<BookingFormData>({
         match_date: '',
@@ -43,6 +48,7 @@ export default function EditBookingPage({
         async function loadBooking() {
             const result = await getBooking(id)
             if (result.data) {
+                setBookingStatus(result.data.status ?? null)
                 setFormData({
                     match_date: result.data.match_date || '',
                     kickoff_time: result.data.kickoff_time?.slice(0, 5) || '',
@@ -107,6 +113,49 @@ export default function EditBookingPage({
         return (
             <div className="h-[calc(100vh-var(--header-height)-var(--bottom-nav-height))] flex items-center justify-center">
                 <div className="w-8 h-8 border-2 border-[var(--brand-primary)] border-t-transparent rounded-full animate-spin" />
+            </div>
+        )
+    }
+
+    // Booking is past the editable window — render a clear locked state
+    // instead of an editable form. Mirrors the server-side guard in
+    // updateBooking which only allows edits for pending/offered bookings.
+    const isEditable = bookingStatus === 'pending' || bookingStatus === 'offered'
+    if (!isEditable) {
+        const reasonByStatus: Record<string, string> = {
+            confirmed: 'This booking has been confirmed with a referee. The price and details are now locked.',
+            completed: 'This match has already been played, so the booking can no longer be edited.',
+            cancelled: 'This booking was cancelled, so it can no longer be edited.',
+        }
+        const reason =
+            (bookingStatus && reasonByStatus[bookingStatus]) ||
+            'This booking is no longer in an editable state.'
+
+        return (
+            <div className="h-[calc(100vh-var(--header-height)-var(--bottom-nav-height))] flex flex-col bg-[var(--neutral-50)]">
+                <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-[var(--border-color)]">
+                    <Link href={`/app/bookings/${id}`} className="p-2 -ml-2 hover:bg-[var(--neutral-100)] rounded-lg">
+                        <ChevronLeft className="w-5 h-5" />
+                    </Link>
+                    <h1 className="text-lg font-semibold">Edit Booking</h1>
+                </div>
+                <div className="flex-1 overflow-y-auto px-4 py-8">
+                    <div className="max-w-[480px] mx-auto bg-white rounded-2xl border border-[var(--border-color)] p-6 shadow-sm text-center">
+                        <div className="w-12 h-12 rounded-full bg-[var(--neutral-100)] flex items-center justify-center mx-auto mb-3">
+                            <Lock className="w-5 h-5 text-[var(--foreground-muted)]" />
+                        </div>
+                        <h2 className="text-lg font-bold text-[var(--foreground)]">Booking locked</h2>
+                        <p className="text-sm text-[var(--foreground-muted)] mt-2 leading-relaxed">
+                            {reason}
+                        </p>
+                        <Link
+                            href={`/app/bookings/${id}`}
+                            className="inline-flex items-center justify-center mt-5 px-4 py-2 text-sm font-semibold text-white bg-[var(--brand-primary)] rounded-lg hover:opacity-90 transition-opacity"
+                        >
+                            Back to booking
+                        </Link>
+                    </div>
+                </div>
             </div>
         )
     }

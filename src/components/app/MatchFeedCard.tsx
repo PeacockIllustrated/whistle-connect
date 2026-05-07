@@ -42,12 +42,22 @@ export function MatchFeedCard({ booking, onExpressInterest }: MatchFeedCardProps
     const kickoff = booking.kickoff_time?.slice(0, 5) || ''
 
     return (
-        <div className={`card overflow-hidden transition-all ${booking.is_sos ? 'ring-2 ring-red-400' : ''}`}>
+        <div
+            className={`card overflow-hidden transition-all ${
+                booking.is_sos
+                    // SOS bookings get the full red treatment on the feed so
+                    // they're impossible to miss next to regular bookings:
+                    // red border, soft red tint behind the body, and a red
+                    // headline banner. Match details remain readable.
+                    ? 'border-2 border-red-500 bg-red-50/30 shadow-[0_4px_16px_-4px_rgba(239,68,68,0.35)]'
+                    : ''
+            }`}
+        >
             {/* SOS Banner */}
             {booking.is_sos && (
-                <div className="bg-red-500 text-white px-4 py-1.5 flex items-center gap-2">
-                    <AlertTriangle className="w-4 h-4" />
-                    <span className="text-xs font-bold uppercase tracking-wider">Urgent - SOS Request</span>
+                <div className="bg-red-600 text-white px-4 py-2 flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Urgent &middot; SOS Request</span>
                 </div>
             )}
 
