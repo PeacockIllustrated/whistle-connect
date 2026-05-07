@@ -343,12 +343,21 @@ export default async function BookingsPage({
 
         const offerBookings = (offers || [])
             .filter(o => o.booking)
-            .map(o => ({ ...o.booking, offer_status: o.status }))
+            // offer_price_pence is threaded through so the card can distinguish
+            // "coach-sent priced invite — needs my response" from a ref-
+            // initiated 'I'm Available' offer that's awaiting the coach. Both
+            // are status='sent' on the booking_offers row but only one calls
+            // for action from the referee.
+            .map(o => ({
+                ...o.booking,
+                offer_status: o.status,
+                offer_price_pence: o.price_pence,
+            }))
         const assignedBookings = (assignments || [])
             .filter(a => a.booking)
             .map(a => ({ ...a.booking, is_assigned: true }))
 
-        const bookingMap = new Map<string, BookingWithDetails & { offer_status?: string; is_assigned?: boolean; archivedForViewer?: boolean }>()
+        const bookingMap = new Map<string, BookingWithDetails & { offer_status?: string; offer_price_pence?: number | null; is_assigned?: boolean; archivedForViewer?: boolean }>()
         assignedBookings.forEach(b => bookingMap.set(b.id, b))
         offerBookings.forEach(b => {
             if (!bookingMap.has(b.id)) bookingMap.set(b.id, b)
