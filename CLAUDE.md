@@ -190,9 +190,9 @@ Schedules in `vercel.json`:
 |---|---|
 | `POST /api/admin/broadcast-push` | System-wide announcement to every profile. Body: `{ title, message, link?, type?, dryRun? }`. dryRun returns recipient count without firing. |
 | `GET /api/admin/push-debug` | Returns VAPID env var state (public key fingerprint, lengths, quote/whitespace flags) so you can verify the running deploy has the right keys after a rotation. |
-| `GET /api/sentry-test` | Throws unconditionally — test fixture for `/sentry-example-page` |
+| `GET /api/sentry-test` | Throws when enabled — test fixture for `/sentry-example-page`. Gated behind `SENTRY_TEST_ROUTES_ENABLED`; returns 404 unless that env var is exactly `'true'`. |
 
-`/sentry-example-page` is the unauthed verification UI: three buttons fire captured client error / unhandled client error / server-side error. Visit after a deploy to confirm Sentry is wired.
+`/sentry-example-page` is the Sentry verification UI: three buttons fire captured client error / unhandled client error / server-side error. **Gated** behind `SENTRY_TEST_ROUTES_ENABLED` (404 unless `'true'`) — set the env var in Vercel Production, redeploy, verify after deploy, then unset it.
 
 ### Sentry
 
@@ -282,46 +282,44 @@ const { data, error } = await supabase.from('table').select('*')
 
 ## Known Issues (Priority Order)
 
-### Critical - Fix First
+> Reconciled 2026-05-15 (pre-FA-trial cleanup pass). Items 1–6 from the
+> previous list were verified against the live code/DB and are **resolved** —
+> they're now in the Resolved section. Don't re-"fix" already-correct code.
 
-1. **Overly Permissive RLS Policies**
-   - Location: `supabase/migrations/0002_rls_policies.sql`
-   - Issue: `WITH CHECK (true)` allows any authenticated user to insert
-   - Affected: `booking_offers`, `booking_assignments`, `threads`, `thread_participants`
-   - Fix: Add proper authorization checks
+### Still Open
 
-2. **Profile Creation Race Condition**
-   - Location: `src/lib/auth/actions.ts:59-93`
-   - Issue: Uses 500ms setTimeout workaround for trigger timing
-   - Fix: Implement proper trigger validation or retry logic
-
-### High Priority
-
-3. **No Transaction Handling on confirmPrice**
-   - Location: `src/app/app/bookings/actions.ts` `confirmPrice` (now a no-op stub — referee acceptance is atomic via `acceptOffer`'s RPC; remove the stub if no UI references remain)
-   - Status: legacy — verify no callers, then delete
-
-4. **Missing Authorization Checks**
-   - `cancelBooking` allows anyone to cancel (line ~156)
-   - `deleteBooking` deletes before verifying ownership result
-   - Fix: Verify authorization before performing mutations
-
-### Medium Priority
-
-5. **Unsafe Type Assertions**
-   - Location: `bookings/actions.ts` (search for `as any`)
-   - Issue: defeats TypeScript on Supabase join results
-   - Fix: Define proper types for join results
-
-6. **N+1 Query in getThreads**
-   - Location: `src/app/app/messages/actions.ts:121-145`
-   - Issue: 2 queries per thread in a loop
-   - Fix: Batch queries or use proper joins
-
-7. **Hobby-tier Vercel Cron throttle**
+1. **Hobby-tier Vercel Cron throttle**
    - Real cadence on Hobby is once-per-day regardless of schedule string. Fine for soft launch, must upgrade to Pro before real volume — or move escrow-release to Supabase pg_cron.
 
+2. **`authenticated` can execute SECURITY DEFINER RPCs directly** (advisor lint 0029)
+   - Money/booking RPCs (`confirm_booking`, `mark_booking_complete`, `wallet_withdraw_*`, `charge_sos_fee`, `escrow_refund`, `claim_sos_booking`, `archive_offer_*`) are callable by any signed-in user via `/rest/v1/rpc/...`, not just through the app's server actions.
+   - Migration `0140` documents this as an accepted tradeoff (the RLS-helper subset *must* keep the `authenticated` grant). Proper fix is per-function `auth.uid()` guards or moving non-helper RPCs to a private schema — its own PR, not a trial blocker. **`anon`/`PUBLIC` exposure was the real hole and is closed by `0155`.**
+
+3. **PostGIS in `public` schema** (advisor lints 0013/0014)
+   - `postgis` extension + `spatial_ref_sys` live in `public`. `spatial_ref_sys` is a static SRID lookup (no sensitive data); the migration role can't `ALTER` extension-owned objects. Moving PostGIS to its own schema is an invasive, separately-tested migration. Accepted, same stance as `0138`.
+
+4. **Auth: leaked-password protection disabled** (advisor)
+   - HaveIBeenPwned check is off. This is a Supabase **dashboard** setting (Auth → Policies), not a DDL change — toggle it on before the trial.
+
 ### Resolved (kept for context, do not regress)
+
+- ✅ **Overly permissive RLS (`WITH CHECK (true)`)** — fixed by migrations `0111` (table-level policies) + `0136` (booking_offers referee insert). Live security advisor shows no table RLS lints (only the accepted PostGIS `spatial_ref_sys` one).
+- ✅ **Function-level security advisor lints** — `0138`/`0139` swept `search_path` + `anon` EXECUTE; `0140` restored the RLS-helper `authenticated` grants. Regressed by later `CREATE OR REPLACE` migrations; **re-swept by `0155_security_advisor_resweep`** (pins `search_path`, revokes `anon`+`PUBLIC` on every owned SECDEF function). `0155` is in the repo but must be applied via the normal migration/deploy flow.
+- ✅ **Profile creation race condition** — `src/lib/auth/actions.ts` now uses a bounded retry-with-backoff loop, not the old fixed 500ms `setTimeout`.
+- ✅ **`confirmPrice` no-op stub** — removed (2026-05-15). Referee acceptance is atomic via `acceptOffer`'s RPC. `confirmPriceSchema` is retained (still validated by `acceptOffer`).
+- ✅ **Missing authorization on `cancelBooking` / `deleteBooking`** — both verify the caller (coach or assigned referee / `coach_id` ownership) before mutating.
+- ✅ **Unsafe `as any` in bookings/actions.ts** — none remain.
+- ✅ **N+1 in `getThreads`** — now 3 batched queries (participations, threads+joins, all messages) with `.range()` pagination.
+- ✅ **Sentry test routes unauthenticated** — `/sentry-example-page` + `/api/sentry-test` now gated behind `SENTRY_TEST_ROUTES_ENABLED` (404 unless exactly `'true'`).
+- ✅ **Web push silently broken** — VAPID validation `validate.ts` was rejecting every valid keypair (broken JWK slicing). Fixed via ECDH-on-P256 derivation. See Sentry WHISTLE-CONNECT-1.
+- ✅ **Cron 401 silent failure** — `CRON_SECRET` must exist in Vercel Production env AND a deploy must have happened since it was set; env changes need a redeploy.
+- ✅ **`createNotification` permission denied from cron** — was using cookie-aware `createClient()` which runs as `anon`. Now prefers `createAdminClient()` so cron + system contexts work.
+- ✅ **Orphaned booking threads** — inline thread creation could fail silently. Now via `ensureBookingThread` helper at every confirmation path (offer accept, availability accept, SOS claim).
+- ✅ **SOS claim never created a thread** — `claim_sos_booking` RPC didn't, and no JS-side fallback existed. Now `claimSOSBooking` calls `ensureBookingThread` post-RPC.
+- ✅ **Atomic withdraw money-loss** — Stripe transfer succeeded then RPC failed leaving balance unchanged. Now `withdrawal_requests` audit table + 3-step pattern.
+- ✅ **Disputes 10-char prompt()** — replaced with `DisputeFormModal` (category radio cards, optional incident timestamp, 50-char-min reason, desired_outcome). Migration `0145`.
+- ✅ **Refs default to unavailable** — column default flipped to `true` (migration `0146`). Existing rows untouched.
+- ✅ **Missing referee_id silent skip in escrow release notification** — now console.error + Sentry capture.
 
 - ✅ **Web push silently broken** — VAPID validation `validate.ts` was rejecting every valid keypair (broken JWK slicing). Fixed via ECDH-on-P256 derivation. See Sentry WHISTLE-CONNECT-1.
 - ✅ **Cron 401 silent failure** — `CRON_SECRET` must exist in Vercel Production env AND a deploy must have happened since it was set; env changes need a redeploy.
@@ -347,22 +345,37 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0145 | `dispute_structured_fields` — `category`, `desired_outcome`, `incident_at` |
 | 0146 | `default_referees_available` — flipped column default |
 | 0147 | `truncate_web_push_subscriptions` — only run if rotating VAPID keys |
+| 0148 | `wallet_descriptions_breakdown` — wallet transaction description detail |
+| 0149 | `per_user_booking_archive` — per-user booking archive (not global) |
+| 0150 | `confirm_booking_accepts_price` — `confirm_booking` price arg |
+| 0151 | `offer_per_user_archive` — per-user offer archive |
+| 0152 | `thread_participant_archive` — per-user thread archive |
+| 0153 | `add_tournament_booking_type` — tournament booking type |
+| 0154 | `sos_premium_fee` — SOS premium fee (uses booking ref type) |
+| 0155 | `security_advisor_resweep` — re-pin `search_path` + revoke `anon`/`PUBLIC` EXECUTE on owned SECDEF functions (regressed by 0143–0154 `CREATE OR REPLACE`). **Apply via the normal migration/deploy flow.** |
+
+> Note: `supabase/migrations/RUN_THIS_NOW.sql` is loose scratch SQL, not a
+> tracked migration — ignore it / it should be removed.
 
 ---
 
 ## Improvement Roadmap
 
 ### Phase 1: Security Hardening
-- [ ] Fix overly permissive RLS policies (still outstanding)
-- [ ] Add authorization checks to `cancelBooking` / `deleteBooking`
+- [x] Fix overly permissive RLS policies (migrations `0111`/`0136`)
+- [x] Add authorization checks to `cancelBooking` / `deleteBooking`
+- [x] Function-level advisor sweep (`0138`/`0139`/`0140`, re-swept `0155`)
+- [ ] Per-function `auth.uid()` guards / private schema for non-helper SECDEF RPCs (advisor 0029 — see Still Open #2)
+- [ ] Move PostGIS out of `public` schema (advisor 0013/0014 — see Still Open #3)
+- [ ] Enable leaked-password protection (dashboard toggle — see Still Open #4)
 
 ### Phase 2: Code Quality
 - [x] Standardize error handling pattern (single `{ success, error }` shape across actions)
-- [ ] Fix remaining `as any` casts in bookings/actions.ts
+- [x] Remove remaining `as any` casts in bookings/actions.ts (none remain)
 
 ### Phase 3: Performance
-- [ ] Fix N+1 in getThreads
-- [ ] Add pagination to list queries
+- [x] Fix N+1 in getThreads (3 batched queries)
+- [x] Add pagination to list queries (`getThreads` uses `.range()`)
 
 ### Phase 4: Features
 - [ ] iOS Safari non-PWA messaging (detect non-standalone, suggest "Add to Home Screen" instead of dead permission prompt)
@@ -406,6 +419,7 @@ CRON_SECRET=                             # 32-byte URL-safe random; needed by /a
 # Sentry
 NEXT_PUBLIC_SENTRY_DSN=
 SENTRY_AUTH_TOKEN=                       # for source map upload at build time
+SENTRY_TEST_ROUTES_ENABLED=              # unset/false in prod; set to 'true' to expose /sentry-example-page + /api/sentry-test for post-deploy verification, then unset
 
 # Feature kill switches (default true — set 'false' to disable)
 WALLET_TOPUPS_ENABLED=true

@@ -1,11 +1,8 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { describe, it, expect, afterAll } from 'vitest'
 import {
     adminClient,
-    createTestUser,
-    createTestBooking,
     createTestRefereeWithDBS,
     cleanupTestData,
-    TestUser,
 } from '../test-utils'
 import { requiresDBS, DBS_REQUIRED_AGE_GROUPS } from '@/lib/constants'
 
@@ -63,12 +60,6 @@ describe('DBS Enforcement Logic', () => {
 // ── Integration tests ────────────────────────────────────────────────
 
 describe.skipIf(!HAS_DB)('Referee Search - DB Integration', () => {
-    let coach: TestUser
-
-    beforeAll(async () => {
-        coach = await createTestUser('coach')
-    })
-
     afterAll(async () => {
         await cleanupTestData()
     })

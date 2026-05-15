@@ -53,14 +53,12 @@ export async function createNotification({
         .eq('user_id', userId)
 
     if (!subscriptions || subscriptions.length === 0) {
-        console.log(`[Notifications] No push subscriptions found for user ${userId}`)
         return { success: true }
     }
 
     // Split subscriptions by platform
     const webSubs = subscriptions.filter(s => s.platform === 'web')
     const firebaseSubs = subscriptions.filter(s => s.platform === 'firebase')
-    console.log(`[Notifications] Sending push to ${webSubs.length} web + ${firebaseSubs.length} firebase subscriptions`)
 
     const isSOS = urgency === 'sos'
     const payload = {

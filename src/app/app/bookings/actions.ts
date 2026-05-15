@@ -781,13 +781,6 @@ export async function acceptOffer(offerId: string) {
     return { success: true, threadId }
 }
 
-// confirmPrice is no longer needed — referee acceptance now triggers
-// confirmation directly via acceptOffer(). Kept as a no-op for safety
-// in case any old UI code references it.
-export async function confirmPrice(_offerId: string) {
-    return { error: 'This action is no longer available. The referee now confirms the booking when accepting.' }
-}
-
 export async function declineOffer(offerId: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

@@ -63,6 +63,7 @@ export default function SplashScreen({ always = false }: SplashScreenProps) {
                 }}
             >
                 {/* Whistle icon */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- animated SVG; next/image doesn't optimize SVG and its wrapper breaks the keyframe + drop-shadow animation */}
                 <img
                     src="/assets/icon-lightblue.svg"
                     alt=""
@@ -75,6 +76,7 @@ export default function SplashScreen({ always = false }: SplashScreenProps) {
                 />
 
                 {/* Wordmark */}
+                {/* eslint-disable-next-line @next/next/no-img-element -- animated SVG; next/image doesn't optimize SVG and its wrapper breaks the keyframe animation */}
                 <img
                     src="/assets/wordmark-white.svg"
                     alt="Whistle Connect"
