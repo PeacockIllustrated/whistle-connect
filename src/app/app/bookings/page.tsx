@@ -9,9 +9,10 @@ import { LocalStorageArchiveMigration } from '@/components/app/LocalStorageArchi
 import { AdminBookingsView } from '@/components/app/AdminBookingsView'
 import type { AdminBooking } from '@/components/app/AdminBookingsView'
 import { BookingStatus, BookingWithDetails } from '@/lib/types'
-import { formatDate, formatTime, toLocalDateString } from '@/lib/utils'
+import { toLocalDateString } from '@/lib/utils'
 import { CalendarDays, XCircle } from 'lucide-react'
 import { Pagination } from '@/components/app/Pagination'
+import { SwipeableDeclinedList, type DeclinedOfferItem } from '@/components/app/SwipeableDeclinedList'
 
 const PAGE_SIZE = 20
 
@@ -67,15 +68,7 @@ interface RefereeActionItem {
     price: number | null
 }
 
-interface DeclinedOfferItem {
-    id: string
-    bookingId: string
-    matchDate: string
-    kickoffTime: string
-    venue: string
-    refereeName: string | null
-    declinedAt: string
-}
+// DeclinedOfferItem is defined in and imported from SwipeableDeclinedList.
 
 // Coach status pills shown only inside the Upcoming tab. Confirmed-only fixtures
 // after kickoff but before completion are still "Upcoming" workflow-wise.
@@ -590,34 +583,7 @@ export default async function BookingsPage({
                     <p className="text-xs text-[var(--foreground-muted)] mb-3">
                         Referees who declined offers for upcoming matches.
                     </p>
-                    <div className="space-y-2">
-                        {coachDeclinedItems.map((item) => (
-                            <Link
-                                key={item.id}
-                                href={`/app/bookings/${item.bookingId}`}
-                                className="flex items-center gap-3 p-3 rounded-lg border border-[var(--border-color)] bg-red-50/50 hover:bg-red-50 transition-colors"
-                            >
-                                <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-red-100 flex flex-col items-center justify-center">
-                                    <span className="text-xs font-bold text-red-700">
-                                        {new Date(item.matchDate).getDate()}
-                                    </span>
-                                    <span className="text-[10px] text-red-500 uppercase">
-                                        {new Date(item.matchDate).toLocaleDateString('en', { month: 'short' })}
-                                    </span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm truncate">{item.venue}</p>
-                                    <p className="text-xs text-[var(--foreground-muted)]">
-                                        {item.refereeName ? <span className="font-medium">{item.refereeName}</span> : 'A referee'}
-                                        {' · '}declined{item.declinedAt ? ` ${formatDate(item.declinedAt)}` : ''}
-                                    </p>
-                                </div>
-                                <span className="text-xs text-[var(--foreground-muted)] flex-shrink-0">
-                                    {formatTime(item.kickoffTime)}
-                                </span>
-                            </Link>
-                        ))}
-                    </div>
+                    <SwipeableDeclinedList items={coachDeclinedItems} />
                 </section>
             )}
 

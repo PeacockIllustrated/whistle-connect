@@ -2,7 +2,7 @@ import Image from 'next/image'
 import { RefereeSearchResult } from '@/lib/types'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { ReliabilityBadge } from '@/components/app/ReliabilityBadge'
-import { CheckCircle, ShieldCheck } from 'lucide-react'
+import { CheckCircle, ShieldCheck, Target } from 'lucide-react'
 
 interface RefereeSearchResultCardProps {
     referee: RefereeSearchResult
@@ -37,7 +37,8 @@ export function RefereeSearchResultCard({
                         </h3>
                         <div className="flex items-center gap-2 flex-shrink-0">
                             {referee.match_score != null && referee.match_score > 0 && (
-                                <span className="text-[10px] font-bold text-[var(--brand-primary)] bg-[var(--brand-primary)]/10 px-1.5 py-0.5 rounded">
+                                <span className="flex items-center gap-1 px-2 py-1 bg-white/90 rounded-full text-[10px] font-semibold text-[var(--foreground-muted)] border border-[var(--border-color)]">
+                                    <Target className="w-3 h-3" />
                                     {referee.match_score}% match
                                 </span>
                             )}
@@ -86,6 +87,12 @@ export function RefereeSearchResultCard({
                             }`}>
                                 <ShieldCheck className="w-3 h-3" />
                                 {referee.dbs_status === 'verified' ? 'DBS Verified' : referee.dbs_status === 'expired' ? 'DBS Expired' : 'DBS Provided'}
+                            </span>
+                        )}
+                        {referee.is_under_18 && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-purple-50 text-purple-700 border border-purple-200">
+                                <ShieldCheck className="w-3 h-3" />
+                                {referee.is_under_16 ? 'Under 16 — parent contact' : 'Youth (under 18)'}
                             </span>
                         )}
                     </div>

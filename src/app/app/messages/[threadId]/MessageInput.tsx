@@ -54,6 +54,7 @@ export function MessageInput({
                     club_name: null,
                     latitude: null,
                     longitude: null,
+                    date_of_birth: null,
                     created_at: '',
                     updated_at: '',
                 },

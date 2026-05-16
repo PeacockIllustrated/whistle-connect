@@ -11,6 +11,7 @@ import { useRedirectIfAuthed } from '@/lib/hooks/useRedirectIfAuthed'
 import { UserRole } from '@/lib/types'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { cn } from '@/lib/utils'
+import { ageOnDate, MINIMUM_REFEREE_AGE, PARENTAL_CONSENT_AGE } from '@/lib/constants'
 
 const roleOptions = [
     { value: 'coach', label: 'Coach / Club Manager' },
@@ -29,6 +30,8 @@ export default function RegisterPage() {
     const [phone, setPhone] = useState('')
     const [postcode, setPostcode] = useState('')
     const [faNumber, setFaNumber] = useState('')
+    const [dob, setDob] = useState('')
+    const [parentEmail, setParentEmail] = useState('')
     const [termsAccepted, setTermsAccepted] = useState(false)
     const [privacyAccepted, setPrivacyAccepted] = useState(false)
     const [error, setError] = useState('')
@@ -41,6 +44,11 @@ export default function RegisterPage() {
             setRole(roleParam)
         }
     }, [searchParams])
+
+    const refereeAge = role === 'referee' && dob ? ageOnDate(dob) : null
+    const needsParentalConsent =
+        refereeAge !== null && refereeAge >= MINIMUM_REFEREE_AGE && refereeAge < PARENTAL_CONSENT_AGE
+    const todayStr = new Date().toISOString().split('T')[0]
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && e.target instanceof HTMLInputElement) {
@@ -58,6 +66,26 @@ export default function RegisterPage() {
             setError('FA number must be 8-10 digits')
             setLoading(false)
             return
+        }
+
+        // Referee age + parental consent rules (mirrored server-side in signUpSchema).
+        if (role === 'referee') {
+            if (!dob) {
+                setError('Please enter your date of birth')
+                setLoading(false)
+                return
+            }
+            const age = ageOnDate(dob)
+            if (age < MINIMUM_REFEREE_AGE) {
+                setError(`Referees must be at least ${MINIMUM_REFEREE_AGE} years old`)
+                setLoading(false)
+                return
+            }
+            if (age < PARENTAL_CONSENT_AGE && !parentEmail) {
+                setError("A parent or guardian's email is required for referees under 16")
+                setLoading(false)
+                return
+            }
         }
 
         if (!termsAccepted) {
@@ -81,6 +109,8 @@ export default function RegisterPage() {
                 phone: phone || undefined,
                 postcode: postcode || undefined,
                 fa_number: faNumber || undefined,
+                date_of_birth: role === 'referee' ? dob : undefined,
+                parent_email: needsParentalConsent ? parentEmail : undefined,
                 terms_accepted: termsAccepted,
                 privacy_accepted: privacyAccepted,
             }, returnTo)
@@ -219,6 +249,30 @@ export default function RegisterPage() {
                                 placeholder="e.g. 12345678"
                                 hint="Your 8-10 digit Football Association registration number"
                                 maxLength={10}
+                            />
+                        )}
+
+                        {role === 'referee' && (
+                            <Input
+                                label="Date of Birth"
+                                type="date"
+                                value={dob}
+                                onChange={(e) => setDob(e.target.value)}
+                                max={todayStr}
+                                hint="Referees must be at least 14. Under-16s need a parent or guardian to approve the account."
+                                required
+                            />
+                        )}
+
+                        {needsParentalConsent && (
+                            <Input
+                                label="Parent / Guardian Email"
+                                type="email"
+                                value={parentEmail}
+                                onChange={(e) => setParentEmail(e.target.value)}
+                                placeholder="parent@example.com"
+                                hint="Please use the same parent/guardian email used on the child's FA sign-up. We'll email them to approve this account before it can be used."
+                                required
                             />
                         )}
 

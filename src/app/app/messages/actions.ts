@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
 import { validate, sendMessageSchema } from '@/lib/validation'
+import { ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
 
 export async function sendMessage(threadId: string, body: string) {
     const validationError = validate(sendMessageSchema, { threadId, body })
@@ -28,6 +29,19 @@ export async function sendMessage(threadId: string, body: string) {
 
     if (!participant) {
         return { error: 'Not a participant of this thread' }
+    }
+
+    // Safeguarding: under-16 users cannot use in-app messaging (age computed
+    // at today). Coaches contact the parent/guardian instead (see booking
+    // detail "Email parent for important updates").
+    const { data: senderProfile } = await supabase
+        .from('profiles')
+        .select('date_of_birth')
+        .eq('id', user.id)
+        .single()
+
+    if (senderProfile?.date_of_birth && ageOnDate(senderProfile.date_of_birth) < PARENTAL_CONSENT_AGE) {
+        return { error: 'In-app messaging is unavailable for under-16 referees. Important updates are sent to your parent or guardian.' }
     }
 
     // Insert message and return the created ID

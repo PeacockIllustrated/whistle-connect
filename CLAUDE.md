@@ -113,6 +113,7 @@ supabase/
 | `messages` | Individual messages |
 | `notifications` | In-app notifications |
 | `push_subscriptions` | Web push subscriptions |
+| `parental_consents` | Under-16 referee parental-consent queue (token-driven, mirrors `fa_verification_requests`) |
 
 ### Key Relationships
 
@@ -221,6 +222,19 @@ If you DO rotate:
 3. Redeploy (env changes don't apply until next build).
 4. `DELETE FROM push_subscriptions WHERE platform='web'` — old subs are bound to old public key and will 403 on any send.
 5. Verify via `GET /api/admin/push-debug` (with Bearer `CRON_SECRET`).
+
+### Referee Age Gating & Parental Consent (safeguarding — FA trial)
+
+DOB is captured at registration for referees (`profiles.date_of_birth`). Rules,
+all in `src/lib/constants.ts`:
+
+- **Min age 14** — under-14 cannot register (`signUpSchema` superRefine + client mirror).
+- **Age-based eligibility** — `refereeEligibleForAgeGroup(age, ageGroup)`: 18+=all, 17=≤U16, 16=≤U15, 15=≤U14, 14=≤U13; adult/veterans require 18. Age computed **at the match date**. Applied in `searchRefereesForBooking` (filter), `sendBookingRequest` + `acceptOffer` (re-validation). NULL DOB ⇒ treated eligible (internal/legacy accounts only — pre-trial).
+- **Under-16 → parental consent + account LOCKED** — `referee_profiles.parental_consent_status` (`not_required|awaiting|verified|rejected`). The `handle_new_user` trigger sets `awaiting` + creates the `parental_consents` row atomically (path-independent of the JS signup branch). `signUp` then sends the parent a one-click email (`src/lib/email/parent-consent.ts` → `/api/parent-consent?token=&action=` → `/parent-consent/{complete,error}`) — mirrors the FA-verification pattern exactly. Locked refs are excluded from search and rejected by `sendBookingRequest`/`acceptOffer`.
+- **Under-16 in-app messaging blocked** — hard rule, age at *today*. `sendMessage` rejects; on `/app/bookings/[id]` the "Message {name}" CTA is **replaced** with "Email parent for important updates" (mailto the `parent_email`); a youth tag shows on the referee card + booking detail.
+
+Don't reintroduce a JS-only lock — the lock must stay in the trigger so the
+email-confirmation signup branch can't bypass it.
 
 ---
 
@@ -353,6 +367,7 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0153 | `add_tournament_booking_type` — tournament booking type |
 | 0154 | `sos_premium_fee` — SOS premium fee (uses booking ref type) |
 | 0155 | `security_advisor_resweep` — re-pin `search_path` + revoke `anon`/`PUBLIC` EXECUTE on owned SECDEF functions (regressed by 0143–0154 `CREATE OR REPLACE`). **Apply via the normal migration/deploy flow.** |
+| 0156 | `referee_dob_and_parental_consent` — `profiles.date_of_birth`, `referee_profiles.parental_consent_status`, `parental_consents` table; `handle_new_user` trigger extended to copy DOB + atomically lock & create the consent row for under-16 referees. |
 
 > Note: `supabase/migrations/RUN_THIS_NOW.sql` is loose scratch SQL, not a
 > tracked migration — ignore it / it should be removed.
