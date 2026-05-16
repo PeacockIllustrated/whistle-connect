@@ -231,6 +231,17 @@ export interface BookingFormData {
     notes?: string
     budget_pounds?: number
     booking_type?: 'individual' | 'central' | 'tournament'
+    /** Tournament only (not central). Optional display name for the event. */
+    tournament_name?: string
+    /** Tournament & central: the per-fixture schedule. No per-match date — the
+     * single booking-level match_date applies to all. */
+    matches?: TournamentMatchInput[]
+}
+
+export interface TournamentMatchInput {
+    kickoff_time: string
+    home_team?: string
+    away_team?: string
 }
 
 export interface SearchCriteria {

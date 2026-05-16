@@ -115,6 +115,37 @@ export const bookingSchema = z.object({
     notes: z.string().max(1000, 'Notes are too long').optional().or(z.literal('')),
     budget_pounds: z.number().positive('Budget must be positive').max(500, 'Budget cannot exceed £500').optional(),
     booking_type: z.enum(['individual', 'central', 'tournament']).optional(),
+    tournament_name: z.string().max(200, 'Tournament name is too long').optional().or(z.literal('')),
+    matches: z.array(z.object({
+        kickoff_time: z.string().regex(TIME_FORMAT, 'Invalid kick-off time (HH:MM)'),
+        home_team: z.string().max(100, 'Team name is too long').optional().or(z.literal('')),
+        away_team: z.string().max(100, 'Team name is too long').optional().or(z.literal('')),
+    })).max(50, 'Too many matches').optional(),
+}).superRefine((data, ctx) => {
+    const isMulti = data.booking_type === 'tournament' || data.booking_type === 'central'
+    if (!isMulti) return
+
+    if (!data.matches || data.matches.length < 1) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['matches'],
+            message: 'Add at least one match with a kick-off time',
+        })
+    }
+    if (data.booking_type === 'tournament' && !data.tournament_name?.trim()) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['tournament_name'],
+            message: 'Tournament name is required',
+        })
+    }
+    if (data.booking_type === 'central' && data.tournament_name?.trim()) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['tournament_name'],
+            message: 'Central venue bookings do not have a tournament name',
+        })
+    }
 })
 
 export const confirmPriceSchema = z.object({
