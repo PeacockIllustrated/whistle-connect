@@ -182,7 +182,7 @@ Schedules in `vercel.json`:
 | Path | Cadence | What it does |
 |---|---|---|
 | `/api/cron/escrow-release` | `*/15 * * * *` | Path A: mutual-confirm releases (status=completed + both_confirmed_at). Path B: kickoff+48h fallback. Skips on open dispute. Fires nudge notifications 24h after first mark. |
-| `/api/cron/reconcile` | `0 6 * * 1` (weekly) | Detects wallet balance mismatches + bookings with escrow stuck >7 days. Notifies admins. |
+| `/api/cron/reconcile` | `0 6 * * 1` (weekly) | Detects wallet balance mismatches + bookings with escrow stuck >7 days. **Sweeps `withdrawal_requests` stuck `pending` >1h: asks Stripe for ground truth — matching transfer → `wallet_withdraw_finalise`, provably none → `wallet_withdraw_cancel` (refund the hold). Never double-pays or strands.** Notifies admins. |
 
 **Auth**: Bearer `CRON_SECRET`. Vercel auto-injects this header for cron-triggered requests. If `CRON_SECRET` env var isn't set in Production, all cron requests 401 silently — and Vercel Hobby plan throttles crons to once-per-day regardless of schedule string. For real sub-daily schedules at scale, Pro plan is needed (or move to Supabase pg_cron).
 
