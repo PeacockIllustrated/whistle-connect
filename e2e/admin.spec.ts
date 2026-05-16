@@ -82,6 +82,6 @@ test.describe('Admin Access Control', () => {
         // Should be denied or redirected (exact behavior depends on middleware/RLS)
         // At minimum, should not see the settings form
         const settingsVisible = await page.locator('text=Platform Settings').isVisible().catch(() => false)
-        // If they can see it, the getPlatformSettings() call should fail with admin error
+        expect(settingsVisible).toBe(false)
     })
 })

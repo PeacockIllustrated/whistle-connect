@@ -22,7 +22,6 @@ import {
 type ViewMode = 'admin' | 'coach' | 'referee'
 
 interface AdminDashboardProps {
-    profileName: string
     adminStats: StatItem[]
     coachStats: StatItem[]
     refereeStats: StatItem[]
@@ -36,7 +35,6 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({
-    profileName,
     adminStats,
     coachStats,
     refereeStats,

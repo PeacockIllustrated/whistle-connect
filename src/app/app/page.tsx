@@ -426,7 +426,6 @@ export default async function AppHomePage() {
             {/* Admin View */}
             {isAdmin && (
                 <AdminDashboard
-                    profileName={profile.full_name || ''}
                     adminStats={adminStats}
                     coachStats={adminCoachStats}
                     refereeStats={adminRefereeStats}

@@ -2,6 +2,15 @@
 
 Reference doc for future development work. Items are grouped by priority.
 
+> ⚠️ **Stale as of 2026-05-15.** This doc is a historical snapshot. Most items
+> below — including "Fix Overly Permissive RLS Policies", the `confirmPrice`
+> transaction item, `cancelBooking`/`deleteBooking` auth, `as any` casts, and
+> the `getThreads` N+1 — have been **resolved**. Before acting on anything
+> here, check the reconciled, verified status in **`CLAUDE.md` → "Known Issues
+> (Priority Order)"** (sections "Still Open" and "Resolved"), which is the
+> current source of truth. Do not re-"fix" already-correct code during the
+> FA-trial prep.
+
 ---
 
 ## 🔴 Security — Before Public Launch

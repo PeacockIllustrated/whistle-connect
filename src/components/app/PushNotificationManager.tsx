@@ -59,8 +59,6 @@ export function PushNotificationManager() {
 
         if (error) {
             console.error('[PushNotification] Failed to save subscription:', error)
-        } else {
-            console.log('[PushNotification] Subscription saved successfully')
         }
     }, [])
 

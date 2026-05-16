@@ -32,7 +32,6 @@ export async function initNativePush(): Promise<void> {
 
     // 3. Handle successful registration — save token
     PushNotifications.addListener('registration', async (token) => {
-        console.log('[NativePush] Token received:', token.value.slice(0, 12) + '...')
         await saveNativeToken(token.value)
     })
 
@@ -42,8 +41,7 @@ export async function initNativePush(): Promise<void> {
     })
 
     // 5. Handle foreground notifications
-    PushNotifications.addListener('pushNotificationReceived', (notification) => {
-        console.log('[NativePush] Foreground:', notification.title)
+    PushNotifications.addListener('pushNotificationReceived', () => {
         // The native OS shows the notification automatically
         // due to presentationOptions in capacitor.config.ts
     })

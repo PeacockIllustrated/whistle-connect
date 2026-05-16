@@ -15,7 +15,7 @@ export function AvailabilityToggle({ initialAvailable, initialRadius }: Availabi
     const [isAvailable, setIsAvailable] = useState(initialAvailable)
     const [radius, setRadius] = useState(initialRadius)
     const [togglePending, startToggleTransition] = useTransition()
-    const [radiusPending, startRadiusTransition] = useTransition()
+    const [, startRadiusTransition] = useTransition()
     const [confirmOff, setConfirmOff] = useState(false)
     const { showToast } = useToast()
     const radiusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
