@@ -125,3 +125,38 @@ export const BOOKING_FEE_PENCE = 99
  * so the cost-of-attention is real.
  */
 export const SOS_FEE_PENCE = 199
+
+/**
+ * Double-booking window. Bookings store a kickoff but no end-time/duration,
+ * so for clash detection a confirmed booking is assumed to occupy the
+ * referee from kickoff for MATCH_DURATION_MINUTES plus a fixed travel buffer.
+ * Two same-date bookings clash only when these windows overlap — so a referee
+ * CAN officiate several non-overlapping matches on the same day.
+ */
+export const MATCH_DURATION_MINUTES = 120
+export const MATCH_TRAVEL_BUFFER_MINUTES = 45
+export const MATCH_BLOCK_MINUTES = MATCH_DURATION_MINUTES + MATCH_TRAVEL_BUFFER_MINUTES
+
+/** Minutes since midnight for an 'HH:MM' or 'HH:MM:SS' time string. */
+export function minutesSinceMidnight(time: string | null | undefined): number {
+    if (!time) return 0
+    const [h, m] = time.split(':').map(Number)
+    return (h || 0) * 60 + (m || 0)
+}
+
+/**
+ * True if two confirmed bookings clash for one referee: same calendar date
+ * AND their [kickoff, kickoff + MATCH_BLOCK_MINUTES] windows intersect.
+ * Different dates never clash (grassroots matches don't span midnight).
+ */
+export function bookingsClash(
+    dateA: string | null | undefined,
+    kickoffA: string | null | undefined,
+    dateB: string | null | undefined,
+    kickoffB: string | null | undefined,
+): boolean {
+    if (!dateA || !dateB || dateA !== dateB) return false
+    const startA = minutesSinceMidnight(kickoffA)
+    const startB = minutesSinceMidnight(kickoffB)
+    return startA < startB + MATCH_BLOCK_MINUTES && startB < startA + MATCH_BLOCK_MINUTES
+}

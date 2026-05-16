@@ -9,7 +9,7 @@ import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { checkBookingRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
-import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE, ageOnDate, refereeEligibleForAgeGroup } from '@/lib/constants'
+import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE, ageOnDate, refereeEligibleForAgeGroup, bookingsClash, MATCH_BLOCK_MINUTES, minutesSinceMidnight } from '@/lib/constants'
 
 /** Fetch the current travel cost rate from platform settings */
 export async function getTravelRate(): Promise<number> {
@@ -860,20 +860,56 @@ export async function acceptOffer(offerId: string) {
         link: `/app/bookings/${offer.booking_id}`
     })
 
-    // Auto-remove availability slot
+    // Carve the booked window out of the ref's date-availability slot(s)
+    // rather than deleting the whole slot — they keep the rest of that day
+    // free for other, non-overlapping matches.
     const bookingDate = offer.booking.match_date
-    const bookingTime = offer.booking.kickoff_time
+    const bookingTime: string = offer.booking.kickoff_time
 
-    const { error: availError } = await supabase
+    const fmtTime = (mins: number) => {
+        const c = Math.max(0, Math.min(mins, 23 * 60 + 59))
+        return `${String(Math.floor(c / 60)).padStart(2, '0')}:${String(c % 60).padStart(2, '0')}:00`
+    }
+
+    const { data: coveringSlots } = await supabase
         .from('referee_date_availability')
-        .delete()
+        .select('id, start_time, end_time')
         .eq('referee_id', offer.referee_id)
         .eq('date', bookingDate)
         .lte('start_time', bookingTime)
         .gte('end_time', bookingTime)
 
-    if (availError) {
-        console.error('Failed to remove availability slot:', availError)
+    const bookedStart = minutesSinceMidnight(bookingTime)
+    const bookedEnd = Math.min(bookedStart + MATCH_BLOCK_MINUTES, 23 * 60 + 59)
+
+    for (const slot of coveringSlots || []) {
+        const s = minutesSinceMidnight(slot.start_time)
+        const e = minutesSinceMidnight(slot.end_time)
+        const pieces: { start_time: string; end_time: string }[] = []
+        if (bookedStart > s) pieces.push({ start_time: fmtTime(s), end_time: fmtTime(Math.min(bookedStart, e)) })
+        if (bookedEnd < e) pieces.push({ start_time: fmtTime(Math.max(bookedEnd, s)), end_time: fmtTime(e) })
+
+        const { error: delErr } = await supabase
+            .from('referee_date_availability')
+            .delete()
+            .eq('id', slot.id)
+        if (delErr) {
+            console.error('Failed to update availability slot on accept:', delErr)
+            continue
+        }
+
+        const valid = pieces.filter(p => p.end_time > p.start_time)
+        if (valid.length > 0) {
+            const { error: insErr } = await supabase
+                .from('referee_date_availability')
+                .insert(valid.map(p => ({
+                    referee_id: offer.referee_id,
+                    date: bookingDate,
+                    start_time: p.start_time,
+                    end_time: p.end_time,
+                })))
+            if (insErr) console.error('Failed to re-insert split availability slots:', insErr)
+        }
     }
 
     revalidatePath('/app/bookings')
@@ -1340,7 +1376,10 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
 
     let refereeIds = Array.from(refereeIdSet)
 
-    // 3b. Exclude referees who already have a confirmed booking assignment at the same date/time
+    // 3b. Exclude referees whose existing confirmed assignment TIME-OVERLAPS
+    // this booking. Refs may officiate multiple non-overlapping matches the
+    // same day — only a genuine clash (within MATCH_BLOCK_MINUTES of kickoff)
+    // blocks them. Previously this excluded the whole calendar date.
     const { data: bookedReferees } = await supabase
         .from('booking_assignments')
         .select('referee_id, booking:bookings!inner(match_date, kickoff_time, status)')
@@ -1352,8 +1391,11 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
                 .filter(b => {
                     const bk = Array.isArray(b.booking) ? b.booking[0] : b.booking
                     return bk &&
-                        bk.match_date === booking.match_date &&
-                        bk.status !== 'cancelled'
+                        bk.status !== 'cancelled' &&
+                        bookingsClash(
+                            booking.match_date, booking.kickoff_time,
+                            bk.match_date, bk.kickoff_time,
+                        )
                 })
                 .map(b => b.referee_id)
         )
@@ -1527,7 +1569,7 @@ export async function sendBookingRequest(
     // Verify user owns this booking and it's in a valid state
     const { data: bookingCheck, error: bookingCheckError } = await supabase
         .from('bookings')
-        .select('coach_id, status, deleted_at, age_group, match_date')
+        .select('coach_id, status, deleted_at, age_group, match_date, kickoff_time')
         .eq('id', bookingId)
         .is('deleted_at', null)
         .single()
@@ -1574,6 +1616,29 @@ export async function sendBookingRequest(
                     return { error: 'This referee is too young to officiate this age group.' }
                 }
             }
+        }
+    }
+
+    // Time-overlap guard (defence in depth — search hides clashing refs, but
+    // a stale offer/UI must not create a genuine double-booking). The ref may
+    // hold other matches the same day as long as none overlap this one.
+    {
+        const { data: refAssignments } = await supabase
+            .from('booking_assignments')
+            .select('booking:bookings!inner(match_date, kickoff_time, status)')
+            .eq('referee_id', refereeId)
+
+        const clash = (refAssignments || []).some(a => {
+            const bk = Array.isArray(a.booking) ? a.booking[0] : a.booking
+            return bk &&
+                bk.status !== 'cancelled' &&
+                bookingsClash(
+                    bookingCheck.match_date, bookingCheck.kickoff_time,
+                    bk.match_date, bk.kickoff_time,
+                )
+        })
+        if (clash) {
+            return { error: 'This referee already has a match that overlaps this kick-off time.' }
         }
     }
 
