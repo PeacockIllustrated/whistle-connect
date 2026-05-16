@@ -108,6 +108,7 @@ export async function createBooking(data: BookingFormData) {
         notes: data.notes || null,
         budget_pounds: data.budget_pounds || null,
         booking_type: data.booking_type || 'individual',
+        tournament_name: data.tournament_name || null,
     }
 
     if (latitude !== null && longitude !== null) {
@@ -129,7 +130,8 @@ export async function createBooking(data: BookingFormData) {
         bookingError?.message?.includes('home_team') ||
         bookingError?.message?.includes('away_team') ||
         bookingError?.message?.includes('county') ||
-        bookingError?.message?.includes('booking_type')) {
+        bookingError?.message?.includes('booking_type') ||
+        bookingError?.message?.includes('tournament_name')) {
 
         // Fallback: insert with only the core columns (no extended fields)
         const fallbackResult = await supabase
@@ -157,6 +159,36 @@ export async function createBooking(data: BookingFormData) {
 
     if (bookingError) {
         return { error: bookingError.message }
+    }
+
+    // Tournament / central: insert the child match schedule. If this fails we
+    // compensating-delete the parent so we never leave an offerable booking
+    // with no fixtures (the plan's accepted alternative to an atomic RPC).
+    const bookingType = data.booking_type || 'individual'
+    if ((bookingType === 'tournament' || bookingType === 'central') && booking?.id) {
+        const rows = (data.matches || [])
+            .filter(m => m.kickoff_time)
+            .map((m, idx) => ({
+                booking_id: booking.id,
+                sort_order: idx,
+                kickoff_time: m.kickoff_time.length === 5 ? m.kickoff_time + ':00' : m.kickoff_time,
+                home_team: m.home_team || null,
+                away_team: m.away_team || null,
+            }))
+
+        if (rows.length === 0) {
+            await supabase.from('bookings').delete().eq('id', booking.id)
+            return { error: 'Add at least one match with a kick-off time' }
+        }
+
+        const { error: matchesError } = await supabase
+            .from('tournament_matches')
+            .insert(rows)
+
+        if (matchesError) {
+            await supabase.from('bookings').delete().eq('id', booking.id)
+            return { error: 'Failed to save the match schedule: ' + matchesError.message }
+        }
     }
 
     // Geocode booking location for distance-based features

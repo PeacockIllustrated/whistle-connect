@@ -95,6 +95,17 @@ export default function NewBookingPage() {
         setFormData(prev => ({ ...prev, [field]: value }))
     }
 
+    // Tournament / central multi-match builder. One booking-level match_date;
+    // each row is a kick-off time + optional team names. No per-match date.
+    const matches = formData.matches && formData.matches.length > 0
+        ? formData.matches
+        : [{ kickoff_time: '', home_team: '', away_team: '' }]
+    const setMatches = (next: typeof matches) => updateField('matches', next)
+    const addMatch = () => setMatches([...matches, { kickoff_time: '', home_team: '', away_team: '' }])
+    const removeMatch = (i: number) => setMatches(matches.filter((_, idx) => idx !== i))
+    const updateMatch = (i: number, patch: Partial<(typeof matches)[number]>) =>
+        setMatches(matches.map((m, idx) => (idx === i ? { ...m, ...patch } : m)))
+
     const handleCreate = async () => {
         // Prevent autofill-triggered submission
         if (isSubmitting) return
@@ -102,8 +113,34 @@ export default function NewBookingPage() {
         setIsSubmitting(true)
         setError('')
 
+        // For tournament/central: the single booking-level kickoff_time is the
+        // EARLIEST match time (keeps the feed / notifications working), and the
+        // per-fixture schedule travels in `matches`. tournament_name only
+        // applies to tournaments.
+        let payload: BookingFormData = formData
+        if (isTournament || isCentral) {
+            const cleanMatches = matches
+                .filter(m => m.kickoff_time)
+                .map(m => ({
+                    kickoff_time: m.kickoff_time,
+                    home_team: m.home_team || undefined,
+                    away_team: m.away_team || undefined,
+                }))
+            const earliest = cleanMatches
+                .map(m => m.kickoff_time)
+                .sort()[0] || ''
+            payload = {
+                ...formData,
+                kickoff_time: earliest,
+                matches: cleanMatches,
+                home_team: undefined,
+                away_team: undefined,
+                tournament_name: isTournament ? formData.tournament_name?.trim() : undefined,
+            }
+        }
+
         try {
-            const result = await createBooking(formData)
+            const result = await createBooking(payload)
             if (result?.error) {
                 setError(result.error)
                 setIsSubmitting(false)
@@ -232,29 +269,50 @@ export default function NewBookingPage() {
                                             required
                                         />
 
-                                        <div className="grid grid-cols-2 gap-4">
+                                        {isTournament && (
                                             <Input
-                                                label="Match Date"
+                                                label="Tournament Name"
+                                                value={formData.tournament_name || ''}
+                                                onChange={(e) => updateField('tournament_name', e.target.value)}
+                                                placeholder="e.g. Summer Cup 2026"
+                                                required
+                                            />
+                                        )}
+
+                                        {hideTeamNames ? (
+                                            <Input
+                                                label="Tournament Date"
                                                 type="date"
                                                 value={formData.match_date}
                                                 onChange={(e) => updateField('match_date', e.target.value)}
                                                 min={toLocalDateString(new Date())}
+                                                hint="One date for the whole event — add each match's kick-off time below."
                                                 required
                                             />
-                                            <Input
-                                                label="Kickoff"
-                                                type="time"
-                                                value={formData.kickoff_time}
-                                                onChange={(e) => updateField('kickoff_time', e.target.value)}
-                                                required
-                                            />
-                                        </div>
+                                        ) : (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <Input
+                                                    label="Match Date"
+                                                    type="date"
+                                                    value={formData.match_date}
+                                                    onChange={(e) => updateField('match_date', e.target.value)}
+                                                    min={toLocalDateString(new Date())}
+                                                    required
+                                                />
+                                                <Input
+                                                    label="Kickoff"
+                                                    type="time"
+                                                    value={formData.kickoff_time}
+                                                    onChange={(e) => updateField('kickoff_time', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                        )}
 
-                                        {/* Team name inputs only make sense for
-                                            Individual bookings — central venues
-                                            and tournaments cover multiple games
-                                            without a single home/away fixture. */}
-                                        {!hideTeamNames && (
+                                        {/* Individual: single home/away fixture.
+                                            Tournament/central: a list of matches,
+                                            each with its own kick-off time. */}
+                                        {!hideTeamNames ? (
                                             <div className="grid grid-cols-2 gap-4">
                                                 <Input
                                                     label="Home Team"
@@ -268,6 +326,54 @@ export default function NewBookingPage() {
                                                     onChange={(e) => updateField('away_team', e.target.value)}
                                                     placeholder="Optional"
                                                 />
+                                            </div>
+                                        ) : (
+                                            <div className="space-y-3">
+                                                <p className="text-sm font-medium text-[var(--foreground)]">Matches</p>
+                                                {matches.map((m, i) => (
+                                                    <div key={i} className="rounded-xl border border-[var(--border-color)] p-3 space-y-3 bg-[var(--neutral-50)]">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs font-bold text-[var(--neutral-400)] uppercase">Match {i + 1}</span>
+                                                            {matches.length > 1 && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => removeMatch(i)}
+                                                                    className="text-xs font-semibold text-red-600 hover:underline"
+                                                                >
+                                                                    Remove
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <Input
+                                                            label="Kick-off time"
+                                                            type="time"
+                                                            value={m.kickoff_time}
+                                                            onChange={(e) => updateMatch(i, { kickoff_time: e.target.value })}
+                                                            required
+                                                        />
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <Input
+                                                                label="Home Team"
+                                                                value={m.home_team || ''}
+                                                                onChange={(e) => updateMatch(i, { home_team: e.target.value })}
+                                                                placeholder="Optional"
+                                                            />
+                                                            <Input
+                                                                label="Away Team"
+                                                                value={m.away_team || ''}
+                                                                onChange={(e) => updateMatch(i, { away_team: e.target.value })}
+                                                                placeholder="Optional"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={addMatch}
+                                                    className="w-full rounded-xl border-2 border-dashed border-[var(--border-color)] py-3 text-sm font-semibold text-[var(--color-primary)] hover:bg-[var(--neutral-50)] transition-colors"
+                                                >
+                                                    + Add another match
+                                                </button>
                                             </div>
                                         )}
 

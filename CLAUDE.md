@@ -114,6 +114,7 @@ supabase/
 | `notifications` | In-app notifications |
 | `push_subscriptions` | Web push subscriptions |
 | `parental_consents` | Under-16 referee parental-consent queue (token-driven, mirrors `fa_verification_requests`) |
+| `tournament_matches` | Per-fixture schedule for a tournament/central booking (child of `bookings`; one booking booked as a unit) |
 
 ### Key Relationships
 
@@ -235,6 +236,23 @@ all in `src/lib/constants.ts`:
 
 Don't reintroduce a JS-only lock — the lock must stay in the trigger so the
 email-confirmation signup branch can't bypass it.
+
+### Tournament / Central multi-match bookings
+
+A tournament/central booking is **ONE `bookings` row booked by ONE referee as
+a unit** — one offer, one escrow hold, one price, one assignment. The
+per-fixture schedule is descriptive child rows in `tournament_matches`
+(kickoff_time + optional team names; no per-match date — the booking-level
+`match_date` applies to all). `age_group`, `format`, `budget_pounds` are
+per-booking, **not** per-match — the referee search / DBS / age-eligibility /
+consent gates run once against the parent booking, unchanged. Parent
+`kickoff_time` = the earliest match time (keeps feed/notifications/
+`find_bookings_near_referee` working). `tournament_name` is set for
+tournaments, NULL for central. `createBooking` inserts the parent then the
+`tournament_matches` rows and **compensating-deletes the parent if the child
+insert fails** (no atomic RPC — accepted alternative; never leave an
+offerable booking with no fixtures). Per-match pricing / age groups /
+edit / partial completion are explicit post-trial follow-ups.
 
 ---
 
@@ -368,6 +386,7 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0154 | `sos_premium_fee` — SOS premium fee (uses booking ref type) |
 | 0155 | `security_advisor_resweep` — re-pin `search_path` + revoke `anon`/`PUBLIC` EXECUTE on owned SECDEF functions (regressed by 0143–0154 `CREATE OR REPLACE`). **Apply via the normal migration/deploy flow.** |
 | 0156 | `referee_dob_and_parental_consent` — `profiles.date_of_birth`, `referee_profiles.parental_consent_status`, `parental_consents` table; `handle_new_user` trigger extended to copy DOB + atomically lock & create the consent row for under-16 referees. |
+| 0157 | `tournament_matches` — `bookings.tournament_name` + `tournament_matches` child table (RLS mirrors booking-child pattern). Tournament/central = one booking + child schedule rows. |
 
 > Note: `supabase/migrations/RUN_THIS_NOW.sql` is loose scratch SQL, not a
 > tracked migration — ignore it / it should be removed.

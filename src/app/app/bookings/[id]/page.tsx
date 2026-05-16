@@ -97,6 +97,24 @@ export default async function BookingDetailPage({
         assignedRefParentEmail = consent?.parent_email ?? null
     }
 
+    // Tournament / central: load the read-only fixture schedule.
+    const isMultiMatch = booking.booking_type === 'tournament' || booking.booking_type === 'central'
+    let tournamentMatches: {
+        id: string
+        sort_order: number
+        kickoff_time: string
+        home_team: string | null
+        away_team: string | null
+    }[] = []
+    if (isMultiMatch) {
+        const { data: tm } = await supabase
+            .from('tournament_matches')
+            .select('id, sort_order, kickoff_time, home_team, away_team')
+            .eq('booking_id', booking.id)
+            .order('sort_order', { ascending: true })
+        tournamentMatches = tm ?? []
+    }
+
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
             {/* Header */}
@@ -113,9 +131,11 @@ export default async function BookingDetailPage({
             {/* Main Card */}
             <div className={`card p-4 mb-4 ${getStatusCardStyle(booking.status)}`}>
                 <h2 className="text-xl font-bold mb-1">
-                    {booking.home_team && booking.away_team
-                        ? `${booking.home_team} vs ${booking.away_team}`
-                        : (booking.address_text || booking.ground_name || booking.location_postcode)}
+                    {booking.tournament_name
+                        ? booking.tournament_name
+                        : booking.home_team && booking.away_team
+                            ? `${booking.home_team} vs ${booking.away_team}`
+                            : (booking.address_text || booking.ground_name || booking.location_postcode)}
                 </h2>
 
                 <div className="space-y-3 mt-4">
@@ -201,6 +221,38 @@ export default async function BookingDetailPage({
                     )}
                 </div>
             </div>
+
+            {/* Tournament / central fixture schedule (read-only) */}
+            {isMultiMatch && (
+                <div className="card p-4 mb-4">
+                    <h3 className="text-sm font-semibold text-[var(--foreground-muted)] mb-3">
+                        {booking.tournament_name
+                            ? `SCHEDULE — ${booking.tournament_name}`
+                            : 'MATCH SCHEDULE'}
+                    </h3>
+                    {tournamentMatches.length === 0 ? (
+                        <p className="text-sm text-[var(--foreground-muted)]">No matches listed.</p>
+                    ) : (
+                        <ol className="space-y-2">
+                            {tournamentMatches.map((m, i) => (
+                                <li key={m.id} className="flex items-center gap-3 p-2 rounded-lg bg-[var(--neutral-50)]">
+                                    <span className="flex-shrink-0 w-7 h-7 rounded-full bg-[var(--brand-primary)] text-white text-xs font-bold flex items-center justify-center">
+                                        {i + 1}
+                                    </span>
+                                    <span className="text-sm font-semibold tabular-nums">
+                                        {formatTime(m.kickoff_time)}
+                                    </span>
+                                    <span className="text-sm text-[var(--foreground-muted)] truncate">
+                                        {m.home_team || m.away_team
+                                            ? `${m.home_team || 'TBC'} vs ${m.away_team || 'TBC'}`
+                                            : 'Teams TBC'}
+                                    </span>
+                                </li>
+                            ))}
+                        </ol>
+                    )}
+                </div>
+            )}
 
             {/* Coach Info (for referees) — once the booking is confirmed,
                 surface a Message button right on the card so the ref can
