@@ -477,7 +477,31 @@ export async function cancelBooking(bookingId: string) {
     }
 
     if (isAssignedReferee && !isCoach && booking.status === 'confirmed') {
-        // Referee is cancelling a confirmed booking:
+        // Referee is cancelling a confirmed booking.
+
+        // Refund the held escrow to the coach FIRST. confirm_booking holds a
+        // fresh amount with no "already held" check and overwrites
+        // bookings.escrow_amount_pence, so without this the coach is charged
+        // again when they rebook and the original hold is stranded in their
+        // escrow_pence forever. Mirrors the coach-cancel branch below.
+        let escrowRefunded = false
+        if (
+            booking.escrow_amount_pence &&
+            booking.escrow_amount_pence > 0 &&
+            !booking.escrow_released_at
+        ) {
+            const { data: refundResult, error: refundError } = await supabase.rpc('escrow_refund', {
+                p_booking_id: bookingId,
+            })
+            if (refundError) {
+                console.error('Escrow refund failed on referee pull-out:', refundError)
+            } else if (refundResult?.error) {
+                console.error('Escrow refund returned error on referee pull-out:', refundResult.error)
+            } else {
+                escrowRefunded = true
+            }
+        }
+
         // Revert booking to 'pending' so the coach can find a new referee
         const { error } = await supabase
             .from('bookings')
@@ -548,10 +572,13 @@ export async function cancelBooking(bookingId: string) {
             .eq('profile_id', user.id)
 
         // Notify the coach that the referee pulled out
+        const refundNote = escrowRefunded
+            ? ' Your held funds have been returned to your wallet.'
+            : ''
         await createNotification({
             userId: booking.coach_id,
             title: 'Referee Pulled Out',
-            message: `The assigned referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}. You can now search for a new referee.`,
+            message: `The assigned referee has cancelled the booking for ${booking.ground_name || booking.location_postcode}.${refundNote} You can now search for a new referee.`,
             type: 'warning',
             link: `/app/bookings/${bookingId}`
         })

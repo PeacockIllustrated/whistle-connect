@@ -138,6 +138,7 @@ These are the production-hardened systems future changes need to respect. Each s
 | Atomic withdraw (3-step pattern) | `wallet_withdraw_begin` → `stripe.transfers.create({idempotencyKey})` → `wallet_withdraw_finalise` / `_cancel`. Audit table `withdrawal_requests` |
 | Escrow hold on offer accept | `escrow_hold` RPC inside `acceptOffer` |
 | Escrow release | `escrow_release` RPC, called by the cron — never inline. `0144_dual_completion_confirmation.sql` |
+| Escrow refund on cancel/pull-out | `escrow_refund` RPC. Called in `cancelBooking` for BOTH the coach-cancel branch AND the referee-pull-out branch. **Must stay in the ref-pull-out branch** — `confirm_booking` has no "already held" guard and overwrites `escrow_amount_pence`, so omitting the refund double-charges the coach and strands the first hold in `escrow_pence` (reconcile won't catch it). |
 | Webhook handler | `src/app/api/webhooks/stripe/route.ts` — idempotent via `webhook_events` table (`0142`) |
 
 Idempotency keys on **every** Stripe write. Money-loss bug from the pre-launch plan was the inline `transfers.create` → RPC failure leaving the user debited. Don't reintroduce that pattern.
