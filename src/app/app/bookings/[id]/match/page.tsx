@@ -8,7 +8,7 @@ import { RefereeSearchResultCard } from '@/components/app/RefereeSearchResultCar
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { BOOKING_FEE_PENCE } from '@/lib/constants'
 import Image from 'next/image'
-import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, Receipt, Banknote, Pencil, Radar, AlertTriangle, Megaphone } from 'lucide-react'
+import { ChevronLeft, Check, Search, X, ShieldCheck, MapPin, Banknote, Pencil, Radar, AlertTriangle, Megaphone } from 'lucide-react'
 
 interface Props {
     params: Promise<{ id: string }>
@@ -285,19 +285,14 @@ export default function BookingMatchPage({ params }: Props) {
                                             onBook={() => handleRequest(referee)}
                                             onViewProfile={(ref) => setSelectedReferee(ref)}
                                         />
-                                        {/* Distance + booking fee badges */}
-                                        <div className="absolute top-3 right-3 z-[5] flex flex-col items-end gap-1">
-                                            {referee.distance_km !== null && (
-                                                <div className="flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-semibold text-[var(--foreground-muted)] border border-[var(--border-color)]">
-                                                    <MapPin className="w-3 h-3" />
-                                                    {referee.distance_km.toFixed(1)} km
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-1 px-2 py-1 bg-emerald-50 backdrop-blur-sm rounded-full text-[10px] font-semibold text-emerald-700 border border-emerald-200">
-                                                <Receipt className="w-3 h-3" />
-                                                Booking fee {fmtPrice(BOOKING_FEE_PENCE)}
+                                        {/* Distance badge — booking fee is shown in the
+                                            cost breakdown below, not on the card. */}
+                                        {referee.distance_km !== null && (
+                                            <div className="absolute top-3 right-3 z-[5] flex items-center gap-1 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-[10px] font-semibold text-[var(--foreground-muted)] border border-[var(--border-color)]">
+                                                <MapPin className="w-3 h-3" />
+                                                {referee.distance_km.toFixed(1)} km
                                             </div>
-                                        </div>
+                                        )}
                                         {/* Cost breakdown below card */}
                                         {matchFeePounds && renderBreakdown(referee)}
                                         {sentRequests.includes(referee.id) && (

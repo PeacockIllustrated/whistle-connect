@@ -7,7 +7,8 @@ import { BookingActions } from './BookingActions'
 import { SOSStatusPanel } from '@/components/app/SOSStatusPanel'
 import { CoachOfferRow } from '@/components/app/CoachOfferRow'
 import { BookingOffer, Profile } from '@/lib/types'
-import { ChevronLeft, CalendarDays, MapPin, MessageCircle } from 'lucide-react'
+import { ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
+import { ChevronLeft, CalendarDays, MapPin, MessageCircle, Mail } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
 
 export default async function BookingDetailPage({
@@ -76,6 +77,25 @@ export default async function BookingDetailPage({
     const thread = Array.isArray(booking.thread)
         ? booking.thread[0]
         : booking.thread
+
+    // Safeguarding: under-16 referees cannot use in-app messaging. The coach
+    // contacts the parent/guardian instead, and the under-16 referee sees a
+    // note rather than a (blocked) message button.
+    const assignedRefDob: string | null = assignment?.referee?.date_of_birth ?? null
+    const assignedRefUnder16 =
+        !!assignedRefDob && ageOnDate(assignedRefDob) < PARENTAL_CONSENT_AGE
+    const viewerIsUnder16 =
+        !!profile?.date_of_birth && ageOnDate(profile.date_of_birth) < PARENTAL_CONSENT_AGE
+
+    let assignedRefParentEmail: string | null = null
+    if (isCoach && assignedRefUnder16 && assignment?.referee_id) {
+        const { data: consent } = await supabase
+            .from('parental_consents')
+            .select('parent_email')
+            .eq('referee_id', assignment.referee_id)
+            .maybeSingle()
+        assignedRefParentEmail = consent?.parent_email ?? null
+    }
 
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
@@ -197,14 +217,22 @@ export default async function BookingDetailPage({
                             {booking.club && <p className="text-sm text-[var(--foreground-muted)]">{booking.club.name}</p>}
                         </div>
                     </div>
-                    {thread?.id && (booking.status === 'confirmed' || booking.status === 'completed') && (
-                        <Link
-                            href={`/app/messages/${thread.id}`}
-                            className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-2.5 text-sm hover:opacity-90 transition-opacity"
-                        >
-                            <MessageCircle className="w-4 h-4" />
-                            Message {booking.coach.full_name}
-                        </Link>
+                    {(booking.status === 'confirmed' || booking.status === 'completed') && (
+                        viewerIsUnder16 ? (
+                            <p className="mt-3 text-xs text-[var(--foreground-muted)] bg-[var(--neutral-50)] rounded-lg p-3">
+                                In-app messaging is unavailable for under-16 referees.
+                                Important updates about this match are sent to your parent
+                                or guardian.
+                            </p>
+                        ) : thread?.id ? (
+                            <Link
+                                href={`/app/messages/${thread.id}`}
+                                className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-2.5 text-sm hover:opacity-90 transition-opacity"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                Message {booking.coach.full_name}
+                            </Link>
+                        ) : null
                     )}
                 </div>
             )}
@@ -224,14 +252,32 @@ export default async function BookingDetailPage({
                         </div>
                         <StatusChip status="verified" size="sm" />
                     </div>
-                    {thread?.id && (booking.status === 'confirmed' || booking.status === 'completed') && (
-                        <Link
-                            href={`/app/messages/${thread.id}`}
-                            className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-2.5 text-sm hover:opacity-90 transition-opacity"
-                        >
-                            <MessageCircle className="w-4 h-4" />
-                            Message {assignment.referee.full_name}
-                        </Link>
+                    {(booking.status === 'confirmed' || booking.status === 'completed') && (
+                        assignedRefUnder16 ? (
+                            assignedRefParentEmail ? (
+                                <a
+                                    href={`mailto:${assignedRefParentEmail}?subject=${encodeURIComponent('Whistle Connect — match update')}`}
+                                    className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-2.5 text-sm hover:opacity-90 transition-opacity"
+                                >
+                                    <Mail className="w-4 h-4" />
+                                    Email parent for important updates
+                                </a>
+                            ) : (
+                                <p className="mt-3 text-xs text-[var(--foreground-muted)] bg-[var(--neutral-50)] rounded-lg p-3">
+                                    This referee is under 16. In-app messaging is unavailable —
+                                    important updates must go via their parent/guardian. No
+                                    parent contact email is on file; please contact support.
+                                </p>
+                            )
+                        ) : thread?.id ? (
+                            <Link
+                                href={`/app/messages/${thread.id}`}
+                                className="mt-3 flex items-center justify-center gap-2 w-full rounded-xl bg-[var(--brand-primary)] text-white font-semibold py-2.5 text-sm hover:opacity-90 transition-opacity"
+                            >
+                                <MessageCircle className="w-4 h-4" />
+                                Message {assignment.referee.full_name}
+                            </Link>
+                        ) : null
                     )}
                 </div>
             )}

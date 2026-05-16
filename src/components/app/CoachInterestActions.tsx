@@ -21,12 +21,19 @@ export function CoachInterestActions({
 }: CoachInterestActionsProps) {
     const router = useRouter()
     const { showToast } = useToast()
-    const [price, setPrice] = useState<string>(defaultPricePounds ? String(defaultPricePounds) : '')
+    // The referee tapped "I'm Available" against the price the coach
+    // advertised on the feed (booking.budget_pounds). That figure is now
+    // LOCKED — the coach cannot quietly confirm at a different value than the
+    // ref saw. Only the rare case of a booking with no advertised fee falls
+    // back to a manual input.
+    const lockedPrice =
+        defaultPricePounds != null && defaultPricePounds > 0 ? defaultPricePounds : null
+    const [price, setPrice] = useState<string>(lockedPrice != null ? String(lockedPrice) : '')
     const [showDecline, setShowDecline] = useState(false)
     const [isPending, startTransition] = useTransition()
 
     const handleAccept = () => {
-        const num = parseFloat(price)
+        const num = lockedPrice != null ? lockedPrice : parseFloat(price)
         if (isNaN(num) || num <= 0) {
             showToast({ message: 'Enter a match fee before confirming', type: 'error' })
             return
@@ -70,21 +77,30 @@ export function CoachInterestActions({
                 <p className="text-xs font-semibold text-amber-800">
                     {refereeName} is available — confirm to book them.
                 </p>
-                <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">£</span>
-                    <input
-                        type="number"
-                        inputMode="decimal"
-                        placeholder="Match fee"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        className="w-full pl-7 pr-3 py-2 bg-white border border-[var(--border-color)] rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                        min="1"
-                        max="500"
-                        step="0.01"
-                        disabled={isPending}
-                    />
-                </div>
+                {lockedPrice != null ? (
+                    <div className="flex items-center justify-between rounded-lg border border-[var(--border-color)] bg-white px-3 py-2">
+                        <span className="text-xs font-medium text-[var(--foreground-muted)]">
+                            Match fee (as advertised)
+                        </span>
+                        <span className="text-sm font-bold">£{lockedPrice.toFixed(2)}</span>
+                    </div>
+                ) : (
+                    <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">£</span>
+                        <input
+                            type="number"
+                            inputMode="decimal"
+                            placeholder="Match fee"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
+                            className="w-full pl-7 pr-3 py-2 bg-white border border-[var(--border-color)] rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                            min="1"
+                            max="500"
+                            step="0.01"
+                            disabled={isPending}
+                        />
+                    </div>
+                )}
                 <div className="flex gap-2">
                     <button
                         type="button"

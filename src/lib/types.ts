@@ -37,6 +37,8 @@ export interface Profile {
     club_name: string | null
     latitude: number | null
     longitude: number | null
+    /** ISO date (YYYY-MM-DD). Null for legacy/internal accounts created before DOB capture. */
+    date_of_birth: string | null
     created_at: string
     updated_at: string
 }
@@ -55,6 +57,8 @@ export interface Club {
 
 export type DBSStatus = 'not_provided' | 'provided' | 'verified' | 'expired'
 
+export type ParentalConsentStatus = 'not_required' | 'awaiting' | 'verified' | 'rejected'
+
 export interface RefereeProfile {
     profile_id: string
     fa_id: string | null
@@ -69,6 +73,7 @@ export interface RefereeProfile {
     dbs_expires_at: string | null
     safeguarding_status: DBSStatus
     safeguarding_expires_at: string | null
+    parental_consent_status: ParentalConsentStatus
     reliability_score: number
     total_matches_completed: number
     average_rating: number
@@ -252,6 +257,10 @@ export interface RefereeSearchResult {
     total_matches_completed: number | null
     average_rating: number | null
     match_score: number | null
+    /** Computed from DOB at the match date — drives the youth tag on the card. */
+    is_under_18: boolean
+    /** Under-16 referees: in-app messaging is blocked; coach contacts the parent. */
+    is_under_16: boolean
 }
 
 export interface AvailabilitySlot {
@@ -288,6 +297,10 @@ export interface RegisterFormData {
     phone?: string
     postcode?: string
     fa_number?: string
+    /** ISO date (YYYY-MM-DD). Required for referees; drives age gating + parental consent. */
+    date_of_birth?: string
+    /** Parent/guardian email — required for referees under 16 (parental consent). */
+    parent_email?: string
     /**
      * Both must be true at the moment of signup. The schema rejects anything
      * else. The auth action stamps `terms_accepted_at` and `privacy_accepted_at`

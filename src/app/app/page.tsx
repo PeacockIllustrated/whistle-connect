@@ -343,7 +343,7 @@ export default async function AppHomePage() {
                             icon={<Siren className="w-6 h-6" />}
                             title="Referee SOS"
                             subtitle="Emergency broadcast to nearby refs"
-                            variant="secondary"
+                            variant="danger"
                             badge="URGENT"
                         />
                     </div>

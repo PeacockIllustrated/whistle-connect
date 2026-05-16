@@ -58,6 +58,63 @@ export function requiresDBS(ageGroup: string | null | undefined): boolean {
     return !!ageGroup && DBS_REQUIRED_AGE_GROUPS.has(ageGroup)
 }
 
+/** Minimum age a referee can be (FA safeguarding). Under-14s cannot register. */
+export const MINIMUM_REFEREE_AGE = 14
+
+/** Age below which a referee requires parental consent + has in-app messaging blocked. */
+export const PARENTAL_CONSENT_AGE = 16
+
+/**
+ * Whole-years age on a given date. Both args accept a Date or an
+ * ISO date/datetime string. Returns 0 for an unparseable / future DOB.
+ */
+export function ageOnDate(
+    dob: string | Date | null | undefined,
+    onDate: string | Date = new Date(),
+): number {
+    if (!dob) return 0
+    const birth = dob instanceof Date ? dob : new Date(dob)
+    const on = onDate instanceof Date ? onDate : new Date(onDate)
+    if (Number.isNaN(birth.getTime()) || Number.isNaN(on.getTime())) return 0
+    let age = on.getFullYear() - birth.getFullYear()
+    const m = on.getMonth() - birth.getMonth()
+    if (m < 0 || (m === 0 && on.getDate() < birth.getDate())) age--
+    return age < 0 ? 0 : age
+}
+
+/**
+ * Highest youth age-group NUMBER a referee of the given age may officiate.
+ * 18+ → null (no cap — all groups incl. adult/veterans). 17→16, 16→15,
+ * 15→14, 14→13. Below the minimum age → -1 (eligible for nothing).
+ */
+export function maxAgeGroupForRefereeAge(refAge: number): number | null {
+    if (refAge < MINIMUM_REFEREE_AGE) return -1
+    if (refAge >= 18) return null
+    return refAge - 1
+}
+
+/**
+ * Whether a referee of `refAge` may officiate `ageGroup` (an AGE_GROUPS
+ * value such as 'u13' | 'adult' | 'veterans', or null/'' for an
+ * unspecified/general game). Eligibility mapping:
+ *   18+ = all · 17 = ≤U16 · 16 = ≤U15 · 15 = ≤U14 · 14 = ≤U13.
+ * Adult/Veterans require age ≥ 18. A null/unknown age group is not a youth
+ * game, so any valid-age referee (≥ MINIMUM_REFEREE_AGE) is eligible.
+ */
+export function refereeEligibleForAgeGroup(
+    refAge: number,
+    ageGroup: string | null | undefined,
+): boolean {
+    if (refAge < MINIMUM_REFEREE_AGE) return false
+    if (refAge >= 18) return true
+    if (!ageGroup) return true
+    if (ageGroup === 'adult' || ageGroup === 'veterans') return refAge >= 18
+    const match = /^u(\d{1,2})$/.exec(ageGroup)
+    if (!match) return true
+    const groupNumber = parseInt(match[1], 10)
+    return groupNumber <= refAge - 1
+}
+
 /** Platform booking fee added to coach's total per booking, in pence. */
 export const BOOKING_FEE_PENCE = 99
 

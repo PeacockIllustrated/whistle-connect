@@ -14,6 +14,8 @@ import {
 } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { sendFAVerificationEmail } from '@/lib/email/fa-verification'
+import { sendParentConsentEmail } from '@/lib/email/parent-consent'
+import { ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
 /**
@@ -140,6 +142,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                 full_name: data.full_name,
                 phone: data.phone || null,
                 postcode: data.postcode || null,
+                date_of_birth: data.date_of_birth || null,
                 terms_accepted_at: consentAcceptedAt,
                 privacy_accepted_at: consentAcceptedAt,
             },
@@ -192,6 +195,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                     full_name: data.full_name,
                     phone: data.phone || null,
                     postcode: data.postcode || null,
+                    date_of_birth: data.date_of_birth || null,
                 })
 
             if (insertError) {
@@ -227,6 +231,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                     full_name: data.full_name,
                     phone: data.phone || null,
                     postcode: data.postcode || null,
+                    date_of_birth: data.date_of_birth || null,
                 })
 
             if (insertError) {
@@ -258,6 +263,37 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                     .eq('id', authData.user!.id)
             }
         }).catch(() => { /* geocoding is best-effort at signup */ })
+    }
+
+    // Under-16 referee: the trigger has already locked the account
+    // (parental_consent_status='awaiting') and created the parental_consents
+    // row. Send the parent the one-click approve email (best-effort — the
+    // account stays locked regardless, so a missed send is recoverable).
+    if (
+        data.role === 'referee' &&
+        data.parent_email &&
+        data.date_of_birth &&
+        ageOnDate(data.date_of_birth) < PARENTAL_CONSENT_AGE
+    ) {
+        const adminClient = createAdminClient()
+        if (adminClient) {
+            const { data: consentRow } = await adminClient
+                .from('parental_consents')
+                .select('response_token')
+                .eq('referee_id', authData.user.id)
+                .maybeSingle()
+            if (consentRow?.response_token) {
+                sendParentConsentEmail({
+                    parentEmail: data.parent_email,
+                    childName: data.full_name,
+                    responseToken: consentRow.response_token,
+                }).catch(() => { /* email is best-effort; account stays locked regardless */ })
+            } else {
+                console.error('Parental consent row missing for', authData.user.id)
+            }
+        } else {
+            console.error('Parental consent: admin client unavailable (missing service role key)')
+        }
     }
 
     // Send FA verification email if referee provided an FA number (fire-and-forget)

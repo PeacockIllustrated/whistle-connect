@@ -3,13 +3,13 @@
 import * as Sentry from '@sentry/nextjs'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus } from '@/lib/types'
+import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus, ParentalConsentStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
 import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { checkBookingRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
-import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE } from '@/lib/constants'
+import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE, ageOnDate, refereeEligibleForAgeGroup } from '@/lib/constants'
 
 /** Fetch the current travel cost rate from platform settings */
 export async function getTravelRate(): Promise<number> {
@@ -47,8 +47,9 @@ interface RefereeProfileQueryResult {
     fa_verification_status: FAVerificationStatus
     dbs_status: DBSStatus | null
     central_venue_opt_in?: boolean
-    profile: { id: string; full_name: string; avatar_url: string | null }
-        | { id: string; full_name: string; avatar_url: string | null }[]
+    parental_consent_status?: ParentalConsentStatus
+    profile: { id: string; full_name: string; avatar_url: string | null; date_of_birth?: string | null }
+        | { id: string; full_name: string; avatar_url: string | null; date_of_birth?: string | null }[]
 }
 
 export async function createBooking(data: BookingFormData) {
@@ -665,6 +666,32 @@ export async function acceptOffer(offerId: string) {
         return { error: 'This offer has no valid price' }
     }
 
+    // Parental-consent + age gate for the accepting referee (stale-offer
+    // guard — search hides locked/ineligible refs, but an offer could predate
+    // a lock or be hit directly).
+    {
+        const { data: refGate } = await supabase
+            .from('referee_profiles')
+            .select('parental_consent_status, profile:profiles!inner(date_of_birth)')
+            .eq('profile_id', user.id)
+            .single()
+
+        if (
+            refGate?.parental_consent_status === 'awaiting' ||
+            refGate?.parental_consent_status === 'rejected'
+        ) {
+            return { error: 'Your account is locked until a parent or guardian approves it.' }
+        }
+        const acceptBooking = Array.isArray(offer.booking) ? offer.booking[0] : offer.booking
+        const refProfile = refGate && (Array.isArray(refGate.profile) ? refGate.profile[0] : refGate.profile)
+        if (refProfile?.date_of_birth && acceptBooking?.age_group) {
+            const age = ageOnDate(refProfile.date_of_birth, acceptBooking.match_date)
+            if (!refereeEligibleForAgeGroup(age, acceptBooking.age_group)) {
+                return { error: 'You are too young to officiate this age group.' }
+            }
+        }
+    }
+
     // Record responded_at timestamp
     await supabase
         .from('booking_offers')
@@ -842,7 +869,7 @@ export async function coachConfirmInterest(
 
     const { data: offer, error: offerError } = await supabase
         .from('booking_offers')
-        .select('id, booking_id, referee_id, status, price_pence, booking:bookings(id, coach_id, ground_name, location_postcode, match_date, kickoff_time, is_sos)')
+        .select('id, booking_id, referee_id, status, price_pence, booking:bookings(id, coach_id, ground_name, location_postcode, match_date, kickoff_time, is_sos, budget_pounds)')
         .eq('id', offerId)
         .single()
 
@@ -857,6 +884,16 @@ export async function coachConfirmInterest(
 
     if (offer.status !== 'sent') {
         return { error: 'This offer is no longer pending' }
+    }
+
+    // Price integrity: the referee tapped "I'm Available" against the fee the
+    // coach advertised (booking.budget_pounds). The coach must confirm at that
+    // exact figure — they cannot quietly book the ref at a lower value than
+    // the ref saw. (UI also locks this; server-side is defence in depth.)
+    if (booking.budget_pounds != null && booking.budget_pounds > 0) {
+        if (Math.round(pricePounds * 100) !== Math.round(booking.budget_pounds * 100)) {
+            return { error: 'The match fee is fixed to the advertised price and cannot be changed.' }
+        }
     }
 
     // Atomic confirm via RPC (handles price-set, escrow, assignment, booking status).
@@ -1080,6 +1117,8 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 total_matches_completed: null,
                 average_rating: null,
                 match_score: null,
+                is_under_18: false,
+                is_under_16: false,
             }
         })
 
@@ -1274,13 +1313,15 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
             fa_verification_status,
             dbs_status,
             central_venue_opt_in,
+            parental_consent_status,
             reliability_score,
             total_matches_completed,
             average_rating,
             profile:profiles!inner(
                 id,
                 full_name,
-                avatar_url
+                avatar_url,
+                date_of_birth
             )
         `)
         .eq('is_available', true)
@@ -1302,9 +1343,24 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
 
     // 4b. DBS enforcement: U16 and under require verified DBS — filter out non-verified referees
     const dbsRequired = requiresDBS(booking.age_group)
-    const filteredResults = dbsRequired
-        ? (results || []).filter((r: RefereeProfileQueryResult) => r.dbs_status === 'verified')
-        : (results || [])
+    const filteredResults = (results || []).filter((r: RefereeProfileQueryResult) => {
+        if (dbsRequired && r.dbs_status !== 'verified') return false
+
+        // Parental-consent gate: under-16 accounts are locked until a parent
+        // approves. Only 'not_required' / 'verified' may be booked.
+        if (r.parental_consent_status === 'awaiting' || r.parental_consent_status === 'rejected') {
+            return false
+        }
+
+        // Age-based refereeing eligibility (computed at the match date). NULL
+        // DOB (legacy/internal accounts) ⇒ skip the age filter (treated eligible).
+        const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
+        if (profile?.date_of_birth) {
+            const age = ageOnDate(profile.date_of_birth, matchDate)
+            if (!refereeEligibleForAgeGroup(age, booking.age_group)) return false
+        }
+        return true
+    })
 
     // 5. Format and sort by match score (distance used internally for scoring only, not exposed)
     const formattedResults: RefereeSearchResult[] = (filteredResults as (RefereeProfileQueryResult & {
@@ -1314,6 +1370,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
     })[])
         .map(r => {
             const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
+            const refAge = profile.date_of_birth ? ageOnDate(profile.date_of_birth, matchDate) : null
             const distKm = spatialMap?.get(profile.id) ?? null
             // Smart match scoring: distance (30%) + reliability (30%) + rating (20%) + experience (20%)
             const distScore = distKm != null ? Math.max(0, 100 - (distKm * 2)) : 50 // 0km=100, 50km=0
@@ -1339,6 +1396,8 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
                 total_matches_completed: r.total_matches_completed ?? null,
                 average_rating: r.average_rating ?? null,
                 match_score: score,
+                is_under_18: refAge !== null && refAge < 18,
+                is_under_16: refAge !== null && refAge < 16,
             }
         })
         .sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0))
@@ -1391,7 +1450,7 @@ export async function sendBookingRequest(
     // Verify user owns this booking and it's in a valid state
     const { data: bookingCheck, error: bookingCheckError } = await supabase
         .from('bookings')
-        .select('coach_id, status, deleted_at, age_group')
+        .select('coach_id, status, deleted_at, age_group, match_date')
         .eq('id', bookingId)
         .is('deleted_at', null)
         .single()
@@ -1412,6 +1471,32 @@ export async function sendBookingRequest(
 
         if (!refereeProfile || refereeProfile.dbs_status !== 'verified') {
             return { error: 'This referee does not have a verified DBS check, which is required for U16 and under matches.' }
+        }
+    }
+
+    // Parental-consent + age-eligibility re-validation (defence in depth —
+    // searchRefereesForBooking already hides ineligible referees).
+    {
+        const { data: refGate } = await supabase
+            .from('referee_profiles')
+            .select('parental_consent_status, profile:profiles!inner(date_of_birth)')
+            .eq('profile_id', refereeId)
+            .single()
+
+        if (refGate) {
+            if (
+                refGate.parental_consent_status === 'awaiting' ||
+                refGate.parental_consent_status === 'rejected'
+            ) {
+                return { error: "This referee's account is awaiting parental approval and cannot be booked yet." }
+            }
+            const refProfile = Array.isArray(refGate.profile) ? refGate.profile[0] : refGate.profile
+            if (refProfile?.date_of_birth) {
+                const age = ageOnDate(refProfile.date_of_birth, bookingCheck.match_date)
+                if (!refereeEligibleForAgeGroup(age, bookingCheck.age_group)) {
+                    return { error: 'This referee is too young to officiate this age group.' }
+                }
+            }
         }
     }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ageOnDate, MINIMUM_REFEREE_AGE, PARENTAL_CONSENT_AGE } from '@/lib/constants'
 
 // ── Shared patterns ──────────────────────────────────────────────────────
 
@@ -45,6 +46,14 @@ export const signUpSchema = z.object({
         .regex(/^\d{8,10}$/, 'FA number must be 8-10 digits')
         .optional()
         .or(z.literal('')),
+    date_of_birth: z.string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth must be in YYYY-MM-DD format')
+        .optional()
+        .or(z.literal('')),
+    parent_email: z.string()
+        .email('Invalid parent/guardian email address')
+        .optional()
+        .or(z.literal('')),
     // Both must be exactly true. z.literal(true) rejects false / undefined / "true" string.
     terms_accepted: z.literal(true, {
         message: 'You must accept the Terms of Service to create an account',
@@ -52,6 +61,36 @@ export const signUpSchema = z.object({
     privacy_accepted: z.literal(true, {
         message: 'You must accept the Privacy Policy and FA safeguarding consent to create an account',
     }),
+}).superRefine((data, ctx) => {
+    // Age / parental-consent rules apply to referees only.
+    if (data.role !== 'referee') return
+
+    if (!data.date_of_birth) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['date_of_birth'],
+            message: 'Date of birth is required for referees',
+        })
+        return
+    }
+
+    const age = ageOnDate(data.date_of_birth)
+    if (age < MINIMUM_REFEREE_AGE) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['date_of_birth'],
+            message: `Referees must be at least ${MINIMUM_REFEREE_AGE} years old`,
+        })
+        return
+    }
+
+    if (age < PARENTAL_CONSENT_AGE && !data.parent_email) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['parent_email'],
+            message: "A parent or guardian's email is required for referees under 16",
+        })
+    }
 })
 
 // ── Booking schemas ──────────────────────────────────────────────────────

@@ -62,6 +62,11 @@ export default function NewBookingPage() {
     const isCentral = bookingType === 'central'
     const isTournament = bookingType === 'tournament'
     const hideTeamNames = isCentral || isTournament
+    // Individual games don't offer "tournament" as a competition type — that's
+    // a dedicated booking flow, not a single-game competition option.
+    const competitionOptions = bookingType === 'individual'
+        ? COMPETITION_TYPES.filter((c) => c.value !== 'tournament')
+        : COMPETITION_TYPES
     const pageHeading = isTournament
         ? 'New Tournament Booking'
         : isCentral
@@ -307,7 +312,7 @@ export default function NewBookingPage() {
 
                                         <Select
                                             label="Competition Type"
-                                            options={COMPETITION_TYPES}
+                                            options={competitionOptions}
                                             value={formData.competition_type || ''}
                                             onChange={(e) => updateField('competition_type', e.target.value as CompetitionType)}
                                             placeholder="Select competition type"
