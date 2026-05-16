@@ -502,6 +502,51 @@ export async function cancelBooking(bookingId: string) {
             .eq('booking_id', bookingId)
             .eq('referee_id', user.id)
 
+        // Reset the referee's availability. acceptOffer() auto-removes the
+        // date-availability slot that covered the kickoff; pulling out must
+        // put it back so the ref is re-discoverable (and the reopened booking
+        // can re-fill). Idempotent: skip if a covering slot already exists.
+        if (booking.match_date && booking.kickoff_time) {
+            const kickoff: string = booking.kickoff_time
+            // Restore a sensible window: kickoff → +3h (match + buffer),
+            // clamped to end-of-day. We can't recover the ref's original
+            // bounds (they were deleted), so this conservatively re-lists
+            // them for that slot without overstating all-day availability.
+            const [h, m] = kickoff.split(':').map(Number)
+            const endTotal = Math.min(h * 60 + m + 180, 23 * 60 + 59)
+            const endTime = `${String(Math.floor(endTotal / 60)).padStart(2, '0')}:${String(endTotal % 60).padStart(2, '0')}:00`
+
+            const { data: existingSlot } = await supabase
+                .from('referee_date_availability')
+                .select('id')
+                .eq('referee_id', user.id)
+                .eq('date', booking.match_date)
+                .lte('start_time', kickoff)
+                .gte('end_time', kickoff)
+                .maybeSingle()
+
+            if (!existingSlot) {
+                const { error: availError } = await supabase
+                    .from('referee_date_availability')
+                    .insert({
+                        referee_id: user.id,
+                        date: booking.match_date,
+                        start_time: kickoff,
+                        end_time: endTime,
+                    })
+                if (availError) {
+                    console.error('Failed to restore availability slot on pull-out:', availError)
+                }
+            }
+        }
+
+        // Defensive: ensure the global availability toggle is on so the ref
+        // stays in the general discovery pool after pulling out.
+        await supabase
+            .from('referee_profiles')
+            .update({ is_available: true })
+            .eq('profile_id', user.id)
+
         // Notify the coach that the referee pulled out
         await createNotification({
             userId: booking.coach_id,
