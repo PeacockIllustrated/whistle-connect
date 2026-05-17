@@ -13,18 +13,36 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing signature' }, { status: 400 })
     }
 
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
-    if (!webhookSecret) {
-        console.error('STRIPE_WEBHOOK_SECRET is not set')
+    // Stripe fixes account-vs-Connect scope at endpoint-creation time and a single
+    // endpoint cannot span both, so this URL is fed by TWO endpoints with separate
+    // signing secrets: STRIPE_WEBHOOK_SECRET (account scope —
+    // checkout.session.completed, transfer.reversed) and
+    // STRIPE_CONNECT_WEBHOOK_SECRET (Connect scope — account.updated for connected
+    // accounts). Verify against whichever secret matches the delivery.
+    const webhookSecrets = [
+        process.env.STRIPE_WEBHOOK_SECRET,
+        process.env.STRIPE_CONNECT_WEBHOOK_SECRET,
+    ].filter((s): s is string => Boolean(s))
+
+    if (webhookSecrets.length === 0) {
+        console.error('Neither STRIPE_WEBHOOK_SECRET nor STRIPE_CONNECT_WEBHOOK_SECRET is set')
         return NextResponse.json({ error: 'Server configuration error' }, { status: 500 })
     }
 
-    let event: Stripe.Event
+    let event: Stripe.Event | null = null
+    let lastErr: unknown = null
 
-    try {
-        event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-    } catch (err) {
-        console.error('Webhook signature verification failed:', err)
+    for (const secret of webhookSecrets) {
+        try {
+            event = stripe.webhooks.constructEvent(body, signature, secret)
+            break
+        } catch (err) {
+            lastErr = err
+        }
+    }
+
+    if (!event) {
+        console.error('Webhook signature verification failed against all configured secrets:', lastErr)
         return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
     }
 
