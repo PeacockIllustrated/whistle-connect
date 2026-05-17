@@ -315,14 +315,16 @@ const { data, error } = await supabase.from('table').select('*')
 
 ## Known Issues (Priority Order)
 
-> Reconciled 2026-05-15 (pre-FA-trial cleanup pass). Items 1–6 from the
-> previous list were verified against the live code/DB and are **resolved** —
-> they're now in the Resolved section. Don't re-"fix" already-correct code.
+> Reconciled 2026-05-15 (pre-FA-trial cleanup pass); updated 2026-05-17
+> (push/VAPID finding added; Vercel-cron concern cleared — see Resolved).
+> Don't re-"fix" already-correct code.
 
 ### Still Open
 
-1. **Hobby-tier Vercel Cron throttle**
-   - Real cadence on Hobby is once-per-day regardless of schedule string. Fine for soft launch, must upgrade to Pro before real volume — or move escrow-release to Supabase pg_cron.
+1. **🔴 Web push BROKEN in production — VAPID keypair mismatch (Vercel env). FA-trial blocker.**
+   - **Symptom:** Sentry shows `[WebPush] VAPID validation failed: VAPID public key does not match private key — they were not generated as a pair` (~110 occ / 90d) + a few `Invalid JWK EC key`. In-app `notifications` rows write fine and `push_subscriptions` exist, so it *looks* like notifications work — but **zero pushes ever leave the server**; phones never buzz. (Confirmed via prod Sentry + DB, 2026-05-17.)
+   - **Root cause: configuration, not code.** `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in Vercel Production are not a generated pair. `src/lib/push/validate.ts` is **correct** (proper ECDH-on-P256 derivation) and is correctly refusing to send. **Do NOT "fix" validate.ts** — that's the WHISTLE-CONNECT-1 anti-pattern.
+   - **Fix:** `npx web-push generate-vapid-keys` → set BOTH vars in Vercel Production from the *same* output (no quotes/whitespace — Vercel stores literally) → **redeploy** (env not hot-reloaded; validate.ts caches per server instance) → `DELETE FROM push_subscriptions WHERE platform='web'` (stale subs are bound to the old key and 403/410 — migration `0147`) → users re-grant → verify `GET /api/admin/push-debug` (Bearer `CRON_SECRET`). Full runbook: "VAPID Keys" section above.
 
 2. **`authenticated` can execute SECURITY DEFINER RPCs directly** (advisor lint 0029)
    - Money/booking RPCs (`confirm_booking`, `mark_booking_complete`, `wallet_withdraw_*`, `charge_sos_fee`, `escrow_refund`, `claim_sos_booking`, `archive_offer_*`) are callable by any signed-in user via `/rest/v1/rpc/...`, not just through the app's server actions.
@@ -332,9 +334,20 @@ const { data, error } = await supabase.from('table').select('*')
    - `postgis` extension + `spatial_ref_sys` live in `public`. `spatial_ref_sys` is a static SRID lookup (no sensitive data); the migration role can't `ALTER` extension-owned objects. Moving PostGIS to its own schema is an invasive, separately-tested migration. Accepted, same stance as `0138`.
 
 4. **Auth: leaked-password protection disabled** (advisor)
-   - HaveIBeenPwned check is off. This is a Supabase **dashboard** setting (Auth → Policies), not a DDL change — toggle it on before the trial.
+   - HaveIBeenPwned check is off. Supabase **dashboard** setting (Auth → Policies), not a DDL change. NOTE: this feature requires **Supabase Pro** (separate from Vercel Pro) — if on Supabase Free, raise minimum password length instead.
+
+### Stale branches & PRs — do NOT merge (post-trial triage)
+
+These predate the pre-trial work and are **superseded / conflicting**. Do not
+merge them to get a trial over the line — they will destabilise master.
+
+- **PR #2 "Implement comprehensive notification system…"** — opened 2026-03-14, never updated, +1807/−55. **It is NOT the fix for the broken push** (that's the VAPID env config above, not code). ~2 months stale vs a heavily-changed master → will conflict massively. Post-trial: review → cherry-pick any wanted categories/preferences UI → close.
+- **`fix/withdrawal-stripe-connect-error-handling-and-restyle`** (origin, 9 commits, no open PR) — its features (consent-at-signup, per-user thread archive, SOS status panel, Connect error handling, welcome page) are **already in production via other merges**. Stale superseded snapshot. Post-trial: diff vs master to confirm nothing unique, then delete.
+- **`claude/ecstatic-nobel-0c3ae7`** — 1 stale README/docs commit. Ignore/delete.
 
 ### Resolved (kept for context, do not regress)
+
+- ✅ **Vercel cron cadence concern** — confirmed **Vercel Pro + active (2026-05-17)**. Crons run at the configured cadence (`escrow-release` every 15 min, `reconcile` weekly, the stuck-withdrawal sweep weekly). The old "Hobby throttles to daily" worry does **not** apply. `CRON_SECRET` is set in Production (verified) so the cron endpoints authenticate.
 
 - ✅ **Overly permissive RLS (`WITH CHECK (true)`)** — fixed by migrations `0111` (table-level policies) + `0136` (booking_offers referee insert). Live security advisor shows no table RLS lints (only the accepted PostGIS `spatial_ref_sys` one).
 - ✅ **Function-level security advisor lints** — `0138`/`0139` swept `search_path` + `anon` EXECUTE; `0140` restored the RLS-helper `authenticated` grants. Regressed by later `CREATE OR REPLACE` migrations; **re-swept by `0155_security_advisor_resweep`** (pins `search_path`, revokes `anon`+`PUBLIC` on every owned SECDEF function). `0155` is in the repo but must be applied via the normal migration/deploy flow.
