@@ -141,6 +141,18 @@ These are the production-hardened systems future changes need to respect. Each s
 | Escrow refund on cancel/pull-out | `escrow_refund` RPC. Called in `cancelBooking` for BOTH the coach-cancel branch AND the referee-pull-out branch. **Must stay in the ref-pull-out branch** — `confirm_booking` has no "already held" guard and overwrites `escrow_amount_pence`, so omitting the refund double-charges the coach and strands the first hold in `escrow_pence` (reconcile won't catch it). |
 | Webhook handler | `src/app/api/webhooks/stripe/route.ts` — idempotent via `webhook_events` table (`0142`) |
 
+**Two webhook endpoints, two signing secrets, one URL.** Stripe fixes
+account-vs-Connect scope at endpoint creation (`connect` is immutable) and a
+single endpoint cannot span both scopes. With separate charges & transfers,
+`checkout.session.completed` + `transfer.reversed` are **account-scope**
+(platform-side objects) while `account.updated` for connected Express accounts
+is **Connect-scope**. So `https://www.whistleconnect.co.uk/api/webhooks/stripe`
+is registered as TWO endpoints — an account-scope one and a Connect-scope one —
+and `route.ts` verifies each delivery against whichever of
+`STRIPE_WEBHOOK_SECRET` (account) / `STRIPE_CONNECT_WEBHOOK_SECRET` (Connect)
+matches. Don't collapse this back to one secret — a single endpoint silently
+drops half the events (top-ups OR referee-withdrawal enablement).
+
 Idempotency keys on **every** Stripe write. Money-loss bug from the pre-launch plan was the inline `transfers.create` → RPC failure leaving the user debited. Don't reintroduce that pattern.
 
 ### Notification System
@@ -459,7 +471,8 @@ FIREBASE_PRIVATE_KEY=
 # Stripe (live keys for production; test keys for preview)
 STRIPE_SECRET_KEY=                       # sk_live_… or sk_test_…
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=                   # whsec_… from the live webhook endpoint
+STRIPE_WEBHOOK_SECRET=                   # whsec_… from the ACCOUNT-scope live endpoint (checkout.session.completed, transfer.reversed)
+STRIPE_CONNECT_WEBHOOK_SECRET=           # whsec_… from the CONNECT-scope live endpoint (account.updated). Same URL, separate endpoint/secret — see Wallet & Escrow
 
 # Cron — Vercel auto-injects Bearer header on cron-triggered requests
 CRON_SECRET=                             # 32-byte URL-safe random; needed by /api/cron/* AND /api/admin/* endpoints
