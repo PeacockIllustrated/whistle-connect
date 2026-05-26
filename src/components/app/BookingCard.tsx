@@ -125,6 +125,14 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
         }
     }
 
+    // SOS red treatment: applied to BOTH coach and referee views once a
+    // booking is flagged SOS. The MatchFeedCard already paints unclaimed
+    // SOS bookings red — once a ref has accepted, they continue to see the
+    // booking in their Upcoming list and need the same visual urgency to
+    // remember it's a same-day rush. Suppressed for cancelled bookings
+    // (the existing red "Cancelled" treatment takes precedence).
+    const showSosTreatment = booking.is_sos && booking.status !== 'cancelled' && !archivedForViewer
+
     return (
         <SwipeableCard onArchive={doArchive} disabled={archivedForViewer}>
         <Link
@@ -134,10 +142,21 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
                 'transition-all duration-200',
                 'hover:shadow-md active:scale-[0.99]',
                 getStatusCardStyle(effectiveStatus),
+                showSosTreatment && 'border-2 border-red-500 bg-red-50/30 shadow-[0_4px_16px_-4px_rgba(239,68,68,0.35)]',
                 archivedForViewer && 'opacity-75',
                 className
             )}
         >
+            {/* SOS banner — mirrors MatchFeedCard's banner. Stays visible on
+                confirmed SOS bookings so the assigned ref is reminded this
+                is a same-day rush whenever they land on the card. */}
+            {showSosTreatment && (
+                <div className="flex items-center gap-1.5 mb-2 -mx-4 -mt-4 px-3 py-1.5 bg-red-600 text-white">
+                    <AlertTriangle className="w-3 h-3 flex-shrink-0" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest">Urgent &middot; SOS Booking</span>
+                </div>
+            )}
+
             {/* Cancelled banner — impossible to miss when a coach has pulled a fixture */}
             {booking.status === 'cancelled' && (
                 <div className="flex items-center gap-1.5 mb-2 px-2 py-1 rounded-md bg-red-100 text-red-700 text-[10px] font-bold uppercase tracking-wider w-fit">
@@ -276,8 +295,11 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
                     </button>
                 )}
 
-                {/* Referee Actions: Cancel if confirmed */}
-                {showCoach && booking.status === 'confirmed' && (
+                {/* Referee Actions: Cancel if confirmed.
+                    Hidden on tournament/central — those are booked as a
+                    unit and the server rejects pull-out; surfacing the
+                    button anyway would just produce a dead-end tap. */}
+                {showCoach && booking.status === 'confirmed' && booking.booking_type !== 'tournament' && booking.booking_type !== 'central' && (
                     <button
                         onClick={handleCancel}
                         disabled={isLoading}

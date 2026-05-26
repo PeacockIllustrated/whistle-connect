@@ -75,11 +75,30 @@ export default async function LandingPage() {
 
           <div className="flex flex-col gap-4 max-w-xs mx-auto">
             <Link
-              href="/book"
+              href="/book/individual"
               className="block w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white text-lg font-bold rounded-xl text-center transition-all shadow-md"
             >
               Book a Referee
             </Link>
+
+            {/* Secondary booking entry points — central venues + tournaments
+                are booked-as-a-unit flows distinct from the standard
+                single-match booking, so they get their own CTAs on the
+                landing page (rather than being hidden one tap deeper). */}
+            <div className="grid grid-cols-2 gap-3">
+              <Link
+                href="/book/central"
+                className="block w-full py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-xl text-center transition-all border border-white/20 backdrop-blur-sm"
+              >
+                Central Venue
+              </Link>
+              <Link
+                href="/book/central?type=tournament"
+                className="block w-full py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-xl text-center transition-all border border-white/20 backdrop-blur-sm"
+              >
+                Tournament
+              </Link>
+            </div>
 
             <div className="grid grid-cols-1 gap-3 mt-4">
               <Link href="/auth/register?role=coach" className="w-full">

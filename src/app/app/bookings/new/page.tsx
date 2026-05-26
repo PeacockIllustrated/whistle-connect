@@ -9,16 +9,18 @@ import { createBooking } from '../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
 import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
-import { ChevronLeft, Banknote } from 'lucide-react'
+import { ChevronLeft, Banknote, Info } from 'lucide-react'
 import { toLocalDateString } from '@/lib/utils'
 import { VenueMap } from '@/components/ui/VenueMap'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
+import { PriceGuideModal } from '@/components/app/PriceGuideModal'
 
 export default function NewBookingPage() {
     const router = useRouter()
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [celebration, setCelebration] = useState<{ bookingId: string } | null>(null)
+    const [priceGuideOpen, setPriceGuideOpen] = useState(false)
 
     const [formData, setFormData] = useState<BookingFormData>(() => {
         if (typeof window === 'undefined') return {
@@ -438,9 +440,19 @@ export default function NewBookingPage() {
 
                         {/* Match fee for referee — visible to refs in their match feed */}
                         <div className="bg-white rounded-2xl border border-[var(--border-color)] p-6 shadow-sm">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Banknote className="w-5 h-5 text-emerald-600" />
-                                <h2 className="text-base font-bold">Referee match fee</h2>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                                <div className="flex items-center gap-2">
+                                    <Banknote className="w-5 h-5 text-emerald-600" />
+                                    <h2 className="text-base font-bold">Referee match fee</h2>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setPriceGuideOpen(true)}
+                                    className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--brand-primary)] hover:underline"
+                                >
+                                    <Info className="w-3.5 h-3.5" />
+                                    Price guide
+                                </button>
                             </div>
                             <p className="text-xs text-[var(--foreground-muted)] mb-3">
                                 The amount you&apos;ll pay the referee for this match. Refs will see this when browsing nearby games.
@@ -478,6 +490,11 @@ export default function NewBookingPage() {
                     </form>
                 </div>
             </div>
+
+            <PriceGuideModal
+                isOpen={priceGuideOpen}
+                onClose={() => setPriceGuideOpen(false)}
+            />
         </div>
     )
 }

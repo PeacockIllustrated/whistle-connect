@@ -479,6 +479,31 @@ export async function cancelBooking(bookingId: string) {
     if (isAssignedReferee && !isCoach && booking.status === 'confirmed') {
         // Referee is cancelling a confirmed booking.
 
+        // Tournament / central bookings are booked as a unit — one ref, one
+        // escrow hold, one assignment across N fixtures. Pulling out leaves
+        // the coach with a half-day of orphaned matches and no time to
+        // re-book. Disallowed entirely; ref must contact the coach to
+        // arrange a replacement off-platform.
+        if (booking.booking_type === 'tournament' || booking.booking_type === 'central') {
+            return {
+                error: 'You can\'t pull out of a tournament or central-venue booking. Please contact the coach directly to arrange a replacement.',
+            }
+        }
+
+        // 2-hour cutoff: pulling out inside this window leaves the coach
+        // with no realistic chance of finding a replacement before kickoff.
+        // Past the cutoff the ref has to honour the booking (or contact the
+        // coach off-platform if there's a genuine emergency).
+        if (booking.match_date && booking.kickoff_time) {
+            const kickoffAt = new Date(`${booking.match_date}T${booking.kickoff_time}`)
+            const msUntilKickoff = kickoffAt.getTime() - Date.now()
+            if (msUntilKickoff < 2 * 60 * 60 * 1000) {
+                return {
+                    error: 'You can\'t pull out within 2 hours of kick-off. Please contact the coach directly if you have an emergency.',
+                }
+            }
+        }
+
         // Refund the held escrow to the coach FIRST. confirm_booking holds a
         // fresh amount with no "already held" check and overwrites
         // bookings.escrow_amount_pence, so without this the coach is charged
@@ -735,6 +760,144 @@ export async function completeBooking(bookingId: string) {
     revalidatePath(`/app/bookings/${bookingId}`)
     revalidatePath('/app/bookings')
     return { success: true, both_confirmed: bothConfirmed, your_role: yourRole, already_marked: alreadyMarked }
+}
+
+/**
+ * Referee check-in at the venue (FA-trial evidence trail).
+ *
+ * Window: kickoff - 30min ≤ now ≤ kickoff + 3h. Before the window, the
+ * coach has no reason to be told the ref has arrived; after the window
+ * the booking is well past start and check-in is meaningless.
+ *
+ * Distance is logged but NEVER blocks — if the ref is >500m from the
+ * venue we record that fact and let the UI surface a warning. Same for
+ * geolocation-denied: lat/lng/distance just stay null and we still
+ * stamp `referee_checked_in_at`.
+ *
+ * Re-checkins (e.g. ref re-uploaded a clearer photo) overwrite the
+ * existing fields. The check-in window is the only gate.
+ */
+export async function checkInToBooking(
+    bookingId: string,
+    input: {
+        lat?: number | null
+        lng?: number | null
+        accuracyM?: number | null
+        /** Storage path under the `checkin-evidence` bucket where the
+         * referee already uploaded the photo via the browser client.
+         * Server doesn't proxy the upload — keeps the action lightweight
+         * and Storage RLS does the gatekeeping. */
+        evidencePath?: string | null
+    },
+) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const { data: booking } = await supabase
+        .from('bookings')
+        .select('id, coach_id, status, match_date, kickoff_time, latitude, longitude, ground_name, location_postcode, assignments:booking_assignments(referee_id)')
+        .eq('id', bookingId)
+        .is('deleted_at', null)
+        .single()
+
+    if (!booking) {
+        return { error: 'Booking not found' }
+    }
+
+    const assignments = Array.isArray(booking.assignments)
+        ? booking.assignments
+        : booking.assignments ? [booking.assignments] : []
+    const isAssignedRef = assignments.some(
+        (a: { referee_id: string }) => a.referee_id === user.id,
+    )
+
+    if (!isAssignedRef) {
+        return { error: 'Only the assigned referee can check in' }
+    }
+
+    if (booking.status !== 'confirmed' && booking.status !== 'completed') {
+        return { error: 'Check-in is only available for confirmed bookings' }
+    }
+
+    // Time window: kickoff - 30min through kickoff + 3h.
+    const kickoffAt = new Date(`${booking.match_date}T${booking.kickoff_time}`)
+    const now = Date.now()
+    const windowOpen = kickoffAt.getTime() - 30 * 60 * 1000
+    const windowClose = kickoffAt.getTime() + 3 * 60 * 60 * 1000
+    if (now < windowOpen) {
+        return { error: 'Check-in opens 30 minutes before kick-off' }
+    }
+    if (now > windowClose) {
+        return { error: 'The check-in window has closed' }
+    }
+
+    // Distance: haversine when we have both venue and submitted coords.
+    let distanceM: number | null = null
+    if (
+        typeof input.lat === 'number' &&
+        typeof input.lng === 'number' &&
+        booking.latitude != null &&
+        booking.longitude != null
+    ) {
+        distanceM = haversineMetres(input.lat, input.lng, booking.latitude, booking.longitude)
+    }
+
+    const { error: updateError } = await supabase
+        .from('bookings')
+        .update({
+            referee_checked_in_at: new Date().toISOString(),
+            checkin_lat: input.lat ?? null,
+            checkin_lng: input.lng ?? null,
+            checkin_accuracy_m: input.accuracyM ?? null,
+            checkin_distance_m: distanceM,
+            checkin_evidence_path: input.evidencePath ?? null,
+        })
+        .eq('id', bookingId)
+
+    if (updateError) {
+        Sentry.captureException(updateError, {
+            tags: { 'booking.flow': 'checkin' },
+            user: { id: user.id },
+            extra: { bookingId },
+        })
+        return { error: updateError.message }
+    }
+
+    // Coach notification — concise: identity, where, and any warning flag.
+    const venue = booking.ground_name || booking.location_postcode
+    const distanceNote = distanceM != null && distanceM > 500
+        ? ` (logged ${Math.round(distanceM)}m from venue — review evidence)`
+        : ''
+    await createNotification({
+        userId: booking.coach_id,
+        title: 'Referee checked in',
+        message: `Your referee has checked in for the match at ${venue}.${distanceNote}`,
+        type: distanceM != null && distanceM > 500 ? 'warning' : 'success',
+        link: `/app/bookings/${bookingId}`,
+    })
+
+    revalidatePath(`/app/bookings/${bookingId}`)
+    return {
+        success: true,
+        distance_m: distanceM,
+        far_from_venue: distanceM != null && distanceM > 500,
+    }
+}
+
+/** Great-circle distance in metres between two WGS84 points. */
+function haversineMetres(lat1: number, lng1: number, lat2: number, lng2: number): number {
+    const R = 6371000
+    const toRad = (d: number) => (d * Math.PI) / 180
+    const dLat = toRad(lat2 - lat1)
+    const dLng = toRad(lng2 - lng1)
+    const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
+    return 2 * R * Math.asin(Math.sqrt(a))
 }
 
 export async function acceptOffer(offerId: string) {

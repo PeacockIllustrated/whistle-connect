@@ -132,6 +132,14 @@ export interface Booking {
     referee_marked_complete_at: string | null
     /** Set the moment the second party confirms. Cron uses this + 48h to gate release. */
     both_confirmed_at: string | null
+    /** Referee at-venue check-in (FA-trial evidence). All null until check-in fires. */
+    referee_checked_in_at: string | null
+    checkin_lat: number | null
+    checkin_lng: number | null
+    checkin_accuracy_m: number | null
+    checkin_distance_m: number | null
+    /** Storage path under the `checkin-evidence` bucket — empty unless ref uploaded a photo. */
+    checkin_evidence_path: string | null
     created_at: string
     updated_at: string
 }

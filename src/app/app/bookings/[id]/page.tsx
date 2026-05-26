@@ -5,10 +5,11 @@ import { StatusChip } from '@/components/ui/StatusChip'
 import { formatDate, formatTime, getStatusCardStyle } from '@/lib/utils'
 import { BookingActions } from './BookingActions'
 import { SOSStatusPanel } from '@/components/app/SOSStatusPanel'
+import { CheckInPanel } from '@/components/app/CheckInPanel'
 import { CoachOfferRow } from '@/components/app/CoachOfferRow'
 import { BookingOffer, Profile } from '@/lib/types'
 import { ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
-import { ChevronLeft, CalendarDays, MapPin, MessageCircle, Mail } from 'lucide-react'
+import { ChevronLeft, CalendarDays, MapPin, MessageCircle, Mail, AlertTriangle } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
 
 export default async function BookingDetailPage({
@@ -128,8 +129,22 @@ export default async function BookingDetailPage({
                 <StatusChip status={booking.status} />
             </div>
 
-            {/* Main Card */}
-            <div className={`card p-4 mb-4 ${getStatusCardStyle(booking.status)}`}>
+            {/* Main Card.
+                SOS red treatment: applied to BOTH coach and referee views
+                of the booking detail once is_sos is set — mirrors the
+                feed/list card so the urgency carries through the whole
+                surface area. Suppressed for cancelled bookings (the
+                getStatusCardStyle red there takes precedence). */}
+            {(() => {
+                const showSosTreatment = booking.is_sos && booking.status !== 'cancelled'
+                return (
+            <div className={`card p-4 mb-4 ${showSosTreatment ? 'overflow-hidden border-2 border-red-500 bg-red-50/30 shadow-[0_4px_16px_-4px_rgba(239,68,68,0.35)]' : getStatusCardStyle(booking.status)}`}>
+                {showSosTreatment && (
+                    <div className="flex items-center gap-1.5 -mx-4 -mt-4 mb-3 px-3 py-2 bg-red-600 text-white">
+                        <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                        <span className="text-xs font-bold uppercase tracking-widest">Urgent &middot; SOS Booking</span>
+                    </div>
+                )}
                 <h2 className="text-xl font-bold mb-1">
                     {booking.tournament_name
                         ? booking.tournament_name
@@ -221,6 +236,8 @@ export default async function BookingDetailPage({
                     )}
                 </div>
             </div>
+                )
+            })()}
 
             {/* Tournament / central fixture schedule (read-only) */}
             {isMultiMatch && (
@@ -344,6 +361,25 @@ export default async function BookingDetailPage({
                     broadcastCount={
                         booking.offers?.filter((o: BookingOffer) => o.status === 'sent').length ?? 0
                     }
+                />
+            )}
+
+            {/* At-venue check-in (FA-trial evidence). Renders only when there's
+                a confirmed assignment AND either (a) the ref is in the
+                check-in window, or (b) someone has already checked in. The
+                component itself decides what to show for each role. */}
+            {assignment && (booking.status === 'confirmed' || booking.status === 'completed') && (
+                <CheckInPanel
+                    bookingId={booking.id}
+                    matchDate={booking.match_date}
+                    kickoffTime={booking.kickoff_time}
+                    venueLabel={booking.ground_name || booking.address_text || booking.location_postcode}
+                    isReferee={isAssignedReferee}
+                    isCoach={isCoach}
+                    checkedInAt={booking.referee_checked_in_at ?? null}
+                    distanceM={booking.checkin_distance_m ?? null}
+                    accuracyM={booking.checkin_accuracy_m ?? null}
+                    evidencePath={booking.checkin_evidence_path ?? null}
                 />
             )}
 

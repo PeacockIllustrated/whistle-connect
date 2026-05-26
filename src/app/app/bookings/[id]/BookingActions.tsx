@@ -474,8 +474,15 @@ export function BookingActions({
                     )
                 })()}
 
-                {/* Cancel button — BOTH coach and referee can cancel confirmed bookings */}
-                {booking.status === 'confirmed' && (isCoach || isReferee) && (
+                {/* Cancel / Pull Out button.
+                    Coach can cancel any confirmed booking.
+                    Referee can pull out EXCEPT tournament/central (booked
+                    as a unit — server enforces too, this hides the button
+                    so the ref isn't offered an action that will always
+                    fail). The 2-hour pre-kickoff cutoff stays a server
+                    rejection — kickoff timing is fluid and the toast is
+                    a fine surface for a denial. */}
+                {booking.status === 'confirmed' && (isCoach || (isReferee && booking.booking_type !== 'tournament' && booking.booking_type !== 'central')) && (
                     <>
                         <Button
                             fullWidth
@@ -499,6 +506,18 @@ export function BookingActions({
                             variant="danger"
                         />
                     </>
+                )}
+
+                {/* Referee on a tournament/central confirmed booking — show
+                    a static note in place of the pull-out button so they
+                    understand the booking is locked in. */}
+                {booking.status === 'confirmed' && isReferee && (booking.booking_type === 'tournament' || booking.booking_type === 'central') && (
+                    <div className="rounded-xl border border-[var(--border-color)] bg-[var(--neutral-50)] p-3 text-xs text-[var(--foreground-muted)] flex items-start gap-2">
+                        <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <span>
+                            {booking.booking_type === 'tournament' ? 'Tournament' : 'Central-venue'} bookings can&apos;t be pulled out of — they&apos;re booked as a unit. Contact the coach directly if there&apos;s a problem.
+                        </span>
+                    </div>
                 )}
 
                 {/* Raise Dispute — any booking still holding escrow is
