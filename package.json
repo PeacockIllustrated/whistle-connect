@@ -11,6 +11,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "seed:test": "tsx scripts/seed-test-users.ts",
+    "seed:test:clean": "tsx scripts/seed-test-users.ts --clean",
     "cap:sync": "cap sync",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
@@ -50,6 +52,7 @@
     "eslint-config-next": "16.1.1",
     "supabase": "^2.72.8",
     "tailwindcss": "^4",
+    "tsx": "^4.22.3",
     "typescript": "5.9.3",
     "vitest": "^4.1.4"
   }
