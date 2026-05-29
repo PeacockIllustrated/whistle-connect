@@ -383,6 +383,10 @@ export function RefereeAwaitingAction({ initialItems }: { initialItems: ActionIt
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
 
+        // Mirror server-side filter: exclude SOS broadcast rows
+        // (price_pence IS NULL AND responded_at IS NULL) so passive
+        // notifications don't surface as fake "Awaiting Coach" entries.
+        // See src/app/app/bookings/page.tsx for the same rationale.
         const { data } = await supabase
             .from('booking_offers')
             .select(`
@@ -398,6 +402,7 @@ export function RefereeAwaitingAction({ initialItems }: { initialItems: ActionIt
             .eq('referee_id', user.id)
             .eq('status', 'sent')
             .is('referee_archived_at', null)
+            .or('price_pence.not.is.null,responded_at.not.is.null')
             .order('created_at', { ascending: false })
 
         if (!data) return

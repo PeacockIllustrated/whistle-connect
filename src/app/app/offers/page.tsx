@@ -38,7 +38,14 @@ export default async function OffersPage() {
         )
     }
 
-    // Fetch active offers for this referee (sent + accepted_priced)
+    // Fetch active offers for this referee (sent + accepted_priced).
+    //
+    // Filter `price_pence IS NOT NULL OR responded_at IS NOT NULL` to exclude
+    // SOS broadcast rows. SOS bookings pre-insert a `sent` offer for every
+    // nearby ref with both fields null just to deliver the notification;
+    // without this filter the Incoming Offers page lists every passive SOS
+    // broadcast as if it were a real offer. The ref sees those SOS bookings
+    // on the nearby feed with an explicit "Accept SOS Call" button instead.
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { data: rawOffers, error: _error } = await supabase
         .from('booking_offers')
@@ -62,6 +69,7 @@ export default async function OffersPage() {
         `)
         .eq('referee_id', user.id)
         .in('status', ['sent'])
+        .or('price_pence.not.is.null,responded_at.not.is.null')
         .order('created_at', { ascending: false })
 
     // Filter out offers for soft-deleted bookings

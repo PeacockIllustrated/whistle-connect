@@ -507,6 +507,16 @@ export default async function BookingsPage({
         //   - unpriced sent offers (ref tapped "I'm Available" → ref is waiting)
         // The component splits these into "New Offers" and "Awaiting Coach"
         // sections internally based on price_pence.
+        //
+        // Filter `price_pence IS NOT NULL OR responded_at IS NOT NULL` to
+        // exclude SOS broadcast rows. SOS bookings pre-insert a `sent` offer
+        // for every nearby ref with both price_pence=NULL and
+        // responded_at=NULL just to deliver the notification — without this
+        // filter every SOS broadcast surfaces as a fake "Awaiting Coach"
+        // entry (claiming the ref tapped I'm Available when they didn't).
+        // expressInterest stamps responded_at the moment the ref actually
+        // taps Accept SOS Call / I'm Available, so the filter precisely
+        // separates passive broadcasts from real ref-initiated offers.
         const { data: sentOffers } = await supabase
             .from('booking_offers')
             .select(`
@@ -519,6 +529,7 @@ export default async function BookingsPage({
             .eq('referee_id', user.id)
             .eq('status', 'sent')
             .is('referee_archived_at', null)
+            .or('price_pence.not.is.null,responded_at.not.is.null')
             .order('created_at', { ascending: false })
 
         if (sentOffers) {
