@@ -1622,6 +1622,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
             fa_verification_status,
             dbs_status,
             central_venue_opt_in,
+            tournament_opt_in,
             parental_consent_status,
             reliability_score,
             total_matches_completed,
@@ -1644,6 +1645,13 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
     // Apply Central Venue opt-in if needed
     if (booking.booking_type === 'central') {
         query = query.eq('central_venue_opt_in', true)
+    }
+
+    // Same gate for tournament bookings — refs must have explicitly opted in
+    // on /app/availability (separate from central, because tournament-day
+    // workloads are a tighter commitment than a generic central venue).
+    if (booking.booking_type === 'tournament') {
+        query = query.eq('tournament_opt_in', true)
     }
 
     const { data: results, error } = await query
