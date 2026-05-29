@@ -13,6 +13,7 @@
     "test:e2e:ui": "playwright test --ui",
     "seed:test": "tsx scripts/seed-test-users.ts",
     "seed:test:clean": "tsx scripts/seed-test-users.ts --clean",
+    "lint:migrations": "node scripts/check-migrations.mjs",
     "cap:sync": "cap sync",
     "cap:open:android": "cap open android",
     "cap:open:ios": "cap open ios",
