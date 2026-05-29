@@ -84,16 +84,21 @@ export default async function LandingPage() {
             {/* Secondary booking entry points — central venues + tournaments
                 are booked-as-a-unit flows distinct from the standard
                 single-match booking, so they get their own CTAs on the
-                landing page (rather than being hidden one tap deeper). */}
+                landing page (rather than being hidden one tap deeper).
+                Routes go to the FULL /app/bookings/new form (auth-gated;
+                logged-out users hit the login redirect, then land on the
+                right form). The simpler /book/central legacy form lacks
+                tournament_name + the matches schedule builder, so it's
+                intentionally bypassed. */}
             <div className="grid grid-cols-2 gap-3">
               <Link
-                href="/book/central"
+                href="/app/bookings/new?type=central"
                 className="block w-full py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-xl text-center transition-all border border-white/20 backdrop-blur-sm"
               >
                 Central Venue
               </Link>
               <Link
-                href="/book/central?type=tournament"
+                href="/app/bookings/new?type=tournament"
                 className="block w-full py-3 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-xl text-center transition-all border border-white/20 backdrop-blur-sm"
               >
                 Tournament

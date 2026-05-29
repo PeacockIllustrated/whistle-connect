@@ -116,8 +116,14 @@ export default function BookInterstitialPage() {
                         }
                     />
 
+                    {/* Central + tournament both route into the full
+                        /app/bookings/new form (with ?type=). The legacy
+                        /book/central form lacks tournament_name + the
+                        matches schedule builder, so any booking made
+                        through it would silently miss those fields and
+                        the booking detail page would show no fixtures. */}
                     <ActionCard
-                        onClick={() => handleChoice('/book/central')}
+                        onClick={() => handleChoice('/app/bookings/new?type=central')}
                         title="Central Venue"
                         subtitle="Arrange referees for multiple games at a fixed location"
                         icon={
@@ -128,7 +134,7 @@ export default function BookInterstitialPage() {
                     />
 
                     <ActionCard
-                        onClick={() => handleChoice('/book/central?type=tournament')}
+                        onClick={() => handleChoice('/app/bookings/new?type=tournament')}
                         title="Tournament"
                         subtitle="Cover a tournament day across multiple matches"
                         icon={
