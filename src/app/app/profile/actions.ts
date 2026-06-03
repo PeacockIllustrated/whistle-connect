@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { isValidFANumber } from '@/lib/utils'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
@@ -164,6 +164,55 @@ export async function updateFANumber(faNumber: string) {
     }
 
     revalidatePath('/app/profile')
+    return { success: true }
+}
+
+/**
+ * Delete the current user's account (App Store 5.1.1(v) / Play Store requirement).
+ *
+ * The heavy lifting is in the `request_account_deletion` RPC (migration 0158):
+ * it self-checks auth.uid(), BLOCKS deletion if the user still has a wallet
+ * balance / pending withdrawal / held escrow / active bookings (raising a
+ * user-facing message), and otherwise ANONYMIZES the profile rather than
+ * hard-deleting (financial/audit rows must be retained). After the RPC
+ * succeeds we disable login at the auth layer: ban the user (so the session is
+ * dead and re-login is refused) AND release their email (so they could sign up
+ * fresh later). Both go in a single admin update. Finally sign the cookie
+ * session out so the client lands logged-out.
+ */
+export async function deleteMyAccount(): Promise<{ success?: boolean; error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Not authenticated' }
+    }
+
+    // RPC enforces the money-safe blocking conditions + anonymizes the data.
+    const { error: rpcError } = await supabase.rpc('request_account_deletion')
+    if (rpcError) {
+        // The RPC RAISEs a clean, user-facing message for blocking conditions.
+        return { error: rpcError.message }
+    }
+
+    // Disable login: a ban kills the session and refuses re-login; freeing the
+    // email lets them register again in future. Combined into one update call.
+    const admin = createAdminClient()
+    if (!admin) {
+        return { error: 'Account data removed, but login could not be disabled. Please contact support.' }
+    }
+
+    const { error: banError } = await admin.auth.admin.updateUserById(user.id, {
+        ban_duration: '876000h', // ~100 years — effectively permanent
+        email: `deleted+${user.id}@whistleconnect.co.uk`,
+    })
+    if (banError) {
+        return { error: 'Account data removed, but login could not be disabled. Please contact support.' }
+    }
+
+    // Clear the cookie session so the user is logged out client-side.
+    await supabase.auth.signOut()
+
     return { success: true }
 }
 

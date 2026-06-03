@@ -8,7 +8,7 @@ const config: CapacitorConfig = {
         // Live server URL — the native app loads the Vercel deployment in a WebView.
         // All Server Actions, SSR, and middleware work as-is.
         // For local development, change to: 'http://192.168.x.x:3000' and set cleartext: true
-        url: 'https://whistle-connect.vercel.app',
+        url: 'https://www.whistleconnect.co.uk',
         cleartext: false,
     },
     plugins: {

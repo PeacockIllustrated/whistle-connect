@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { getWallet } from '@/app/app/wallet/actions'
 import TopUpModal from './TopUpModal'
+import { isNative } from '@/lib/platform'
 import Link from 'next/link'
 import { Wallet, Plus, ArrowUpRight } from 'lucide-react'
 import type { Wallet as WalletType } from '@/lib/types'
@@ -26,6 +27,9 @@ export default function WalletWidget({ userRole }: WalletWidgetProps) {
     }, [])
 
     const isCoach = userRole === 'coach'
+    // Apple Guideline 3.1.1: hide the in-app top-up entry point inside the
+    // native shell. isNative() is false on web/PWA, so web is unaffected.
+    const native = isNative()
 
     return (
         <>
@@ -67,13 +71,19 @@ export default function WalletWidget({ userRole }: WalletWidgetProps) {
                             </div>
 
                             {isCoach ? (
-                                <button
-                                    onClick={() => setShowTopUp(true)}
-                                    className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Add Funds
-                                </button>
+                                native ? (
+                                    <p className="text-center text-xs text-[var(--foreground-muted)] py-2.5">
+                                        Add funds on the web at whistleconnect.co.uk
+                                    </p>
+                                ) : (
+                                    <button
+                                        onClick={() => setShowTopUp(true)}
+                                        className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+                                    >
+                                        <Plus className="w-4 h-4" />
+                                        Add Funds
+                                    </button>
+                                )
                             ) : (
                                 <Link
                                     href="/app/wallet/withdraw"

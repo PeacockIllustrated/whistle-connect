@@ -3,15 +3,49 @@
 import { useState } from 'react'
 import { createTopUpSession } from '../actions'
 import { calculateChargeAmount } from '@/lib/stripe/config'
+import { isNative } from '@/lib/platform'
+import { ExternalLink } from 'lucide-react'
 import Link from 'next/link'
 
 const PRESET_AMOUNTS = [10, 20, 50]
+
+const WEB_WALLET_URL = 'https://www.whistleconnect.co.uk/app/wallet'
 
 export default function TopUpPage() {
     const [amount, setAmount] = useState<number | null>(null)
     const [customAmount, setCustomAmount] = useState('')
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+
+    // Apple Guideline 3.1.1: don't sell wallet credit via Stripe inside the
+    // native shell. Show a web hand-off instead of the top-up form.
+    // isNative() is false on web/PWA, so this branch never runs in a browser.
+    if (isNative()) {
+        return (
+            <div className="mx-auto max-w-md space-y-6 p-4 pb-24">
+                <div className="flex items-center justify-between">
+                    <h1 className="text-2xl font-bold">Add funds on the web</h1>
+                    <Link href="/app/wallet" className="text-sm text-muted-foreground hover:underline">
+                        &larr; Back
+                    </Link>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                    To add wallet funds, please visit whistleconnect.co.uk in your browser, then return to the app.
+                </p>
+
+                <a
+                    href={WEB_WALLET_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 py-3 text-center font-semibold text-white transition-colors"
+                >
+                    <ExternalLink className="w-4 h-4" />
+                    Open whistleconnect.co.uk
+                </a>
+            </div>
+        )
+    }
 
     const effectiveAmount = amount ?? (customAmount ? parseFloat(customAmount) : null)
     const isValid = effectiveAmount !== null && effectiveAmount >= 5 && effectiveAmount <= 500
