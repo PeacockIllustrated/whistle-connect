@@ -3,9 +3,12 @@
 import { useState } from 'react'
 import { createTopUpSession } from '@/app/app/wallet/actions'
 import { calculateChargeAmount } from '@/lib/stripe/config'
-import { X, CreditCard } from 'lucide-react'
+import { isNative } from '@/lib/platform'
+import { X, CreditCard, ExternalLink } from 'lucide-react'
 
 const PRESET_AMOUNTS = [10, 20, 50]
+
+const WEB_WALLET_URL = 'https://www.whistleconnect.co.uk/app/wallet'
 
 interface TopUpModalProps {
     open: boolean
@@ -20,6 +23,60 @@ export default function TopUpModal({ open, onClose, prefillAmount }: TopUpModalP
     const [error, setError] = useState<string | null>(null)
 
     if (!open) return null
+
+    // Apple Guideline 3.1.1: don't sell wallet credit via Stripe inside the
+    // native shell. Direct users to the web instead. (isNative() is false on
+    // web/PWA, so this branch never runs in a browser.)
+    if (isNative()) {
+        return (
+            <div
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 pb-[calc(var(--bottom-nav-height,72px)+env(safe-area-inset-bottom,0px))] sm:p-4 sm:pb-4"
+                onClick={onClose}
+            >
+                <div
+                    className="w-full sm:max-w-sm rounded-2xl bg-[var(--background-elevated)] border border-[var(--border-color)] shadow-xl p-5 space-y-4"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[var(--wc-green)]/10 to-[var(--wc-green)]/5 flex items-center justify-center">
+                                <CreditCard className="w-4 h-4 text-[var(--wc-green)]" />
+                            </div>
+                            <h2 className="text-lg font-semibold text-[var(--foreground)]">Add funds on the web</h2>
+                        </div>
+                        <button
+                            onClick={onClose}
+                            className="w-8 h-8 rounded-lg bg-[var(--neutral-100)] flex items-center justify-center text-[var(--neutral-500)] hover:text-[var(--foreground)] transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
+
+                    <p className="text-sm text-[var(--foreground-muted)]">
+                        To add wallet funds, please visit whistleconnect.co.uk in your browser, then return to the app.
+                    </p>
+
+                    <a
+                        href={WEB_WALLET_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold bg-gradient-to-r from-[var(--wc-green)] to-[var(--wc-green-dark)] text-white shadow-lg shadow-[var(--wc-green)]/20 hover:shadow-xl hover:shadow-[var(--wc-green)]/30 hover:-translate-y-0.5 transition-all duration-200"
+                    >
+                        <ExternalLink className="w-4 h-4" />
+                        Open whistleconnect.co.uk
+                    </a>
+
+                    <button
+                        onClick={onClose}
+                        className="w-full rounded-xl py-3 text-sm font-semibold border border-[var(--border-color)] bg-[var(--background-soft)] text-[var(--foreground)] hover:border-[var(--wc-green)]/50 transition-all duration-200"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        )
+    }
 
     const effectiveAmount = amount ?? (customAmount ? parseFloat(customAmount) : null)
     const isValid = effectiveAmount !== null && effectiveAmount >= 5 && effectiveAmount <= 500

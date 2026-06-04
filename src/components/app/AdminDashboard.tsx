@@ -16,7 +16,7 @@ import type { AdminTriage } from '@/app/app/admin/actions'
 import {
     ShieldCheck, FileCheck, CalendarDays, Plus, Clock,
     ClipboardList, Siren, Banknote, Eye, Monitor, Users,
-    AlertOctagon, Settings
+    AlertOctagon, Settings, Flag
 } from 'lucide-react'
 
 type ViewMode = 'admin' | 'coach' | 'referee'
@@ -130,6 +130,12 @@ export function AdminDashboard({
                             icon={<AlertOctagon className="w-6 h-6" />}
                             title="Open Disputes"
                             subtitle="Resolve booking complaints and refunds"
+                        />
+                        <ActionCard
+                            href="/app/admin/reports"
+                            icon={<Flag className="w-6 h-6" />}
+                            title="Reported Content"
+                            subtitle="Review reported messages and block/remove abuse"
                         />
                         <ActionCard
                             href="/app/admin/settings"

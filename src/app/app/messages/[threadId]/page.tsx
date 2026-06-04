@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ThreadView } from './ThreadView'
 import { markThreadAsRead } from '../actions'
+import { ReportBlockMenu } from '@/components/app/ReportBlockMenu'
 import { ChevronLeft, AlertTriangle, Info } from 'lucide-react'
 
 export default async function ThreadPage({
@@ -90,6 +91,19 @@ export default async function ThreadPage({
     )
     const currentUserProfile = currentParticipant ? getProfile(currentParticipant) : undefined
 
+    // Has the current user blocked the other participant? (RLS scopes this to
+    // the caller's own block rows, so a hit means the current user is the blocker.)
+    let hasBlockedOther = false
+    if (otherProfile?.id) {
+        const { data: blockRow } = await supabase
+            .from('blocked_users')
+            .select('id')
+            .eq('blocker_id', user.id)
+            .eq('blocked_id', otherProfile.id)
+            .maybeSingle()
+        hasBlockedOther = Boolean(blockRow)
+    }
+
     // Get messages
     const { data: messages } = await supabase
         .from('messages')
@@ -146,6 +160,15 @@ export default async function ThreadPage({
                     >
                         <Info className="w-5 h-5" />
                     </Link>
+                )}
+
+                {otherProfile?.id && (
+                    <ReportBlockMenu
+                        threadId={threadId}
+                        otherUserId={otherProfile.id}
+                        otherUserName={otherProfile.full_name || 'this user'}
+                        initialBlocked={hasBlockedOther}
+                    />
                 )}
             </div>
 

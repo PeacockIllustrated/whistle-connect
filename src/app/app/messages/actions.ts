@@ -1,9 +1,9 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
-import { validate, sendMessageSchema } from '@/lib/validation'
+import { validate, sendMessageSchema, reportSchema, blockSchema, type ReportInput } from '@/lib/validation'
 import { ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
 
 export async function sendMessage(threadId: string, body: string) {
@@ -31,14 +31,42 @@ export async function sendMessage(threadId: string, body: string) {
         return { error: 'Not a participant of this thread' }
     }
 
+    // Moderation (Apple Guideline 1.2): if either party has blocked the other,
+    // the thread is muted both ways. Check every other participant for a block
+    // in EITHER direction via the SECURITY DEFINER helper (the caller can't read
+    // the counterparty's block rows directly under RLS).
+    const { data: blockCheckParticipants } = await supabase
+        .from('thread_participants')
+        .select('profile_id')
+        .eq('thread_id', threadId)
+        .neq('profile_id', user.id)
+
+    if (blockCheckParticipants && blockCheckParticipants.length > 0) {
+        for (const other of blockCheckParticipants) {
+            const { data: isBlocked } = await supabase.rpc('users_are_blocked', {
+                p_user_a: user.id,
+                p_user_b: other.profile_id,
+            })
+            if (isBlocked) {
+                return { error: 'You can no longer message this person.' }
+            }
+        }
+    }
+
     // Safeguarding: under-16 users cannot use in-app messaging (age computed
     // at today). Coaches contact the parent/guardian instead (see booking
     // detail "Email parent for important updates").
     const { data: senderProfile } = await supabase
         .from('profiles')
-        .select('date_of_birth')
+        .select('date_of_birth, suspended_at')
         .eq('id', user.id)
         .single()
+
+    // Moderation: a suspended (ejected) user cannot send messages. The auth ban
+    // already kills their session; this guards the window before token expiry.
+    if (senderProfile?.suspended_at) {
+        return { error: 'Your account is suspended and cannot send messages. Contact support if you believe this is a mistake.' }
+    }
 
     if (senderProfile?.date_of_birth && ageOnDate(senderProfile.date_of_birth) < PARENTAL_CONSENT_AGE) {
         return { error: 'In-app messaging is unavailable for under-16 referees. Important updates are sent to your parent or guardian.' }
@@ -259,4 +287,154 @@ export async function getThreads(limit = 30, offset = 0) {
     }))
 
     return { data: threadsWithLastMessage, error: null }
+}
+
+// ── Moderation (Apple Guideline 1.2: report objectionable content / users) ──
+
+const REPORT_CATEGORY_LABELS: Record<string, string> = {
+    spam: 'Spam',
+    harassment: 'Harassment',
+    hate_or_abuse: 'Hate or abuse',
+    inappropriate: 'Inappropriate content',
+    safety_concern: 'Safety concern',
+    other: 'Other',
+}
+
+/**
+ * File a moderation report against a message, user, and/or thread. The reporter
+ * inserts as themselves (RLS enforces reporter_id = auth.uid()); admins are
+ * notified so they can triage from /app/admin/reports.
+ */
+export async function reportContent(input: ReportInput) {
+    const validationError = validate(reportSchema, input)
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const { category, reason, messageId, reportedUserId, threadId } = input
+
+    const { error: insertError } = await supabase
+        .from('reports')
+        .insert({
+            reporter_id: user.id,
+            reported_user_id: reportedUserId ?? null,
+            message_id: messageId ?? null,
+            thread_id: threadId ?? null,
+            category,
+            reason,
+        })
+
+    if (insertError) {
+        return { error: insertError.message }
+    }
+
+    // Notify admins so the report surfaces in the moderation queue. Best-effort:
+    // a notification failure must not fail the report itself.
+    const adminSupabase = createAdminClient()
+    if (adminSupabase) {
+        const { data: reporter } = await adminSupabase
+            .from('profiles')
+            .select('full_name')
+            .eq('id', user.id)
+            .single()
+        const reporterName = reporter?.full_name || 'A user'
+        const categoryLabel = REPORT_CATEGORY_LABELS[category] || category
+        const reasonExcerpt = reason.length > 150 ? reason.substring(0, 150) + '…' : reason
+
+        const { data: admins } = await adminSupabase
+            .from('profiles')
+            .select('id')
+            .eq('role', 'admin')
+
+        if (admins && admins.length > 0) {
+            await Promise.allSettled(
+                admins.map(admin =>
+                    createNotification({
+                        userId: admin.id,
+                        title: `Content reported — ${categoryLabel}`,
+                        message: `${reporterName} reported content. ${reasonExcerpt}`,
+                        type: 'warning',
+                        link: '/app/admin/reports',
+                    })
+                )
+            )
+        }
+    }
+
+    return { success: true }
+}
+
+/**
+ * Block another user. Once blocked, neither party can message the other (see the
+ * block check in sendMessage). Idempotent via the unique (blocker_id, blocked_id)
+ * constraint — re-blocking is a no-op.
+ */
+export async function blockUser(blockedId: string) {
+    const validationError = validate(blockSchema, { blockedId })
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    if (blockedId === user.id) {
+        return { error: 'You cannot block yourself' }
+    }
+
+    const { error } = await supabase
+        .from('blocked_users')
+        .upsert(
+            { blocker_id: user.id, blocked_id: blockedId },
+            { onConflict: 'blocker_id,blocked_id', ignoreDuplicates: true }
+        )
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/app/messages')
+    return { success: true }
+}
+
+/**
+ * Remove a previously created block. Deletes only the caller's own block row
+ * (RLS enforces blocker_id = auth.uid()).
+ */
+export async function unblockUser(blockedId: string) {
+    const validationError = validate(blockSchema, { blockedId })
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    const { error } = await supabase
+        .from('blocked_users')
+        .delete()
+        .eq('blocker_id', user.id)
+        .eq('blocked_id', blockedId)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    revalidatePath('/app/messages')
+    return { success: true }
 }

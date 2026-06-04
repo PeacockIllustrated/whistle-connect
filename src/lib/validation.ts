@@ -239,3 +239,35 @@ export const disputeSchema = z.object({
 
 export type DisputeCategory = typeof DISPUTE_CATEGORIES[number]
 export type DisputeDesiredOutcome = typeof DISPUTE_DESIRED_OUTCOMES[number]
+
+// ── Moderation schemas (Apple Guideline 1.2: report / block) ──────────────
+
+export const REPORT_CATEGORIES = [
+    'spam',
+    'harassment',
+    'hate_or_abuse',
+    'inappropriate',
+    'safety_concern',
+    'other',
+] as const
+
+export const reportSchema = z.object({
+    category: z.enum(REPORT_CATEGORIES, { message: 'Pick a category that best describes the issue' }),
+    reason: z.string()
+        .min(10, 'Please describe the issue in at least 10 characters')
+        .max(2000, 'Please keep the description under 2000 characters'),
+    messageId: z.string().regex(UUID, 'Invalid message ID').optional(),
+    reportedUserId: z.string().regex(UUID, 'Invalid user ID').optional(),
+    threadId: z.string().regex(UUID, 'Invalid thread ID').optional(),
+}).refine(
+    (data) => Boolean(data.messageId || data.reportedUserId || data.threadId),
+    { message: 'A report must reference a message, user, or thread' }
+)
+
+export const blockSchema = z.object({
+    blockedId: z.string().regex(UUID, 'Invalid user ID'),
+})
+
+export type ReportCategory = typeof REPORT_CATEGORIES[number]
+export type ReportInput = z.infer<typeof reportSchema>
+export type BlockInput = z.infer<typeof blockSchema>

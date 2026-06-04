@@ -8,8 +8,9 @@ import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
-import { updateFANumber } from './actions'
-import { Pencil, ShieldCheck, BadgeCheck } from 'lucide-react'
+import { Modal } from '@/components/ui/Modal'
+import { updateFANumber, deleteMyAccount, exportMyData } from './actions'
+import { Pencil, ShieldCheck, BadgeCheck, Trash2, AlertTriangle, Download } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile } from '@/lib/types'
 
@@ -111,6 +112,166 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
             {profile?.role === 'referee' && refereeProfile && (
                 <RefereeDetailsCard refereeProfile={refereeProfile} onUpdate={() => router.refresh()} />
             )}
+
+            {/* Your data — GDPR export (right to data portability) */}
+            <DataExport />
+
+            {/* Danger zone — account deletion (App/Play Store requirement) */}
+            <DangerZone />
+        </>
+    )
+}
+
+function DataExport() {
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+
+    async function handleExport() {
+        setLoading(true)
+        setError('')
+        const result = await exportMyData()
+        setLoading(false)
+        if (result.error || !result.data) {
+            setError(result.error || 'Could not export your data. Please try again.')
+            return
+        }
+        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `whistle-connect-data-${new Date().toISOString().slice(0, 10)}.json`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+    }
+
+    return (
+        <Card variant="default" padding="md" className="mb-4">
+            <h2 className="text-sm font-semibold text-[var(--foreground-muted)] uppercase tracking-wide mb-2">
+                Your Data
+            </h2>
+            <p className="text-sm text-[var(--foreground-muted)] mb-4">
+                Download a copy of your personal data (profile, bookings, offers, messages and wallet history) as a JSON file.
+            </p>
+            {error && (
+                <p className="text-sm text-red-600 mb-3">{error}</p>
+            )}
+            <button
+                onClick={handleExport}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--neutral-100)] disabled:opacity-50"
+            >
+                <Download className="w-4 h-4" />
+                {loading ? 'Preparing…' : 'Download my data'}
+            </button>
+        </Card>
+    )
+}
+
+function DangerZone() {
+    const [showModal, setShowModal] = useState(false)
+    const [confirmText, setConfirmText] = useState('')
+    const [error, setError] = useState('')
+    const [deleting, setDeleting] = useState(false)
+
+    const canDelete = confirmText === 'DELETE'
+
+    function closeModal() {
+        if (deleting) return
+        setShowModal(false)
+        setConfirmText('')
+        setError('')
+    }
+
+    async function handleDelete() {
+        if (!canDelete || deleting) return
+        setError('')
+        setDeleting(true)
+        const result = await deleteMyAccount()
+        if (result.error) {
+            setDeleting(false)
+            setError(result.error)
+            return
+        }
+        // Account anonymized + login disabled + signed out — go to the landing page.
+        window.location.href = '/'
+    }
+
+    return (
+        <>
+            <Card variant="default" padding="md" className="mt-6 border-red-300">
+                <h2 className="text-sm font-semibold text-red-600 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4" />
+                    Danger Zone
+                </h2>
+                <p className="text-sm text-[var(--foreground-muted)] mb-4">
+                    Permanently delete your account and personal data. This cannot be undone.
+                </p>
+                <button
+                    onClick={() => setShowModal(true)}
+                    className="inline-flex items-center gap-2 py-2.5 px-4 rounded-lg border border-red-300 text-red-600 font-medium text-sm hover:bg-red-50 transition-colors"
+                >
+                    <Trash2 className="w-4 h-4" />
+                    Delete account
+                </button>
+            </Card>
+
+            <Modal isOpen={showModal} onClose={closeModal} title="Delete account" size="md">
+                <div className="space-y-4">
+                    <p className="text-sm text-[var(--foreground)]">
+                        This will <span className="font-semibold">permanently delete</span> your
+                        account and remove your personal details. You will be signed out and will
+                        not be able to log back in. This action cannot be undone.
+                    </p>
+
+                    <div className="rounded-lg bg-red-50 border border-red-200 px-3 py-2.5">
+                        <p className="text-xs font-semibold text-red-700 mb-1">Before you can delete:</p>
+                        <ul className="text-xs text-red-700 list-disc list-inside space-y-0.5">
+                            <li>Your wallet balance must be £0 (withdraw any funds first)</li>
+                            <li>You must have no active bookings or funds held in escrow</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm text-[var(--foreground-muted)] mb-1.5">
+                            Type <span className="font-semibold text-[var(--foreground)]">DELETE</span> to confirm
+                        </label>
+                        <input
+                            type="text"
+                            value={confirmText}
+                            onChange={(e) => setConfirmText(e.target.value)}
+                            placeholder="DELETE"
+                            autoComplete="off"
+                            disabled={deleting}
+                            className="w-full px-3 py-2.5 text-sm border border-[var(--border-color)] rounded-lg focus:outline-none focus:ring-1 focus:ring-red-400 disabled:opacity-50"
+                        />
+                    </div>
+
+                    {error && (
+                        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                            {error}
+                        </p>
+                    )}
+
+                    <div className="flex gap-3 pt-1">
+                        <button
+                            onClick={closeModal}
+                            disabled={deleting}
+                            className="flex-1 py-3 px-4 rounded-lg border border-[var(--border-color)] font-medium disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleDelete}
+                            disabled={!canDelete || deleting}
+                            className="flex-1 py-3 px-4 rounded-lg font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            {deleting ? 'Deleting…' : 'Delete account'}
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </>
     )
 }

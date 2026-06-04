@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import { MessageWithSender } from '@/lib/types'
+import { ReportMessageButton } from '@/components/app/ReportMessageButton'
 
 export interface MessageBubbleProps {
     message: MessageWithSender
@@ -53,16 +54,25 @@ export function MessageBubble({ message, isOwn, showSender = false, className }:
                     </p>
                 </div>
 
-                {/* Timestamp */}
-                <p className={cn(
-                    'text-[10px] text-[var(--neutral-400)] mt-1',
-                    isOwn ? 'text-right mr-1' : 'ml-3'
+                {/* Timestamp + (incoming only) per-message report control */}
+                <div className={cn(
+                    'flex items-center gap-1.5 mt-1',
+                    isOwn ? 'justify-end mr-1' : 'ml-3'
                 )}>
-                    {new Date(message.created_at).toLocaleTimeString('en', {
-                        hour: 'numeric',
-                        minute: '2-digit'
-                    })}
-                </p>
+                    <p className="text-[10px] text-[var(--neutral-400)]">
+                        {new Date(message.created_at).toLocaleTimeString('en', {
+                            hour: 'numeric',
+                            minute: '2-digit'
+                        })}
+                    </p>
+                    {!isOwn && message.sender_id && (
+                        <ReportMessageButton
+                            messageId={message.id}
+                            threadId={message.thread_id}
+                            reportedUserId={message.sender_id}
+                        />
+                    )}
+                </div>
             </div>
         </div>
     )
