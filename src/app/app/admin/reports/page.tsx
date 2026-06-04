@@ -1,9 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ChevronLeft, ShieldAlert, Trash2, Check, X } from 'lucide-react'
+import { ChevronLeft, ShieldAlert, Trash2, Check, X, UserX, UserCheck } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { resolveReport, removeMessage } from './actions'
+import { resolveReport, removeMessage, suspendUser, unsuspendUser } from './actions'
 
 const CATEGORY_LABELS: Record<string, string> = {
     spam: 'Spam',
@@ -23,7 +23,7 @@ interface ReportRow {
     thread_id: string | null
     reported_user_id: string | null
     reporter: { id: string; full_name: string | null } | { id: string; full_name: string | null }[] | null
-    reported: { id: string; full_name: string | null } | { id: string; full_name: string | null }[] | null
+    reported: { id: string; full_name: string | null; suspended_at: string | null } | { id: string; full_name: string | null; suspended_at: string | null }[] | null
     message: { id: string; body: string; deleted_at: string | null } | { id: string; body: string; deleted_at: string | null }[] | null
 }
 
@@ -56,7 +56,7 @@ export default async function AdminReportsPage() {
         .select(`
       id, category, reason, created_at, message_id, thread_id, reported_user_id,
       reporter:profiles!reports_reporter_id_fkey(id, full_name),
-      reported:profiles!reports_reported_user_id_fkey(id, full_name),
+      reported:profiles!reports_reported_user_id_fkey(id, full_name, suspended_at),
       message:messages!reports_message_id_fkey(id, body, deleted_at)
     `)
         .eq('status', 'open')
@@ -77,6 +77,16 @@ export default async function AdminReportsPage() {
     async function removeMessageAction(messageId: string) {
         'use server'
         await removeMessage(messageId)
+    }
+
+    async function suspendAction(userId: string) {
+        'use server'
+        await suspendUser(userId)
+    }
+
+    async function unsuspendAction(userId: string) {
+        'use server'
+        await unsuspendUser(userId)
     }
 
     return (
@@ -184,6 +194,30 @@ export default async function AdminReportsPage() {
                                                 Remove message
                                             </button>
                                         </form>
+                                    )}
+
+                                    {report.reported_user_id && reported && (
+                                        reported.suspended_at ? (
+                                            <form action={unsuspendAction.bind(null, report.reported_user_id)}>
+                                                <button
+                                                    type="submit"
+                                                    className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] px-3 py-2 text-sm font-medium text-[var(--foreground-muted)] hover:bg-[var(--neutral-50)]"
+                                                >
+                                                    <UserCheck className="h-4 w-4" />
+                                                    Unsuspend {reported.full_name || 'user'}
+                                                </button>
+                                            </form>
+                                        ) : (
+                                            <form action={suspendAction.bind(null, report.reported_user_id)}>
+                                                <button
+                                                    type="submit"
+                                                    className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700"
+                                                >
+                                                    <UserX className="h-4 w-4" />
+                                                    Suspend {reported.full_name || 'user'}
+                                                </button>
+                                            </form>
+                                        )
                                     )}
 
                                     <form action={resolveAction.bind(null, report.id)} className="space-y-2">

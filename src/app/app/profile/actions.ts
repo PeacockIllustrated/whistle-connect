@@ -216,6 +216,59 @@ export async function deleteMyAccount(): Promise<{ success?: boolean; error?: st
     return { success: true }
 }
 
+/**
+ * GDPR data export (right to data portability). Returns a structured JSON
+ * snapshot of the signed-in user's own data — own-data reads only, scoped by
+ * the cookie client + RLS. The client turns this payload into a file download.
+ */
+export async function exportMyData(): Promise<{ success?: boolean; data?: Record<string, unknown>; error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Not authenticated' }
+    }
+
+    const [profileRes, refRes, bookingsRes, offersRes, assignmentsRes, messagesRes, walletRes, notificationsRes] =
+        await Promise.all([
+            supabase.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+            supabase.from('referee_profiles').select('*').eq('profile_id', user.id).maybeSingle(),
+            supabase.from('bookings').select('*').eq('coach_id', user.id),
+            supabase.from('booking_offers').select('*').eq('referee_id', user.id),
+            supabase.from('booking_assignments').select('*').eq('referee_id', user.id),
+            supabase.from('messages').select('*').eq('sender_id', user.id),
+            supabase.from('wallets').select('*').eq('user_id', user.id).maybeSingle(),
+            supabase.from('notifications').select('*').eq('user_id', user.id),
+        ])
+
+    // wallet_transactions are keyed by wallet_id, so resolve the wallet first.
+    let walletTransactions: unknown[] = []
+    if (walletRes.data?.id) {
+        const { data: tx } = await supabase
+            .from('wallet_transactions')
+            .select('*')
+            .eq('wallet_id', walletRes.data.id)
+        walletTransactions = tx ?? []
+    }
+
+    return {
+        success: true,
+        data: {
+            exported_at: new Date().toISOString(),
+            account: { id: user.id, email: user.email },
+            profile: profileRes.data,
+            referee_profile: refRes.data,
+            bookings: bookingsRes.data ?? [],
+            offers_received: offersRes.data ?? [],
+            assignments: assignmentsRes.data ?? [],
+            messages_sent: messagesRes.data ?? [],
+            wallet: walletRes.data,
+            wallet_transactions: walletTransactions,
+            notifications: notificationsRes.data ?? [],
+        },
+    }
+}
+
 // ── Notification Test Simulator ────────────────────────────────────────────
 
 const TEST_SCENARIOS = [

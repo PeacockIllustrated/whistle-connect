@@ -9,8 +9,8 @@ import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
 import { Modal } from '@/components/ui/Modal'
-import { updateFANumber, deleteMyAccount } from './actions'
-import { Pencil, ShieldCheck, BadgeCheck, Trash2, AlertTriangle } from 'lucide-react'
+import { updateFANumber, deleteMyAccount, exportMyData } from './actions'
+import { Pencil, ShieldCheck, BadgeCheck, Trash2, AlertTriangle, Download } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile } from '@/lib/types'
 
@@ -113,9 +113,59 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
                 <RefereeDetailsCard refereeProfile={refereeProfile} onUpdate={() => router.refresh()} />
             )}
 
+            {/* Your data — GDPR export (right to data portability) */}
+            <DataExport />
+
             {/* Danger zone — account deletion (App/Play Store requirement) */}
             <DangerZone />
         </>
+    )
+}
+
+function DataExport() {
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState('')
+
+    async function handleExport() {
+        setLoading(true)
+        setError('')
+        const result = await exportMyData()
+        setLoading(false)
+        if (result.error || !result.data) {
+            setError(result.error || 'Could not export your data. Please try again.')
+            return
+        }
+        const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `whistle-connect-data-${new Date().toISOString().slice(0, 10)}.json`
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        URL.revokeObjectURL(url)
+    }
+
+    return (
+        <Card variant="default" padding="md" className="mb-4">
+            <h2 className="text-sm font-semibold text-[var(--foreground-muted)] uppercase tracking-wide mb-2">
+                Your Data
+            </h2>
+            <p className="text-sm text-[var(--foreground-muted)] mb-4">
+                Download a copy of your personal data (profile, bookings, offers, messages and wallet history) as a JSON file.
+            </p>
+            {error && (
+                <p className="text-sm text-red-600 mb-3">{error}</p>
+            )}
+            <button
+                onClick={handleExport}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--neutral-100)] disabled:opacity-50"
+            >
+                <Download className="w-4 h-4" />
+                {loading ? 'Preparing…' : 'Download my data'}
+            </button>
+        </Card>
     )
 }
 

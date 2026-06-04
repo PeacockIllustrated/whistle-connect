@@ -58,9 +58,15 @@ export async function sendMessage(threadId: string, body: string) {
     // detail "Email parent for important updates").
     const { data: senderProfile } = await supabase
         .from('profiles')
-        .select('date_of_birth')
+        .select('date_of_birth, suspended_at')
         .eq('id', user.id)
         .single()
+
+    // Moderation: a suspended (ejected) user cannot send messages. The auth ban
+    // already kills their session; this guards the window before token expiry.
+    if (senderProfile?.suspended_at) {
+        return { error: 'Your account is suspended and cannot send messages. Contact support if you believe this is a mistake.' }
+    }
 
     if (senderProfile?.date_of_birth && ageOnDate(senderProfile.date_of_birth) < PARENTAL_CONSENT_AGE) {
         return { error: 'In-app messaging is unavailable for under-16 referees. Important updates are sent to your parent or guardian.' }

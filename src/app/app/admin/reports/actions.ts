@@ -98,3 +98,77 @@ export async function removeMessage(messageId: string): Promise<{ success?: bool
     revalidatePath('/app/admin/reports')
     return { success: true }
 }
+
+/**
+ * Suspend (eject) a user in response to a report. Admin-only. Sets the
+ * suspension marker AND bans the auth.users row (reversible) so the session is
+ * killed and re-login refused immediately.
+ */
+export async function suspendUser(userId: string, reason?: string): Promise<{ success?: boolean; error?: string }> {
+    const auth = await requireAdmin()
+    if ('error' in auth) {
+        return { error: auth.error }
+    }
+    if (userId === auth.userId) {
+        return { error: 'You cannot suspend your own account.' }
+    }
+
+    const adminSupabase = createAdminClient()
+    if (!adminSupabase) {
+        return { error: 'Admin client unavailable' }
+    }
+
+    const { error } = await adminSupabase
+        .from('profiles')
+        .update({
+            suspended_at: new Date().toISOString(),
+            suspended_reason: reason?.trim() || null,
+        })
+        .eq('id', userId)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    // Disable login immediately (reversible). ~100yr ban.
+    const { error: banError } = await adminSupabase.auth.admin.updateUserById(userId, { ban_duration: '876000h' })
+    if (banError) {
+        return { error: 'User flagged as suspended, but login could not be disabled. Please retry.' }
+    }
+
+    revalidatePath('/app/admin/reports')
+    return { success: true }
+}
+
+/**
+ * Lift a suspension. Admin-only. Clears the marker and un-bans the auth user.
+ */
+export async function unsuspendUser(userId: string): Promise<{ success?: boolean; error?: string }> {
+    const auth = await requireAdmin()
+    if ('error' in auth) {
+        return { error: auth.error }
+    }
+
+    const adminSupabase = createAdminClient()
+    if (!adminSupabase) {
+        return { error: 'Admin client unavailable' }
+    }
+
+    const { error } = await adminSupabase
+        .from('profiles')
+        .update({ suspended_at: null, suspended_reason: null })
+        .eq('id', userId)
+
+    if (error) {
+        return { error: error.message }
+    }
+
+    // 'none' lifts the ban in supabase-js.
+    const { error: banError } = await adminSupabase.auth.admin.updateUserById(userId, { ban_duration: 'none' })
+    if (banError) {
+        return { error: 'Suspension cleared, but login could not be re-enabled. Please retry.' }
+    }
+
+    revalidatePath('/app/admin/reports')
+    return { success: true }
+}
