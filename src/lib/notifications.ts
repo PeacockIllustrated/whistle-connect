@@ -22,15 +22,23 @@ interface CreateNotificationParams {
 export async function createNotification({
     userId, title, message, type, link, urgency = 'normal',
 }: CreateNotificationParams): Promise<{ success: boolean; error?: string }> {
-    // Prefer the service-role client where available. The
-    // `create_notification` RPC is SECURITY DEFINER + scoped to whatever
-    // userId the caller passes, but its EXECUTE grant is restricted to
-    // `authenticated` and `service_role` (NOT `anon`). Cron jobs and other
-    // session-less server contexts have no user cookie, so a regular
-    // `createClient()` call runs as `anon` and is denied (Postgres 42501).
-    // Falling back to the cookie-based client keeps RLS in play for the
-    // push_subscriptions read when called from a real user session.
-    const supabase = createAdminClient() ?? await createClient()
+    // The `create_notification` RPC is granted to `service_role` ONLY
+    // (migration 0163 — it has no internal auth.uid() check, so leaving it
+    // callable by `authenticated` let any signed-in user spoof notifications to
+    // any user_id). Reading the RECIPIENT's push_subscriptions also needs to
+    // bypass RLS (you are notifying someone else). Both require the
+    // service-role client, so a missing key means we cannot notify — surface it
+    // loudly rather than silently writing nothing (WS-D's /api/admin/health
+    // flags a missing key).
+    const supabase = createAdminClient()
+    if (!supabase) {
+        console.error('createNotification: SUPABASE_SERVICE_ROLE_KEY missing — notification not sent')
+        Sentry.captureMessage('createNotification: admin client unavailable (SUPABASE_SERVICE_ROLE_KEY missing)', {
+            level: 'error',
+            tags: { 'notification.failure': 'admin-client-missing' },
+        })
+        return { success: false, error: 'Notification service unavailable' }
+    }
 
     // 1. Create in-app notification via SECURITY DEFINER RPC function
     const { error } = await supabase.rpc('create_notification', {
