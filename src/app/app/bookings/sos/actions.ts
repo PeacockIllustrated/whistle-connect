@@ -1,7 +1,7 @@
 'use server'
 
 import * as Sentry from '@sentry/nextjs'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
 import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
@@ -134,8 +134,15 @@ export async function claimSOSBooking(bookingId: string) {
 
     if (!user) return { error: 'Unauthorized' }
 
-    // Call the atomic claim RPC
-    const { data, error } = await supabase.rpc('claim_sos_booking', {
+    // claim_sos_booking is service-role-only (migration 0162): it trusts its
+    // p_referee_id argument and had no internal auth.uid() check, so it must
+    // run via the admin client with the referee id pinned to the authenticated
+    // caller (never a client-supplied value).
+    const admin = createAdminClient()
+    if (!admin) {
+        return { error: 'SOS claims are temporarily unavailable. Please try again shortly.' }
+    }
+    const { data, error } = await admin.rpc('claim_sos_booking', {
         p_booking_id: bookingId,
         p_referee_id: user.id,
     })
