@@ -122,7 +122,7 @@ export async function getRefereeProfile() {
     return { data, error: null }
 }
 
-export async function updateRefereeProfile(updates: { central_venue_opt_in?: boolean, county?: string }) {
+export async function updateRefereeProfile(updates: { central_venue_opt_in?: boolean, tournament_opt_in?: boolean, county?: string }) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 

@@ -68,6 +68,7 @@ export interface RefereeProfile {
     county: string | null
     verified: boolean
     central_venue_opt_in: boolean
+    tournament_opt_in: boolean
     is_available: boolean
     dbs_status: DBSStatus
     dbs_expires_at: string | null
@@ -288,6 +289,7 @@ export interface RefereeProfileWithAvailability {
     travel_radius_km: number
     fa_verification_status: FAVerificationStatus
     central_venue_opt_in?: boolean
+    tournament_opt_in?: boolean
     profile: {
         id: string
         full_name: string

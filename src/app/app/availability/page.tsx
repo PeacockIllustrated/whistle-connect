@@ -22,6 +22,8 @@ export default function AvailabilityPage() {
     const [dateAvailability, setDateAvailability] = useState<RefereeDateAvailability[]>([])
     const [centralVenueOptIn, setCentralVenueOptIn] = useState(false)
     const [initialOptIn, setInitialOptIn] = useState(false)
+    const [tournamentOptIn, setTournamentOptIn] = useState(false)
+    const [initialTournamentOptIn, setInitialTournamentOptIn] = useState(false)
     const [county, setCounty] = useState('')
     const [initialCounty, setInitialCounty] = useState('')
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -69,6 +71,8 @@ export default function AvailabilityPage() {
         if (profileResult.data) {
             setCentralVenueOptIn(profileResult.data.central_venue_opt_in)
             setInitialOptIn(profileResult.data.central_venue_opt_in)
+            setTournamentOptIn(profileResult.data.tournament_opt_in ?? false)
+            setInitialTournamentOptIn(profileResult.data.tournament_opt_in ?? false)
             setCounty(profileResult.data.county || '')
             setInitialCounty(profileResult.data.county || '')
             setIsAvailable(profileResult.data.is_available ?? true)
@@ -138,9 +142,10 @@ export default function AvailabilityPage() {
 
                 const results = await Promise.all([
                     ...dateUpdatePromises,
-                    (centralVenueOptIn !== initialOptIn || county !== initialCounty)
+                    (centralVenueOptIn !== initialOptIn || tournamentOptIn !== initialTournamentOptIn || county !== initialCounty)
                         ? updateRefereeProfile({
                             central_venue_opt_in: centralVenueOptIn,
+                            tournament_opt_in: tournamentOptIn,
                             county: county
                         })
                         : Promise.resolve({ success: true })
@@ -152,6 +157,7 @@ export default function AvailabilityPage() {
                 } else {
                     setHasChanges(false)
                     setInitialOptIn(centralVenueOptIn)
+                    setInitialTournamentOptIn(tournamentOptIn)
                     setInitialCounty(county)
                     setSelectedDates([])
                     await loadAllAvailability()
@@ -166,9 +172,10 @@ export default function AvailabilityPage() {
 
                 const results = await Promise.all([
                     updateDateAvailability(dateStr, slots),
-                    (centralVenueOptIn !== initialOptIn || county !== initialCounty)
+                    (centralVenueOptIn !== initialOptIn || tournamentOptIn !== initialTournamentOptIn || county !== initialCounty)
                         ? updateRefereeProfile({
                             central_venue_opt_in: centralVenueOptIn,
+                            tournament_opt_in: tournamentOptIn,
                             county: county
                         })
                         : Promise.resolve({ success: true })
@@ -180,6 +187,7 @@ export default function AvailabilityPage() {
                 } else {
                     setHasChanges(false)
                     setInitialOptIn(centralVenueOptIn)
+                    setInitialTournamentOptIn(tournamentOptIn)
                     setInitialCounty(county)
                     await loadAllAvailability()
                     setCelebration({
@@ -305,6 +313,25 @@ export default function AvailabilityPage() {
                         <label htmlFor="central_venue_opt_in" className="text-sm cursor-pointer select-none">
                             <span className="font-bold block text-[var(--foreground)]">Central Venue Opt-in</span>
                             <span className="text-xs text-[var(--foreground-muted)]">I am available for multi-game bookings at central venues</span>
+                        </label>
+                    </div>
+
+                    <div className="flex items-start gap-3 bg-[var(--neutral-50)] p-4 rounded-xl border border-[var(--border-color)]">
+                        <div className="pt-1">
+                            <input
+                                type="checkbox"
+                                id="tournament_opt_in"
+                                checked={tournamentOptIn}
+                                onChange={(e) => {
+                                    setTournamentOptIn(e.target.checked)
+                                    setHasChanges(true)
+                                }}
+                                className="w-5 h-5 rounded border-[var(--border-color)] text-[var(--brand-primary)] focus:ring-[var(--brand-primary)] cursor-pointer"
+                            />
+                        </div>
+                        <label htmlFor="tournament_opt_in" className="text-sm cursor-pointer select-none">
+                            <span className="font-bold block text-[var(--foreground)]">Tournament Opt-in</span>
+                            <span className="text-xs text-[var(--foreground-muted)]">I am available to cover tournament days (multiple matches at one venue)</span>
                         </label>
                     </div>
                 </div>
@@ -548,8 +575,8 @@ export default function AvailabilityPage() {
                             loading={saving}
                             disabled={
                                 multiSelectMode
-                                    ? selectedDates.length === 0 || (!hasChanges && centralVenueOptIn === initialOptIn && county === initialCounty)
-                                    : !hasChanges && centralVenueOptIn === initialOptIn && county === initialCounty
+                                    ? selectedDates.length === 0 || (!hasChanges && centralVenueOptIn === initialOptIn && tournamentOptIn === initialTournamentOptIn && county === initialCounty)
+                                    : !hasChanges && centralVenueOptIn === initialOptIn && tournamentOptIn === initialTournamentOptIn && county === initialCounty
                             }
                             className="shadow-lg"
                         >
