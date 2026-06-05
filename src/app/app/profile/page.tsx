@@ -41,39 +41,43 @@ export default async function ProfilePage() {
             />
 
 
-            {/* Quick Links */}
-            <Card variant="default" padding="none" className="mb-4 overflow-hidden">
-                {profile?.role === 'referee' && (
-                    <Link
-                        href="/app/availability"
-                        className="flex items-center justify-between p-4 border-b border-[var(--border-color)] hover:bg-[var(--neutral-50)] transition-colors"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center">
-                                <Clock className="w-5 h-5 text-[var(--color-primary)]" />
+            {/* Quick Links — only render when there's actually a link to show.
+                Coaches match neither branch, so rendering the card for them left
+                an empty shadowed sliver under the Danger Zone. The mt-6 gives a
+                clear gap between the Danger Zone and the Set Availability link. */}
+            {(profile?.role === 'referee' || profile?.role === 'admin') && (
+                <Card variant="default" padding="none" className="mt-6 mb-4 overflow-hidden">
+                    {profile?.role === 'referee' && (
+                        <Link
+                            href="/app/availability"
+                            className="flex items-center justify-between p-4 border-b border-[var(--border-color)] hover:bg-[var(--neutral-50)] transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center">
+                                    <Clock className="w-5 h-5 text-[var(--color-primary)]" />
+                                </div>
+                                <span className="font-medium">Set Availability</span>
                             </div>
-                            <span className="font-medium">Set Availability</span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-[var(--neutral-400)]" />
-                    </Link>
-                )}
+                            <ChevronRight className="w-5 h-5 text-[var(--neutral-400)]" />
+                        </Link>
+                    )}
 
-                {profile?.role === 'admin' && (
-                    <Link
-                        href="/app/admin/referees"
-                        className="flex items-center justify-between p-4 border-b border-[var(--border-color)] hover:bg-[var(--neutral-50)] transition-colors"
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
-                                <ShieldCheck className="w-5 h-5 text-violet-600" />
+                    {profile?.role === 'admin' && (
+                        <Link
+                            href="/app/admin/referees"
+                            className="flex items-center justify-between p-4 border-b border-[var(--border-color)] hover:bg-[var(--neutral-50)] transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                                    <ShieldCheck className="w-5 h-5 text-violet-600" />
+                                </div>
+                                <span className="font-medium">Manage Referees</span>
                             </div>
-                            <span className="font-medium">Manage Referees</span>
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-[var(--neutral-400)]" />
-                    </Link>
-                )}
-
-            </Card>
+                            <ChevronRight className="w-5 h-5 text-[var(--neutral-400)]" />
+                        </Link>
+                    )}
+                </Card>
+            )}
 
             {/* Notification Test — dev / preview only. Excluded from prod
                 bundle so end users don't see a "fire test notification" panel. */}

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import { ShieldCheck, Clock, Bell, Users } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import SplashScreen from '@/components/ui/SplashScreen'
 import { createClient } from '@/lib/supabase/server'
@@ -70,7 +71,7 @@ export default async function LandingPage() {
           </h2>
 
           <p className="text-white/60 text-lg max-w-xs mx-auto mb-10">
-            Connecting Grassroots coaches with Local Referees
+            Connecting Grassroots Coaches with Local Referees
           </p>
 
           <div className="flex flex-col gap-4 max-w-xs mx-auto">
@@ -92,6 +93,33 @@ export default async function LandingPage() {
                   Register as a Referee
                 </Button>
               </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Whistle Connect — feature highlights */}
+      <section className="py-10 bg-[var(--surface)]">
+        <div className="max-w-[var(--content-max-width)] mx-auto px-4">
+          <div className="rounded-3xl bg-white border border-[var(--border-color)] shadow-sm px-4 py-8 sm:px-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8">
+              {[
+                { Icon: ShieldCheck, title: 'FA Verified', body: 'All referees are verified and trusted' },
+                { Icon: Clock, title: 'Quick & Easy', body: 'Book in seconds and save time' },
+                { Icon: Bell, title: 'Stay Informed', body: 'Real-time updates and notifications' },
+                { Icon: Users, title: 'Built for Grassroots', body: 'Connecting coaches and referees' },
+              ].map(({ Icon, title, body }) => (
+                <div
+                  key={title}
+                  className="flex flex-col items-center text-center px-3 lg:border-l lg:border-[var(--border-color)] lg:first:border-l-0"
+                >
+                  <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-3">
+                    <Icon className="w-7 h-7 text-blue-600" strokeWidth={2} />
+                  </div>
+                  <h3 className="text-sm sm:text-base font-bold text-[var(--wc-blue)]">{title}</h3>
+                  <p className="text-xs sm:text-sm text-[var(--foreground-muted)] mt-1 max-w-[18ch]">{body}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>

@@ -1483,6 +1483,12 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
         query = query.eq('central_venue_opt_in', true)
     }
 
+    // Tournaments are a separate commitment — only surface referees who have
+    // explicitly opted in to tournament days (migration 0160).
+    if (booking.booking_type === 'tournament') {
+        query = query.eq('tournament_opt_in', true)
+    }
+
     const { data: results, error } = await query
 
     if (error) return { error: error.message }
