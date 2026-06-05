@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
 import { validate, sendMessageSchema, reportSchema, blockSchema, type ReportInput } from '@/lib/validation'
-import { ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
+import { ageOnDate, PARENTAL_CONSENT_AGE, requiresParentalConsent } from '@/lib/constants'
 
 export async function sendMessage(threadId: string, body: string) {
     const validationError = validate(sendMessageSchema, { threadId, body })
@@ -58,7 +58,7 @@ export async function sendMessage(threadId: string, body: string) {
     // detail "Email parent for important updates").
     const { data: senderProfile } = await supabase
         .from('profiles')
-        .select('date_of_birth, suspended_at')
+        .select('role, date_of_birth, suspended_at')
         .eq('id', user.id)
         .single()
 
@@ -68,7 +68,14 @@ export async function sendMessage(threadId: string, body: string) {
         return { error: 'Your account is suspended and cannot send messages. Contact support if you believe this is a mistake.' }
     }
 
-    if (senderProfile?.date_of_birth && ageOnDate(senderProfile.date_of_birth) < PARENTAL_CONSENT_AGE) {
+    // Fails closed for referees: a referee with no DOB on file is treated as
+    // under-16. Coaches are not age-gated, so a missing coach DOB does not
+    // block them.
+    const senderUnder16 =
+        senderProfile?.role === 'referee'
+            ? requiresParentalConsent(senderProfile.date_of_birth)
+            : !!senderProfile?.date_of_birth && ageOnDate(senderProfile.date_of_birth) < PARENTAL_CONSENT_AGE
+    if (senderUnder16) {
         return { error: 'In-app messaging is unavailable for under-16 referees. Important updates are sent to your parent or guardian.' }
     }
 
