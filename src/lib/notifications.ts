@@ -177,6 +177,18 @@ async function sendWebPush(
             }
         })
 
+        const delivered = results.filter(r => r.status === 'fulfilled').length
+        console.log(`[WebPush] delivered ${delivered}/${results.length}`)
+        // The premortem's silent-death signal: web subscriptions exist but NONE
+        // were delivered (validation passed yet every send failed). Surface it
+        // so "phones never buzz" can't hide behind in-app rows that write fine.
+        if (delivered === 0 && results.length > 0) {
+            Sentry.captureMessage(`[WebPush] 0 of ${results.length} web deliveries succeeded`, {
+                level: 'error',
+                tags: { 'push.transport': 'web', 'push.delivered': 'false' },
+            })
+        }
+
         const cleanupPromises = results
             .map((result, index) => {
                 if (result.status === 'rejected' &&
@@ -207,6 +219,13 @@ async function sendFirebasePush(
 ) {
     if (!isFirebaseConfigured()) {
         console.warn('[FCM] Firebase not configured, skipping native push')
+        // We reach here only when native tokens exist (createNotification only
+        // calls this with firebaseSubs.length > 0), so native push is silently
+        // dead. Surface it — Sentry dedups by message fingerprint.
+        Sentry.captureMessage('[FCM] native push tokens exist but Firebase is not configured', {
+            level: 'warning',
+            tags: { 'push.transport': 'firebase', 'push.failure': 'fcm-not-configured', 'push.delivered': 'false' },
+        })
         return
     }
 
@@ -253,6 +272,31 @@ async function sendFirebasePush(
             await sendFCMMessage(message)
         })
     )
+
+    // Surface FCM send failures to Sentry (web-push already does; FCM did not,
+    // so native failures were invisible). NOT_FOUND/UNREGISTERED are expected
+    // token churn (cleaned up below) — anything else is unexpected.
+    results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+            const errorCode = (result.reason as { code?: string })?.code
+            if (errorCode !== 'NOT_FOUND' && errorCode !== 'UNREGISTERED') {
+                Sentry.captureException(result.reason, {
+                    tags: { 'push.transport': 'firebase', 'push.failure': errorCode || 'unknown' },
+                    extra: { subscription_id: subscriptions[index].id },
+                })
+            }
+        }
+    })
+
+    const delivered = results.filter(r => r.status === 'fulfilled').length
+    console.log(`[FCM] delivered ${delivered}/${results.length}`)
+    // Same silent-death signal as web: native tokens exist but none delivered.
+    if (delivered === 0 && results.length > 0) {
+        Sentry.captureMessage(`[FCM] 0 of ${results.length} native deliveries succeeded`, {
+            level: 'error',
+            tags: { 'push.transport': 'firebase', 'push.delivered': 'false' },
+        })
+    }
 
     // Cleanup invalid/unregistered tokens
     const cleanupPromises = results
