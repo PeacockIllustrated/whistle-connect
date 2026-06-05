@@ -188,6 +188,16 @@ export async function deleteMyAccount(): Promise<{ success?: boolean; error?: st
         return { error: 'Not authenticated' }
     }
 
+    // Acquire the admin client BEFORE the anonymising RPC. Deletion must also
+    // disable login via an admin auth update; if the service-role key is
+    // missing we fail HERE, before any data is touched, rather than anonymising
+    // the profile and then being unable to disable login (which would leave an
+    // anonymised-but-still-loggable account).
+    const admin = createAdminClient()
+    if (!admin) {
+        return { error: 'Account deletion is temporarily unavailable. Please try again later or contact support.' }
+    }
+
     // RPC enforces the money-safe blocking conditions + anonymizes the data.
     const { error: rpcError } = await supabase.rpc('request_account_deletion')
     if (rpcError) {
@@ -197,11 +207,6 @@ export async function deleteMyAccount(): Promise<{ success?: boolean; error?: st
 
     // Disable login: a ban kills the session and refuses re-login; freeing the
     // email lets them register again in future. Combined into one update call.
-    const admin = createAdminClient()
-    if (!admin) {
-        return { error: 'Account data removed, but login could not be disabled. Please contact support.' }
-    }
-
     const { error: banError } = await admin.auth.admin.updateUserById(user.id, {
         ban_duration: '876000h', // ~100 years — effectively permanent
         email: `deleted+${user.id}@whistleconnect.co.uk`,

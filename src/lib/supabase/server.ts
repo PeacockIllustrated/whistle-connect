@@ -48,3 +48,17 @@ export function createAdminClient() {
         }
     )
 }
+
+// Like createAdminClient() but THROWS when SUPABASE_SERVICE_ROLE_KEY is
+// missing instead of returning null. Use this on irreversible or
+// system-critical paths (account deletion, suspension, escrow/refund routing,
+// notification fan-out) where a silent no-op is more dangerous than a loud
+// failure. Server actions should catch and surface { error } to the user; the
+// throw still reaches Sentry.
+export function requireAdminClient() {
+    const client = createAdminClient()
+    if (!client) {
+        throw new Error('SUPABASE_SERVICE_ROLE_KEY is not configured — admin client unavailable')
+    }
+    return client
+}
