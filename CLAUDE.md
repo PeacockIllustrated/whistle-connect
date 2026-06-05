@@ -413,9 +413,22 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0155 | `security_advisor_resweep` — re-pin `search_path` + revoke `anon`/`PUBLIC` EXECUTE on owned SECDEF functions (regressed by 0143–0154 `CREATE OR REPLACE`). **Apply via the normal migration/deploy flow.** |
 | 0156 | `referee_dob_and_parental_consent` — `profiles.date_of_birth`, `referee_profiles.parental_consent_status`, `parental_consents` table; `handle_new_user` trigger extended to copy DOB + atomically lock & create the consent row for under-16 referees. |
 | 0157 | `tournament_matches` — `bookings.tournament_name` + `tournament_matches` child table (RLS mirrors booking-child pattern). Tournament/central = one booking + child schedule rows. |
+| 0158 | `account_deletion` — `request_account_deletion` RPC (blocks on money-in-flight, anonymises). |
+| 0159 | `moderation_reports_blocks` — report/block + admin queue. NB: a legacy remote `0159 tournament_opt_in` predates this, and the repo also has `0160_referee_tournament_opt_in.sql` (number collisions — see `MIGRATIONS.md`). |
+| 0160 | `user_suspension` — reversible auth ban + `suspended_at` marker. |
+| 0161 | `referee_dob_fail_closed` — `handle_new_user` locks NULL-DOB / under-16 referees as `awaiting` regardless of `parent_email` (premortem WS-A). |
+| 0162 | `money_rpc_stop_bleed` — revoke `escrow_refund` / `claim_sos_booking` from `authenticated`; drop legacy `wallet_withdraw`; `confirm_booking` already-held (double-charge) guard (WS-B). |
+| 0163 | `lockdown_notification_rpcs` — revoke `create_notification` (spoofing) + `handle_new_user` from `authenticated` (WS-C). |
 
-> Note: `supabase/migrations/RUN_THIS_NOW.sql` is loose scratch SQL, not a
-> tracked migration — ignore it / it should be removed.
+> Note: the repo uses `0xxx_*` filenames but the **remote** migration tracking
+> table uses a mix of legacy `0xxx` and post-reset timestamped (`20260429…`)
+> versions, so filenames do NOT line up 1:1 with tracked versions — and a few
+> migrations (`0156`, `0157`) were applied out-of-band and aren't tracked by
+> name. See `supabase/migrations/MIGRATIONS.md` for the version mapping, the
+> known number collisions (two `0001`, two `0160`, `000_complete_setup.sql`),
+> and the tracking-reconciliation SQL. A CI guard (`npm run lint:migrations`)
+> now fails any new SECDEF migration that doesn't pin `search_path` + revoke
+> `anon`/`PUBLIC`. (The old `RUN_THIS_NOW.sql` scratch file no longer exists.)
 
 ---
 
@@ -463,10 +476,10 @@ NEXT_PUBLIC_VAPID_PUBLIC_KEY=            # 87 chars, no quotes
 VAPID_PRIVATE_KEY=                       # 43 chars, no quotes
 VAPID_SUBJECT=mailto:tom@onesignanddigital.co.uk
 
-# FCM (firebase-admin) — for native push transport (PWA + future Capacitor)
-FIREBASE_PROJECT_ID=
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=
+# FCM (firebase-admin) — for native push transport (Capacitor iOS/Android).
+# `src/lib/firebase-admin.ts` reads ONE env var: the full service-account JSON
+# (single line in Vercel). project_id / client_email / private_key live inside it.
+FIREBASE_SERVICE_ACCOUNT=                 # {"project_id":"…","client_email":"…","private_key":"…", …}
 
 # Stripe (live keys for production; test keys for preview)
 STRIPE_SECRET_KEY=                       # sk_live_… or sk_test_…
