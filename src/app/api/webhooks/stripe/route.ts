@@ -189,7 +189,20 @@ async function handleAccountUpdated(account: Stripe.Account) {
     const isOnboarded = account.charges_enabled && account.payouts_enabled
 
     const supabase = createAdminClient()
-    if (!supabase) return
+    if (!supabase) {
+        // Silent no-op here meant a connected account's onboarding status was
+        // never recorded, so the ref could believe they were enabled for
+        // payouts when they were not. Surface it loudly instead.
+        Sentry.captureMessage(
+            'Stripe webhook account.updated: admin client unavailable (SUPABASE_SERVICE_ROLE_KEY missing); onboarding status NOT recorded',
+            {
+                level: 'error',
+                tags: { 'webhook.handler': 'account.updated' },
+                extra: { account_id: account.id, userId },
+            },
+        )
+        return
+    }
 
     await supabase
         .from('wallets')
@@ -207,7 +220,19 @@ async function handleTransferFailed(transfer: Stripe.Transfer) {
 
     if (userId) {
         const supabase = createAdminClient()
-        if (!supabase) return
+        if (!supabase) {
+            // A failed payout that admins are never told about is a money-loss
+            // blind spot. Capture it so it can't disappear silently.
+            Sentry.captureMessage(
+                'Stripe webhook transfer.failed: admin client unavailable (SUPABASE_SERVICE_ROLE_KEY missing); admins NOT notified of failed transfer',
+                {
+                    level: 'error',
+                    tags: { 'webhook.handler': 'transfer.failed' },
+                    extra: { transfer_id: transfer.id, userId, amount: transfer.amount },
+                },
+            )
+            return
+        }
 
         const { data: admins } = await supabase
             .from('profiles')
