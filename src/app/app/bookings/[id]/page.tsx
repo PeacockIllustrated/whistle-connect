@@ -7,7 +7,7 @@ import { BookingActions } from './BookingActions'
 import { SOSStatusPanel } from '@/components/app/SOSStatusPanel'
 import { CoachOfferRow } from '@/components/app/CoachOfferRow'
 import { BookingOffer, Profile } from '@/lib/types'
-import { ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
+import { requiresParentalConsent } from '@/lib/constants'
 import { ChevronLeft, CalendarDays, MapPin, MessageCircle, Mail } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
 
@@ -81,11 +81,13 @@ export default async function BookingDetailPage({
     // Safeguarding: under-16 referees cannot use in-app messaging. The coach
     // contacts the parent/guardian instead, and the under-16 referee sees a
     // note rather than a (blocked) message button.
+    // Fail closed: a referee with a null/unknown DOB is treated as under-16.
+    // The assigned ref is always a referee, so NULL DOB routes the coach to the
+    // parent-email path. viewerIsUnder16 only applies to a referee viewer
+    // (coaches are not age-gated).
     const assignedRefDob: string | null = assignment?.referee?.date_of_birth ?? null
-    const assignedRefUnder16 =
-        !!assignedRefDob && ageOnDate(assignedRefDob) < PARENTAL_CONSENT_AGE
-    const viewerIsUnder16 =
-        !!profile?.date_of_birth && ageOnDate(profile.date_of_birth) < PARENTAL_CONSENT_AGE
+    const assignedRefUnder16 = requiresParentalConsent(assignedRefDob)
+    const viewerIsUnder16 = isReferee && requiresParentalConsent(profile?.date_of_birth)
 
     let assignedRefParentEmail: string | null = null
     if (isCoach && assignedRefUnder16 && assignment?.referee_id) {

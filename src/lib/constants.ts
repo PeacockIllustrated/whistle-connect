@@ -115,6 +115,40 @@ export function refereeEligibleForAgeGroup(
     return groupNumber <= refAge - 1
 }
 
+/**
+ * Whether a referee REQUIRES parental consent (and has in-app messaging
+ * blocked). FAILS CLOSED: a null/unparseable DOB is treated as requiring
+ * consent, so a referee with no DOB on file can never slip the under-16 gate.
+ * Apply only to referees — coaches are not age-gated. Age computed at `onDate`
+ * (default today, the reference point for the messaging block).
+ */
+export function requiresParentalConsent(
+    dob: string | Date | null | undefined,
+    onDate: string | Date = new Date(),
+): boolean {
+    if (!dob) return true
+    const birth = dob instanceof Date ? dob : new Date(dob)
+    if (Number.isNaN(birth.getTime())) return true
+    return ageOnDate(dob, onDate) < PARENTAL_CONSENT_AGE
+}
+
+/**
+ * Whether a referee is BLOCKED from officiating `ageGroup`. The fail-closed
+ * inverse of refereeEligibleForAgeGroup: a null/unparseable DOB returns true
+ * (blocked), so a referee with no DOB on file is never offered and can never
+ * accept. Pass the MATCH DATE as `onDate` for booking eligibility.
+ */
+export function refereeBlockedFromAgeGroup(
+    dob: string | Date | null | undefined,
+    ageGroup: string | null | undefined,
+    onDate: string | Date = new Date(),
+): boolean {
+    if (!dob) return true
+    const birth = dob instanceof Date ? dob : new Date(dob)
+    if (Number.isNaN(birth.getTime())) return true
+    return !refereeEligibleForAgeGroup(ageOnDate(dob, onDate), ageGroup)
+}
+
 /** Platform booking fee added to coach's total per booking, in pence. */
 export const BOOKING_FEE_PENCE = 99
 

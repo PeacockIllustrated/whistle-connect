@@ -9,7 +9,7 @@ import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { checkBookingRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
-import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE, ageOnDate, refereeEligibleForAgeGroup, bookingsClash, MATCH_BLOCK_MINUTES, minutesSinceMidnight } from '@/lib/constants'
+import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE, ageOnDate, refereeBlockedFromAgeGroup, bookingsClash, MATCH_BLOCK_MINUTES, minutesSinceMidnight } from '@/lib/constants'
 
 /** Fetch the current travel cost rate from platform settings */
 export async function getTravelRate(): Promise<number> {
@@ -788,11 +788,10 @@ export async function acceptOffer(offerId: string) {
         }
         const acceptBooking = Array.isArray(offer.booking) ? offer.booking[0] : offer.booking
         const refProfile = refGate && (Array.isArray(refGate.profile) ? refGate.profile[0] : refGate.profile)
-        if (refProfile?.date_of_birth && acceptBooking?.age_group) {
-            const age = ageOnDate(refProfile.date_of_birth, acceptBooking.match_date)
-            if (!refereeEligibleForAgeGroup(age, acceptBooking.age_group)) {
-                return { error: 'You are too young to officiate this age group.' }
-            }
+        // Age eligibility at the MATCH DATE. Fails closed: a referee with no
+        // DOB on file cannot accept (NULL DOB is blocked, not treated eligible).
+        if (refereeBlockedFromAgeGroup(refProfile?.date_of_birth, acceptBooking?.age_group, acceptBooking?.match_date)) {
+            return { error: 'You are not eligible to officiate this age group.' }
         }
     }
 
@@ -1504,12 +1503,11 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
             return false
         }
 
-        // Age-based refereeing eligibility (computed at the match date). NULL
-        // DOB (legacy/internal accounts) ⇒ skip the age filter (treated eligible).
+        // Age-based refereeing eligibility (computed at the MATCH DATE). Fails
+        // closed: a referee with no DOB on file is excluded from results.
         const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
-        if (profile?.date_of_birth) {
-            const age = ageOnDate(profile.date_of_birth, matchDate)
-            if (!refereeEligibleForAgeGroup(age, booking.age_group)) return false
+        if (refereeBlockedFromAgeGroup(profile?.date_of_birth, booking.age_group, matchDate)) {
+            return false
         }
         return true
     })
@@ -1643,11 +1641,10 @@ export async function sendBookingRequest(
                 return { error: "This referee's account is awaiting parental approval and cannot be booked yet." }
             }
             const refProfile = Array.isArray(refGate.profile) ? refGate.profile[0] : refGate.profile
-            if (refProfile?.date_of_birth) {
-                const age = ageOnDate(refProfile.date_of_birth, bookingCheck.match_date)
-                if (!refereeEligibleForAgeGroup(age, bookingCheck.age_group)) {
-                    return { error: 'This referee is too young to officiate this age group.' }
-                }
+            // Age eligibility at the MATCH DATE. Fails closed: a referee with
+            // no DOB on file cannot be booked.
+            if (refereeBlockedFromAgeGroup(refProfile?.date_of_birth, bookingCheck.age_group, bookingCheck.match_date)) {
+                return { error: 'This referee is not eligible to officiate this age group.' }
             }
         }
     }
