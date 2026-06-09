@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whistle Connect — Security &amp; Data Protection Overview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root { --navy:#1b2537; --navy-deep:#0f1720; --navy-mid:#151e2e; --navy-light:#1e2d42; --red:#cd1719; --white:#FFFFFF; --cream:#F8FAFC; --dark:#0F172A; --mid:#475569; --light:#94A3B8; --border:#E2E8F0; }
+@page { size: 297mm 210mm; margin: 0; }
+body { font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; display:flex; flex-direction:column; align-items:center; background:#e5e7eb; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+.page { width:297mm; height:210mm; position:relative; overflow:hidden; background:var(--white); page-break-after:always; page-break-inside:avoid; }
+@media screen { .page { margin-bottom:12px; box-shadow:0 2px 12px rgba(0,0,0,0.12); } }
+
+/* Header/Footer */
+.page-header { padding:10mm 22mm 0; display:flex; align-items:center; justify-content:space-between; height:18mm; }
+.page-header .section-label { font-size:7.5pt; font-weight:500; color:var(--light); letter-spacing:0.04em; }
+.header-line { height:2px; margin:0 22mm; background:linear-gradient(90deg, var(--red), rgba(205,23,25,0)); }
+.watermark-num { position:absolute; top:18mm; right:22mm; font-size:54pt; font-weight:900; color:var(--red); opacity:0.08; line-height:1; z-index:0; }
+.page-footer { position:absolute; bottom:8mm; left:22mm; right:22mm; border-top:1px solid var(--border); padding-top:3mm; display:flex; justify-content:space-between; align-items:center; font-size:7pt; color:var(--light); }
+.content { padding:6mm 22mm 18mm; position:relative; z-index:1; }
+
+/* Type */
+.section-title { font-size:28pt; font-weight:800; color:var(--dark); line-height:1.1; margin-bottom:3mm; }
+.section-body { font-size:9.5pt; font-weight:400; color:var(--mid); line-height:1.65; max-width:90%; }
+
+/* Tags */
+.tags { display:flex; gap:2mm; flex-wrap:wrap; margin-top:4mm; }
+.tag { display:inline-block; padding:1.2mm 3mm; font-size:6.5pt; font-weight:600; border-radius:1mm; background:var(--cream); color:var(--mid); border:1px solid var(--border); }
+
+/* Benefits */
+.benefits-grid { display:grid; gap:3mm; margin-top:4mm; }
+.benefits-grid.cols-2 { grid-template-columns:1fr 1fr; }
+.benefits-grid.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+.benefits-grid.cols-4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+.benefit-card { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3.5mm 4mm; }
+.benefit-card h4 { font-size:8.5pt; font-weight:700; color:var(--dark); margin-bottom:1mm; }
+.benefit-card p { font-size:7pt; color:var(--mid); line-height:1.45; }
+
+/* Callout */
+.callout { background:var(--cream); border-left:3px solid var(--red); border-radius:0 2mm 2mm 0; padding:3.5mm 5mm; font-size:8.5pt; color:var(--mid); font-style:italic; line-height:1.55; margin-top:4mm; }
+
+/* Navy box */
+.navy-box { background:var(--navy); border-radius:2mm; padding:4mm 5mm; margin-top:4mm; }
+.navy-box h3 { font-size:13pt; font-weight:700; color:var(--white); margin-bottom:1.5mm; }
+.navy-box p { font-size:9pt; color:rgba(255,255,255,0.75); line-height:1.55; }
+
+/* Bullet list */
+.bullet-list { list-style:none; margin-top:3mm; }
+.bullet-list li { position:relative; padding-left:4mm; font-size:8.5pt; color:var(--mid); line-height:1.55; margin-bottom:1.5mm; }
+.bullet-list li::before { content:''; position:absolute; left:0; top:1.8mm; width:2mm; height:2mm; border-radius:50%; background:var(--red); }
+.bullet-list li b { color:var(--dark); }
+
+/* Stat card dark */
+.stat-card-dark { background:rgba(255,255,255,0.06); border-radius:2mm; padding:3mm 4mm; margin-top:3mm; }
+.stat-card-dark .stat-num { font-size:16pt; font-weight:800; color:var(--white); white-space:nowrap; line-height:1.2; }
+.stat-card-dark .stat-desc { font-size:7.5pt; font-weight:400; color:rgba(255,255,255,0.5); line-height:1.35; margin-top:0.5mm; }
+
+/* Tech card */
+.tech-card { background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:3.5mm 4mm 3.5mm 6mm; position:relative; }
+.tech-card::before { content:''; position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:2mm 0 0 2mm; }
+.tech-card h4 { font-size:9pt; font-weight:700; color:var(--dark); margin-bottom:0.5mm; }
+.tech-card p { font-size:7pt; color:var(--mid); line-height:1.4; }
+
+/* Cover */
+.cover { background: repeating-linear-gradient(30deg, transparent, transparent 24px, rgba(255,255,255,0.015) 24px, rgba(255,255,255,0.015) 25px), radial-gradient(ellipse at 65% 45%, rgba(30,45,66,0.6) 0%, transparent 50%), radial-gradient(ellipse at 20% 80%, rgba(21,30,46,0.5) 0%, transparent 45%), linear-gradient(155deg, #1e2d42 0%, #1b2537 35%, #151e2e 65%, #0f1720 100%); display:flex; }
+.cover-accent { position:absolute; bottom:0; left:0; width:45%; height:3px; background:linear-gradient(90deg, rgba(205,23,25,0.5), transparent); }
+
+/* ── Security additions ── */
+.metric-row { display:flex; gap:3mm; margin-top:4mm; }
+.metric { flex:1; background:var(--cream); border:1px solid var(--border); border-radius:2mm; padding:4mm 3mm; text-align:center; }
+.metric .num { font-size:19pt; font-weight:800; color:var(--red); line-height:1; }
+.metric .lbl { font-size:6.8pt; color:var(--mid); margin-top:1.5mm; line-height:1.3; }
+
+.flow { margin-top:2mm; }
+.flow-step { display:flex; gap:3mm; margin-bottom:2.4mm; align-items:flex-start; }
+.flow-step .n { flex-shrink:0; width:6mm; height:6mm; border-radius:50%; background:var(--navy); color:#fff; font-size:8pt; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.flow-step .t { font-size:8.3pt; color:var(--mid); line-height:1.42; padding-top:0.6mm; }
+.flow-step .t b { color:var(--dark); }
+
+.field-panel { display:flex; gap:3mm; margin-top:3mm; }
+.field-col { flex:1; border-radius:2mm; padding:3mm 3.5mm; }
+.field-col.share { background:#ECFDF5; border:1px solid #A7F3D0; }
+.field-col.never { background:#FEF2F2; border:1px solid #FECACA; }
+.field-col h5 { font-size:7.5pt; font-weight:700; margin-bottom:1.5mm; }
+.field-col.share h5 { color:#047857; }
+.field-col.never h5 { color:#B91C1C; }
+.field-chip { display:inline-block; font-size:6.3pt; font-weight:600; padding:0.9mm 2.2mm; border-radius:1mm; margin:0.6mm 0.6mm 0 0; background:#fff; }
+.field-col.share .field-chip { color:#047857; border:1px solid #A7F3D0; }
+.field-col.never .field-chip { color:#B91C1C; border:1px solid #FECACA; }
+
+.email-mock { background:#fff; border:1px solid var(--border); border-radius:2mm; overflow:hidden; box-shadow:0 2mm 8mm rgba(0,0,0,0.06); width:100%; }
+.email-mock .em-head { background:var(--navy); color:#fff; padding:3mm 4mm; }
+.email-mock .em-head .t1 { font-size:9pt; font-weight:700; letter-spacing:0.5px; }
+.email-mock .em-head .t2 { font-size:6pt; color:rgba(255,255,255,0.65); margin-top:0.6mm; }
+.email-mock .em-body { padding:3.5mm 4mm; }
+.email-mock .em-row { display:flex; border:1px solid var(--border); border-bottom:none; }
+.email-mock .em-row:last-of-type { border-bottom:1px solid var(--border); }
+.email-mock .em-k { width:26mm; background:var(--cream); padding:2mm 2.5mm; font-size:6pt; font-weight:700; color:var(--light); text-transform:uppercase; letter-spacing:0.4px; }
+.email-mock .em-v { padding:2mm 2.5mm; font-size:7.5pt; font-weight:600; color:var(--dark); }
+.email-mock .em-btns { display:flex; gap:2mm; margin-top:3mm; }
+.email-mock .em-btn { flex:1; text-align:center; padding:2mm; border-radius:1.5mm; font-size:7pt; font-weight:700; color:#fff; }
+
+.proc-table { width:100%; border-collapse:collapse; margin-top:3mm; font-size:7.4pt; }
+.proc-table th { background:var(--navy); color:#fff; text-align:left; padding:2.2mm 3mm; font-size:6.8pt; font-weight:600; letter-spacing:0.3px; }
+.proc-table td { border-bottom:1px solid var(--border); padding:2mm 3mm; color:var(--mid); vertical-align:top; line-height:1.35; }
+.proc-table td b { color:var(--dark); }
+.proc-table tr:nth-child(even) td { background:var(--cream); }
+
+.duo { display:flex; gap:3mm; margin-top:3mm; }
+.duo-panel { flex:1; border-radius:2mm; padding:3.5mm 4mm; }
+.duo-panel.keep { background:var(--cream); border:1px solid var(--border); }
+.duo-panel.erase { background:var(--navy); }
+.duo-panel h4 { font-size:8.5pt; font-weight:700; margin-bottom:2mm; }
+.duo-panel.keep h4 { color:var(--dark); }
+.duo-panel.erase h4 { color:#fff; }
+.duo-panel ul { list-style:none; }
+.duo-panel li { position:relative; padding-left:3.5mm; font-size:7.3pt; line-height:1.45; margin-bottom:1.2mm; }
+.duo-panel li::before { content:''; position:absolute; left:0; top:1.5mm; width:1.6mm; height:1.6mm; border-radius:50%; }
+.duo-panel.keep li { color:var(--mid); }
+.duo-panel.keep li::before { background:var(--red); }
+.duo-panel.erase li { color:rgba(255,255,255,0.8); }
+.duo-panel.erase li::before { background:#10B981; }
+
+.split { background: radial-gradient(ellipse at 65% 40%, rgba(30,45,66,0.6) 0%, transparent 55%), linear-gradient(155deg, #1e2d42 0%, #1b2537 40%, #0f1720 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.split .kicker { font-size:8pt; letter-spacing:0.32em; color:rgba(255,255,255,0.4); font-weight:600; }
+.split h2 { font-size:42pt; font-weight:900; color:#fff; margin:3mm 0 0; letter-spacing:-0.02em; }
+.split .sub { font-size:12pt; color:rgba(255,255,255,0.7); margin-top:2mm; font-weight:600; }
+.split p { font-size:9.5pt; color:rgba(255,255,255,0.55); max-width:58%; line-height:1.65; margin-top:5mm; }
+.split .rule { width:30mm; height:2px; background:var(--red); margin:6mm 0 0; }
+.split .scissor { position:absolute; top:0; left:0; right:0; border-top:2px dashed rgba(255,255,255,0.25); }
+
+.track-card { background:var(--cream); border:1px solid var(--border); border-left:3px solid #F59E0B; border-radius:0 2mm 2mm 0; padding:3.5mm 4mm; margin-top:3mm; }
+.track-card h4 { font-size:9pt; font-weight:700; color:var(--dark); margin-bottom:2mm; }
+.track-card .tcols { display:flex; gap:4mm; }
+.track-card .tcol { flex:1; }
+.track-card .k { font-size:6.3pt; font-weight:700; color:var(--light); text-transform:uppercase; letter-spacing:0.05em; }
+.track-card .v { font-size:7.3pt; color:var(--mid); line-height:1.42; margin-top:0.6mm; }
+.track-card .v.plan { color:#047857; }
+
+.kv { margin-top:2mm; }
+.kv-row { display:flex; gap:4mm; padding:2.1mm 0; border-bottom:1px solid var(--border); }
+.kv-row .k { width:42mm; flex-shrink:0; font-size:8pt; font-weight:700; color:var(--dark); line-height:1.35; }
+.kv-row .v { font-size:7.8pt; color:var(--mid); line-height:1.42; }
+.kv-row .v b { color:var(--dark); }
+</style>
+</head>
+<body>
+<div id="p1" class="page cover">
+  <div style="width:52%;display:flex;flex-direction:column;justify-content:center;padding-left:28mm;padding-right:8mm;">
+    <div><svg style="height:26mm;width:auto;filter:drop-shadow(0 0 20mm rgba(255,255,255,0.08));" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#fff"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#fff" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <div style="width:35mm;height:1.5px;background:rgba(255,255,255,0.15);margin-top:14mm;"></div>
+    <div style="font-size:7pt;font-weight:600;letter-spacing:0.3em;color:rgba(255,255,255,0.4);margin-top:5mm;">SECURITY &amp; DATA PROTECTION OVERVIEW</div>
+    <div style="font-size:36pt;font-weight:900;color:white;line-height:1.05;letter-spacing:-0.03em;margin-top:5mm;">Your Data,<br>Protected.</div>
+    <div style="margin-top:5mm;">
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(255,255,255,0.5);line-height:1.85;">Safeguarding-first, by design.</span>
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(255,255,255,0.5);line-height:1.85;">FA verification with the minimum data.</span>
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(255,255,255,0.5);line-height:1.85;">Your information, deletable on demand.</span>
+      <span style="display:block;font-size:10.5pt;font-weight:400;color:rgba(255,255,255,0.5);line-height:1.85;">Aligned with UK GDPR &amp; the DPA 2018.</span>
+    </div>
+  </div>
+  <div style="width:48%;display:flex;align-items:center;justify-content:center;position:relative;">
+    <div style="position:absolute;opacity:0.04;z-index:0;"><svg style="height:62mm;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36.96 43.37"><path fill="#fff" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <div style="position:relative;z-index:1;width:78mm;height:78mm;border-radius:50%;background:radial-gradient(circle,rgba(16,185,129,0.16) 0%,rgba(16,185,129,0) 70%);display:flex;align-items:center;justify-content:center;">
+      <svg style="height:50mm;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 4 L86 19 L86 49 C86 72 68 91 50 96 C32 91 14 72 14 49 L14 19 Z" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.6)" stroke-width="2.5"/><path d="M34 50 L45 61 L67 39" stroke="#34D399" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+    </div>
+  </div>
+  <div style="position:absolute;bottom:10mm;left:28mm;right:22mm;display:flex;justify-content:space-between;align-items:flex-end;">
+    <div><span style="display:block;font-size:7pt;color:rgba(255,255,255,0.25);line-height:1.5;">Whistle Connect Ltd. &bull; Data Controller (UK GDPR)</span><span style="display:block;font-size:7pt;color:rgba(255,255,255,0.25);line-height:1.5;">whistleconnect.co.uk &bull; support@whistleconnect.co.uk</span></div>
+    <div><svg style="height:10mm;opacity:0.2;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36.96 43.37"><path fill="#fff" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+  </div>
+  <div class="cover-accent"></div>
+</div>
+<div id="p2" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; At a Glance</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">02</div>
+  <div class="content" style="display:flex;gap:6mm;padding-top:4mm;">
+    <div style="width:45%;">
+      <div style="background:var(--navy);border-radius:3mm;padding:9mm 7mm;">
+        <div style="font-size:24pt;font-weight:800;color:white;line-height:1.1;">Protection,<br>by the numbers</div>
+        <div style="font-size:9.5pt;color:rgba(255,255,255,0.6);margin-top:3mm;line-height:1.55;">A few figures that capture how we treat your data.</div>
+        <div class="stat-card-dark"><div class="stat-num">3 fields</div><div class="stat-desc">are all that we share with the FA to verify a referee &mdash; name, FA number, county</div></div>
+        <div class="stat-card-dark"><div class="stat-num">0 card numbers</div><div class="stat-desc">stored on our servers &mdash; all card data is handled by Stripe (PCI DSS)</div></div>
+        <div class="stat-card-dark"><div class="stat-num">100%</div><div class="stat-desc">of application tables protected by database Row-Level Security</div></div>
+      </div>
+    </div>
+    <div style="width:55%;">
+      <div class="section-title" style="font-size:25pt;">Data Protection at a Glance</div>
+      <p class="section-body" style="max-width:100%;margin-bottom:2mm;">Whistle Connect connects grassroots coaches with qualified, FA-registered referees &mdash; including young officials. We are the <b>data controller</b> for the personal data we hold and we process it under the UK General Data Protection Regulation (UK GDPR) and the Data Protection Act 2018.</p>
+      <div style="font-size:8.5pt;font-weight:700;color:var(--dark);margin:3mm 0 1mm;text-transform:uppercase;letter-spacing:0.05em;">The principles we build to</div>
+      <ul class="bullet-list">
+        <li><b>Data minimisation</b> &mdash; we collect and share only what a task needs, nothing more.</li>
+        <li><b>Least privilege</b> &mdash; access is enforced at the database, scoped to each user and role.</li>
+        <li><b>Safeguarding first</b> &mdash; protections for under-18 referees are enforced in code, not just policy.</li>
+        <li><b>Security in transit</b> &mdash; all traffic is encrypted over HTTPS; payments never touch our servers.</li>
+      </ul>
+      <div class="callout" style="margin-top:3mm;">This document explains, in plain English, what we collect, how we verify referees with the FA, how we keep your money and messages safe, and how you can delete your data at any time.</div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>2</span>
+  </div>
+</div>
+<div id="p3" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; What We Hold</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">03</div>
+  <div class="content">
+    <div class="section-title">What We Collect &mdash; and Why</div>
+    <p class="section-body" style="margin-bottom:3mm;">We collect personal data only when you register, build a profile, make or accept bookings, or message another user. Each category below has a specific operational purpose.</p>
+    <div class="benefits-grid cols-4">
+      <div class="benefit-card"><h4>Account &amp; Contact</h4><p>Name, email and any phone number you choose to provide.</p></div>
+      <div class="benefit-card"><h4>Role &amp; Referee Detail</h4><p>Coach, referee or admin; plus qualification level, county and DBS status.</p></div>
+      <div class="benefit-card"><h4>Date of Birth &amp; Age</h4><p>For referees, to apply age-eligibility and safeguarding rules.</p></div>
+      <div class="benefit-card"><h4>Postcode &amp; Area</h4><p>Geocoded to an approximate location to match nearby matches. No real-time tracking.</p></div>
+      <div class="benefit-card"><h4>Payment Information</h4><p>Handled by Stripe. We hold transaction and wallet records, not full card numbers.</p></div>
+      <div class="benefit-card"><h4>In-App Messages</h4><p>The content of messages between confirmed coaches and referees.</p></div>
+      <div class="benefit-card"><h4>Device &amp; Push Tokens</h4><p>Web-push subscriptions and notification tokens used to deliver alerts.</p></div>
+      <div class="benefit-card"><h4>Error &amp; Diagnostic Logs</h4><p>IP, device and error data captured to keep the service secure and reliable.</p></div>
+    </div>
+    <div class="callout" style="margin-top:4mm;">Date of birth and any data relating to under-18 referees are treated as sensitive and handled under our safeguarding rules (page 06). Data is held in our managed Postgres database (Supabase); payment data lives with Stripe.</div>
+    <div class="tags" style="margin-top:3mm;"><span class="tag">Purpose-limited</span><span class="tag">No precise location</span><span class="tag">No card numbers</span><span class="tag">No advertising trackers</span></div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>3</span>
+  </div>
+</div>
+<div id="p4" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; Access Control</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">04</div>
+  <div class="content">
+    <div class="section-title">Identity, Authentication &amp; Access</div>
+    <p class="section-body" style="margin-bottom:4mm;">Who can see what is decided by the database, not just the screen. Even a mistake in the interface cannot reveal one user&rsquo;s data to another, because access rules are enforced one layer deeper.</p>
+    <div class="benefits-grid cols-3">
+      <div class="benefit-card"><h4>Secure Sign-In</h4><p>Authentication is managed by Supabase Auth with encrypted, cookie-based sessions and automatic token validation.</p></div>
+      <div class="benefit-card"><h4>Row-Level Security</h4><p>Every application table enforces per-user access policies in the database, so users only ever read and write their own rows.</p></div>
+      <div class="benefit-card"><h4>Role-Based Access</h4><p>Coach, referee and admin each see a scoped view. Admin tools are gated to verified administrators only.</p></div>
+      <div class="benefit-card"><h4>Hardened Functions</h4><p>Privileged database functions run with a pinned, safe search path and have anonymous execution revoked.</p></div>
+      <div class="benefit-card"><h4>Least-Privilege Service Role</h4><p>The all-access service key is used only by trusted system jobs (cron, webhooks), never exposed to the browser.</p></div>
+      <div class="benefit-card"><h4>Encrypted Transport</h4><p>All traffic is served over HTTPS. Secrets and keys live in server-side configuration, never in client code.</p></div>
+    </div>
+    <div class="callout" style="margin-top:4mm;">Defence in depth: a coach can never load another coach&rsquo;s bookings, and a referee can never read a thread they aren&rsquo;t part of &mdash; the database refuses the query, regardless of what the app asks for.</div>
+    <div class="tags" style="margin-top:3mm;"><span class="tag">Database-enforced</span><span class="tag">Per-user isolation</span><span class="tag">Role scoping</span><span class="tag">HTTPS everywhere</span></div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>4</span>
+  </div>
+</div>
+<div id="p5" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; FA Verification</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">05</div>
+  <div class="content" style="display:flex;gap:8mm;">
+    <div style="width:55%;">
+      <div class="section-title" style="font-size:25pt;">Verifying Referees<br>with the FA</div>
+      <p class="section-body" style="max-width:100%;margin-bottom:2mm;">Every referee&rsquo;s FA registration number is checked with their County FA before coaches rely on it. The exchange is deliberately narrow and fully auditable.</p>
+      <div class="flow">
+        <div class="flow-step"><div class="n">1</div><div class="t"><b>Referee submits FA number</b> at sign-up. It is format-checked (8&ndash;10 digits) and must be unique. Status: <i>Pending</i>.</div></div>
+        <div class="flow-step"><div class="n">2</div><div class="t"><b>An administrator queues a verification request,</b> generating a single-use secure token.</div></div>
+        <div class="flow-step"><div class="n">3</div><div class="t"><b>The correct County FA is emailed</b> &mdash; routed by county from a maintained directory of 40+ County FAs.</div></div>
+        <div class="flow-step"><div class="n">4</div><div class="t"><b>The FA clicks Confirm or Not Found</b> &mdash; one tap on a secure token link. No login, no account, no portal.</div></div>
+        <div class="flow-step"><div class="n">5</div><div class="t"><b>The result syncs back</b> &mdash; the referee&rsquo;s status updates, referee and admins are notified, and the request is archived.</div></div>
+      </div>
+      <div class="field-panel">
+        <div class="field-col share"><h5>&#10003; Shared with the FA</h5><span class="field-chip">Referee name</span><span class="field-chip">FA number</span><span class="field-chip">County</span></div>
+        <div class="field-col never"><h5>&#10007; Never shared</h5><span class="field-chip">Date of birth</span><span class="field-chip">Contact details</span><span class="field-chip">Location</span><span class="field-chip">Payment data</span><span class="field-chip">Messages</span></div>
+      </div>
+    </div>
+    <div style="width:45%;display:flex;flex-direction:column;justify-content:center;">
+      <div style="font-size:7pt;font-weight:600;letter-spacing:0.1em;color:var(--light);text-transform:uppercase;margin-bottom:2mm;">What the County FA receives</div>
+      <div class="email-mock">
+        <div class="em-head"><div class="t1">WHISTLE CONNECT</div><div class="t2">FA Number Verification Request</div></div>
+        <div class="em-body">
+          <div style="font-size:7pt;color:var(--mid);line-height:1.5;margin-bottom:3mm;">Please confirm whether the following FA registration number is valid and currently active.</div>
+          <div class="em-row"><div class="em-k">Referee Name</div><div class="em-v">A. Williams</div></div>
+          <div class="em-row"><div class="em-k">FA Number</div><div class="em-v" style="font-family:'Courier New',monospace;letter-spacing:1px;color:var(--navy);">10293847</div></div>
+          <div class="em-row"><div class="em-k">County FA</div><div class="em-v">Hampshire</div></div>
+          <div class="em-btns"><div class="em-btn" style="background:#16a34a;">&#10003; Confirm</div><div class="em-btn" style="background:#dc2626;">&#10007; Not Found</div></div>
+          <div style="font-size:6pt;color:var(--light);text-align:center;margin-top:2mm;">One click &mdash; no login or account required.</div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top:3mm;">Only three fields ever leave our system. The link is single-use and tied to one request, so it cannot be reused or guessed.</div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>5</span>
+  </div>
+</div>
+<div id="p6" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; Safeguarding</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">06</div>
+  <div class="content" style="display:flex;gap:8mm;">
+    <div style="width:56%;">
+      <div class="section-title">Safeguarding by Design</div>
+      <p class="section-body" style="max-width:100%;margin-bottom:3mm;">Referees on the platform may be aged 14 to 17. Protecting them is not left to good intentions &mdash; the rules are enforced in the system itself.</p>
+      <ul class="bullet-list">
+        <li><b>Minimum age 14.</b> Under-14s cannot register; date of birth is captured and validated at sign-up.</li>
+        <li><b>Age-appropriate matching.</b> Eligibility is calculated for the actual match date, so referees are only offered fixtures suitable for their age.</li>
+        <li><b>Parental consent for under-16s.</b> The account is <b>locked</b> until a parent or guardian verifies consent via a one-click email.</li>
+        <li><b>The lock is in the database.</b> It is set by a server-side trigger at account creation, so no sign-up path can bypass it.</li>
+        <li><b>No direct messaging for under-16s.</b> In-app chat is disabled; coaches are directed to email a parent or guardian for match updates.</li>
+        <li><b>Credentials tracked.</b> DBS clearance and safeguarding status are recorded and monitored by administrators.</li>
+      </ul>
+    </div>
+    <div style="width:44%;display:flex;flex-direction:column;justify-content:center;">
+      <div style="background:#10B981;border-radius:3mm;padding:6mm 6mm;text-align:center;box-shadow:0 3mm 12mm rgba(16,185,129,0.22);">
+        <svg style="height:22mm;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M50 4 L86 19 L86 49 C86 72 68 91 50 96 C32 91 14 72 14 49 L14 19 Z" fill="rgba(255,255,255,0.18)" stroke="#ffffff" stroke-width="2.5"/><path d="M34 50 L45 61 L67 39" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+        <div style="font-size:13pt;font-weight:900;color:#fff;letter-spacing:0.04em;margin-top:2mm;">ENFORCED IN CODE</div>
+        <div style="font-size:7.5pt;color:rgba(255,255,255,0.85);margin-top:1mm;line-height:1.4;">Locked &bull; Consent-gated &bull; Age-matched</div>
+      </div>
+      <div class="callout" style="margin-top:4mm;">There is no code path that lets an unverified under-16 account take bookings or message adults. Safeguarding is the default state, not a setting someone has to remember to switch on.</div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>6</span>
+  </div>
+</div>
+<div id="p7" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; Payments</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">07</div>
+  <div class="content">
+    <div class="section-title">Payments, Handled Safely</div>
+    <p class="section-body" style="margin-bottom:4mm;">Money moves through the platform when coaches top up a wallet, funds are held in escrow for a booking, and referees are paid out. Every step is designed so that money is never lost, double-charged or stranded.</p>
+    <div class="benefits-grid cols-3">
+      <div class="benefit-card"><h4>Stripe Handles Cards</h4><p>Card details are entered with Stripe, a PCI-DSS Level 1 provider. Full card numbers never reach our servers.</p></div>
+      <div class="benefit-card"><h4>Escrow Protection</h4><p>A coach&rsquo;s payment is held in escrow and only released to the referee once the match is confirmed complete.</p></div>
+      <div class="benefit-card"><h4>No Double Charges</h4><p>Every payment instruction carries an idempotency key, so a retry can never charge or pay twice.</p></div>
+      <div class="benefit-card"><h4>Safe Withdrawals</h4><p>Referee payouts use an audited multi-step process, so funds can never be debited without the transfer completing.</p></div>
+      <div class="benefit-card"><h4>Verified Webhooks</h4><p>Payment events from Stripe are cryptographically signature-checked and de-duplicated before they are trusted.</p></div>
+      <div class="benefit-card"><h4>Weekly Reconciliation</h4><p>An automated job checks balances and flags any stuck funds for administrators every week.</p></div>
+    </div>
+    <div class="callout" style="margin-top:4mm;">The financial ledger is immutable and retained even after an account is deleted &mdash; protecting both parties and meeting UK money-movement and audit obligations.</div>
+    <div class="tags" style="margin-top:3mm;"><span class="tag">PCI DSS via Stripe</span><span class="tag">Idempotent writes</span><span class="tag">Escrow held funds</span><span class="tag">Audited payouts</span></div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>7</span>
+  </div>
+</div>
+<div id="p8" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; Deletion &amp; Rights</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">08</div>
+  <div class="content">
+    <div class="section-title">Delete Your Data, Anytime</div>
+    <p class="section-body" style="margin-bottom:1mm;">You can delete your account yourself from inside the app &mdash; <b>Profile &rsaquo; Delete account</b> &mdash; meeting Apple App Store and Google Play requirements. Deletion erases your personal data while preserving the financial records the law requires us to keep.</p>
+    <div class="duo">
+      <div class="duo-panel erase">
+        <h4>What we erase / anonymise</h4>
+        <ul>
+          <li>Name, phone and avatar</li>
+          <li>Postcode and approximate location</li>
+          <li>Date of birth</li>
+          <li>FA registration number</li>
+          <li>Sign-in is disabled and the email is released</li>
+        </ul>
+      </div>
+      <div class="duo-panel keep">
+        <h4>What we retain (and why)</h4>
+        <ul>
+          <li>Transaction, payout and escrow records</li>
+          <li>Dispute history</li>
+          <li>Kept only as long as law, tax and audit duties require</li>
+          <li>Held against an anonymised profile &mdash; no longer a contactable person</li>
+        </ul>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:3mm;">Money-safe: deletion is blocked while you still hold a wallet balance, a pending withdrawal, funds in escrow, or an active booking &mdash; so no funds are stranded and no counterparty is left mid-deal. You resolve those first, then delete.</div>
+    <div style="display:flex;gap:6mm;margin-top:3mm;align-items:center;">
+      <div style="flex:1;">
+        <div style="font-size:8.5pt;font-weight:700;color:var(--dark);margin-bottom:1mm;text-transform:uppercase;letter-spacing:0.05em;">Your UK GDPR rights</div>
+        <div style="font-size:8pt;color:var(--mid);line-height:1.5;">Access &bull; Rectification &bull; Erasure &bull; Portability &bull; Object / restrict processing &bull; Withdraw consent. Exercise any of them at <b>support@whistleconnect.co.uk</b>; you may also complain to the ICO (ico.org.uk).</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>8</span>
+  </div>
+</div>
+<div id="p9" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; Trust &amp; Safety</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">09</div>
+  <div class="content">
+    <div class="section-title">Trust, Safety &amp; Moderation</div>
+    <p class="section-body" style="margin-bottom:4mm;">Because the platform carries user-to-user messaging, we operate a zero-tolerance approach to objectionable content and abusive behaviour, with tools for users and a queue for administrators.</p>
+    <div class="benefits-grid cols-2" style="max-width:88%;">
+      <div class="benefit-card"><h4>Report Content</h4><p>Any message or user can be reported from within a thread, sending it straight to the moderation queue.</p></div>
+      <div class="benefit-card"><h4>Block Users</h4><p>Blocking is mutual and enforced &mdash; blocked users cannot message each other, with under-16 safeguarding rules kept intact.</p></div>
+      <div class="benefit-card"><h4>Admin Moderation Queue</h4><p>Administrators review reports and can resolve, dismiss, or soft-remove an offending message from a dedicated dashboard.</p></div>
+      <div class="benefit-card"><h4>Zero-Tolerance Policy</h4><p>Our Terms of Service set an explicit zero-tolerance content clause; repeat or serious breaches lead to removal.</p></div>
+    </div>
+    <div class="callout" style="margin-top:4mm;">Removed messages are hidden from users but retained for audit, so moderation decisions can be reviewed. Reporting and blocking are always available &mdash; no configuration required.</div>
+    <div class="tags" style="margin-top:3mm;"><span class="tag">Report</span><span class="tag">Block</span><span class="tag">Admin review queue</span><span class="tag">Audit-retained</span></div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>9</span>
+  </div>
+</div>
+<div id="p10" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; Platform &amp; Operations</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">10</div>
+  <div class="content">
+    <div class="section-title">Platform Security &amp; Operations</div>
+    <p class="section-body" style="margin-bottom:4mm;">The application runs on managed, industry-standard infrastructure, with monitoring that lets us detect and respond to problems quickly.</p>
+    <div class="benefits-grid cols-3">
+      <div class="benefit-card"><h4>Encrypted in Transit</h4><p>All traffic is served over HTTPS with modern TLS. There is no unencrypted access to the app.</p></div>
+      <div class="benefit-card"><h4>Managed Hosting</h4><p>Hosted on Vercel&rsquo;s global edge network with a managed Supabase Postgres database and file storage.</p></div>
+      <div class="benefit-card"><h4>Error Monitoring</h4><p>Sentry captures errors and diagnostics (which may include IP and device data, as disclosed in our policy) so we can fix issues fast.</p></div>
+      <div class="benefit-card"><h4>Secrets Management</h4><p>API keys and signing secrets live in server-side configuration and are never committed to source code.</p></div>
+      <div class="benefit-card"><h4>Essential Cookies Only</h4><p>We use only the cookies needed to keep you signed in. No advertising trackers; we do not sell data.</p></div>
+      <div class="benefit-card"><h4>International Transfers</h4><p>Where a processor is outside the UK, transfers rely on UK adequacy or standard contractual clauses.</p></div>
+    </div>
+    <div class="callout" style="margin-top:4mm;">Operational safety nets &mdash; signature-verified webhooks, de-duplicated event handling and a weekly reconciliation job &mdash; mean issues are caught and corrected rather than silently accumulating.</div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>10</span>
+  </div>
+</div>
+<div id="p11" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Security &amp; Data Protection &mdash; Sub-Processors &amp; Governance</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">11</div>
+  <div class="content">
+    <div class="section-title" style="font-size:25pt;">Sub-Processors &amp; Governance</div>
+    <p class="section-body" style="margin-bottom:1mm;">We do not sell personal data. We share it only to run the service, meet legal and safeguarding duties, or with your consent. Our processors and partners are:</p>
+    <table class="proc-table">
+      <tr><th style="width:24mm;">Partner</th><th>Purpose</th><th style="width:62mm;">Data involved</th></tr>
+      <tr><td><b>Supabase</b></td><td>Database, authentication &amp; file storage</td><td>Core application &amp; account data</td></tr>
+      <tr><td><b>Stripe</b></td><td>Payments, wallet, escrow &amp; payouts</td><td>Payment &amp; payout records (PCI DSS)</td></tr>
+      <tr><td><b>Sentry</b></td><td>Error monitoring &amp; diagnostics</td><td>Diagnostics, may include IP address</td></tr>
+      <tr><td><b>Mapbox</b></td><td>Geocoding postcodes to approximate areas</td><td>Postcode</td></tr>
+      <tr><td><b>Resend</b></td><td>Transactional &amp; verification emails</td><td>Name, email; FA number for verification</td></tr>
+      <tr><td><b>Vercel</b></td><td>Application hosting &amp; delivery</td><td>Request &amp; technical data</td></tr>
+      <tr><td><b>web-push / Firebase</b></td><td>Push notification delivery</td><td>Device push token only</td></tr>
+      <tr><td><b>The Football Association</b></td><td>Referee verification &amp; safeguarding oversight</td><td>Referee name, FA number, county</td></tr>
+    </table>
+    <div class="navy-box" style="margin-top:4mm;display:flex;justify-content:space-between;align-items:center;gap:6mm;">
+      <div>
+        <h3 style="font-size:11pt;">Governance &amp; Contact</h3>
+        <p style="font-size:8.5pt;">Whistle Connect Ltd is the data controller. To exercise your rights, ask a question, or report a security concern, contact us &mdash; you may also complain to the UK ICO.</p>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:7pt;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.1em;">Contact</div>
+        <div style="font-size:10pt;font-weight:700;color:#fff;margin-top:0.5mm;">support@whistleconnect.co.uk</div>
+        <div style="font-size:8pt;color:rgba(255,255,255,0.55);margin-top:1mm;">ico.org.uk</div>
+      </div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>11</span>
+  </div>
+</div>
+<div id="p12" class="page split">
+  <div class="scissor"></div>
+  <div class="kicker">APPENDIX</div>
+  <h2>The Detail</h2>
+  <div class="sub">Technical controls &amp; continuous hardening</div>
+  <div class="rule"></div>
+  <p>The pages that follow are a technical appendix written for security reviewers. They can be shared &mdash; or withheld &mdash; separately from the overview above. Everything beyond this divider is candid, including items we are still hardening.</p>
+  <div style="position:absolute;bottom:10mm;left:22mm;right:22mm;display:flex;justify-content:space-between;font-size:7pt;color:rgba(255,255,255,0.3);">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span><span>A</span>
+  </div>
+</div>
+<div id="p13" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Appendix &mdash; Technical Security Controls</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">A1</div>
+  <div class="content">
+    <div class="section-title" style="font-size:25pt;">Technical Security Controls</div>
+    <p class="section-body" style="margin-bottom:1mm;">A reviewer-oriented summary of the mechanisms behind the overview. Implementation detail is in the codebase and migration history.</p>
+    <div class="kv">
+      <div class="kv-row"><div class="k">Access control</div><div class="v"><b>Row-Level Security</b> on application tables; admin gating via a server-side <i>is_admin()</i> check; per-user read/write policies.</div></div>
+      <div class="kv-row"><div class="k">Privileged functions</div><div class="v">Money/booking logic runs in <b>SECURITY DEFINER</b> functions with a <b>pinned search_path</b>; <i>anon</i> and <i>PUBLIC</i> EXECUTE are revoked (re-swept in a dedicated migration).</div></div>
+      <div class="kv-row"><div class="k">Authentication</div><div class="v">Supabase Auth, password-based, with JWT sessions in cookies; profile creation uses bounded retry to avoid races.</div></div>
+      <div class="kv-row"><div class="k">Payment integrity</div><div class="v"><b>Idempotency keys on every Stripe write</b>; atomic 3-step withdrawal with an audit table; escrow hold/release via RPC; webhook events de-duplicated; <b>separate account- and Connect-scope signing secrets</b>.</div></div>
+      <div class="kv-row"><div class="k">Account deletion</div><div class="v"><i>auth.uid()</i>-scoped RPC (no id argument to abuse); anonymise-not-delete; pre-checks block deletion while value/commitments remain; wallet ledger is immutable by trigger.</div></div>
+      <div class="kv-row"><div class="k">FA verification</div><div class="v">Single-use token links; processed by the service role only; <b>data-minimised to three fields</b> (name, FA number, county).</div></div>
+      <div class="kv-row"><div class="k">Safeguarding</div><div class="v">Under-16 lock set in the <b>handle_new_user database trigger</b> &mdash; not bypassable from application code; messaging block enforced server-side.</div></div>
+      <div class="kv-row"><div class="k">Transport &amp; secrets</div><div class="v">HTTPS/TLS throughout; secrets in server-side environment configuration; push (VAPID) keys are not committed to source control.</div></div>
+    </div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>A1</span>
+  </div>
+</div>
+<div id="p14" class="page">
+  <div class="page-header">
+    <div><svg style="height:9mm;width:auto;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 125.98 43.32"><g fill="#1b2537"><path d="M56.8,16.85c-.06.27-.27.41-.51.42l-4.61.02c-.19,0-.41-.04-.5-.41-.21-1.16-2.39-11.62-2.39-11.62l3.99-.02,1.34,8.63h.14s1.32-8.64,1.32-8.64l3.97-.02,1.41,8.63h.14s1.28-8.64,1.28-8.64l3.97-.02s-2.05,10.48-2.28,11.64c-.06.37-.31.41-.49.42l-4.59.02c-.27,0-.48-.14-.52-.41l-.86-6.09h-.04s-.77,6.1-.77,6.1Z"/><path d="M66.99,1.91l3.64-.02.02,4.07c.91-.46,2.04-.94,2.97-.94h.5c2.69,0,4.05.7,4.07,3.63l.04,8.45-3.64.02-.04-8.08c0-.78-.36-1.05-1.12-1.05h-.39c-.68,0-1.44.28-2.37.49l.04,8.65-3.64.02-.08-15.24Z"/><path d="M81.46,0c1.05,0,1.9.78,1.91,1.83,0,1.05-.84,1.84-1.89,1.85-1.05,0-1.9-.78-1.91-1.83S80.4,0,81.46,0ZM83.34,17.07l-3.61.02-.06-11.98,3.61-.02.06,11.98Z"/><path d="M94.55,7.74l-5.37.03c-.58,0-.78,0-.78.36v.31c0,.39.19.43.42.47l2.71.5c2.48.42,3.78.56,3.8,3.2v.72c.02,2.83-1.42,3.81-4.19,3.82-3.37.02-6.47-.36-6.47-.36v-2.54s5.67-.03,5.67-.03c1.09,0,1.49-.15,1.48-.79v-.33c0-.33-.19-.47-1.37-.67-.95-.16-2.5-.4-3.37-.56-1.49-.3-2.3-.73-2.31-2.69v-.95c-.02-2.83,1.36-3.27,4.15-3.28,3.37-.02,5.64.2,5.64.2v2.6Z"/><path d="M95.63,5.01h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/><path d="M108.93,16.94l-3.61.02-.08-15.24,3.61-.02.08,15.24Z"/><path d="M120.77,16.57s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.21.29l-7.31.04v.7c0,.97.24,1.09,1.14,1.09l5.64-.03-.05,2.42ZM118.13,9.05c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M55.62,30.97s-2.41.43-5.76.44c-2.77.01-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M68.05,22.97l.02,4.44c.01,2.97-1.36,3.93-4.15,3.95l-3.18.02c-2.77.01-4.16-.93-4.17-3.9l-.02-4.44c-.02-2.99,1.36-3.93,4.13-3.95l3.18-.02c2.79-.01,4.18.91,4.19,3.9ZM63.55,20.81l-3.53,3.53c-1.05,1.05-1.09,2.76-.06,3.83-.09.04-.18.1-.26.18-.34.34-.34.89,0,1.23s.89.34,1.23,0c.19-.19.27-.44.25-.68.91.25,1.93.02,2.64-.69.89-.89,1.03-2.26.41-3.3-.1-.22-.32-.82-.18-1.57.12-.68.47-1.14.67-1.36.04-.05.04-.12,0-.16l-1-1s-.12-.05-.16,0ZM62.92,27.35c-.57.57-1.51.57-2.08,0s-.57-1.51,0-2.08,1.51-.57,2.08,0,.57,1.51,0,2.08Z"/><path d="M69.48,19.23l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M82.1,19.16l3.64-.02v.81c.91-.48,2.04-.94,2.97-.94h.5c2.69-.02,4.05.68,4.07,3.61l.04,8.47-3.64.02-.04-8.1c0-.78-.36-1.03-1.12-1.03h-.39c-.68,0-1.44.28-2.37.47l.04,8.67-3.64.02-.06-11.98Z"/><path d="M104.98,30.72s-2.83.43-6.17.44c-2.77.01-4.16-.72-4.17-3.7l-.02-4.59c-.01-2.15,1.47-3.81,4.24-3.82h2.71c2.79-.03,4.18,1.62,4.19,3.77l.02,3.39c0,.23,0,.29-.2.29l-7.31.04v.7c0,.97.24,1.09,1.15,1.09l5.64-.03-.05,2.42ZM102.34,23.19c0-1.26-.44-1.48-1.37-1.48h-1.28c-.93.01-1.47.22-1.46,1.5v.99s4.11-.08,4.11-.08v-.93Z"/><path d="M116.96,30.66s-2.41.43-5.76.44-4.16-.83-4.17-3.8l-.02-4.56c-.02-2.99,1.36-3.83,4.13-3.84,3.37-.02,5.76.22,5.76.22v2.69s-5.15.03-5.15.03c-.78,0-1.13.32-1.13,1.08l.02,4.17c0,.78.36,1.09,1.14,1.09l5.16-.03v2.52Z"/><path d="M117.4,18.96h1.63s-.01-2.47-.01-2.47l3.64-.02v2.46s3.13-.02,3.13-.02v2.93s-3.1.02-3.1.02l.03,5.41c0,.6.25.89.83.88.14,0,2.44-.03,2.44-.03l-.03,2.38s-2.35.53-3.78.54c-2.62.01-3.09-1.62-3.1-3.5l-.03-5.66h-1.63s-.01-2.92-.01-2.92Z"/></g><path fill="#1b2537" d="M36.89,14.94l.07,14.24c.05,9.54-4.37,12.61-13.32,12.65l-10.2.05c-8.88.04-13.33-2.98-13.38-12.52L0,15.12C-.05,5.52,4.38,2.51,13.25,2.47l10.2-.05c8.94-.04,13.39,2.91,13.44,12.52ZM22.46,8l-11.33,11.33c-3.37,3.37-3.5,8.85-.2,12.27-.3.14-.58.32-.83.57-1.09,1.09-1.09,2.86,0,3.95,1.09,1.09,2.86,1.09,3.95,0,.6-.6.87-1.4.81-2.18,2.92.81,6.18.07,8.47-2.23,2.87-2.87,3.31-7.25,1.33-10.58-.31-.71-1.02-2.62-.58-5.05.39-2.18,1.51-3.65,2.15-4.35.13-.15.13-.37-.01-.51l-3.22-3.22c-.15-.15-.38-.15-.53,0ZM20.44,28.98c-1.84,1.84-4.83,1.84-6.67,0-1.84-1.84-1.84-4.83,0-6.67s4.83-1.84,6.67,0,1.84,4.83,0,6.67Z"/></svg></div>
+    <span class="section-label">Appendix &mdash; Continuous Hardening</span>
+  </div>
+  <div class="header-line"></div>
+  <div class="watermark-num">A2</div>
+  <div class="content">
+    <div class="section-title" style="font-size:25pt;">Continuous Hardening</div>
+    <p class="section-body" style="margin-bottom:1mm;">We run automated Supabase security advisors and Sentry monitoring on an ongoing basis. The items below are <b>known, tracked and mitigated</b>, with planned hardening &mdash; shared here in the interest of transparency.</p>
+    <div class="track-card">
+      <h4>1 &nbsp; Direct execution of privileged database functions</h4>
+      <div class="tcols">
+        <div class="tcol"><div class="k">Observation</div><div class="v">Some privileged functions are callable by any signed-in user directly, not only through our server actions.</div></div>
+        <div class="tcol"><div class="k">Current mitigation</div><div class="v">Row-Level Security still applies; money functions are idempotent and re-validate their inputs, so direct calls cannot bypass ownership or double-charge.</div></div>
+        <div class="tcol"><div class="k">Planned hardening</div><div class="v plan">Per-function auth.uid() guards / move non-helper functions to a private schema.</div></div>
+      </div>
+    </div>
+    <div class="track-card">
+      <h4>2 &nbsp; PostGIS in the public schema</h4>
+      <div class="tcols">
+        <div class="tcol"><div class="k">Observation</div><div class="v">The geospatial extension and its static spatial-reference lookup table live in the public schema.</div></div>
+        <div class="tcol"><div class="k">Current mitigation</div><div class="v">The table holds only static reference data &mdash; no personal or sensitive information is exposed.</div></div>
+        <div class="tcol"><div class="k">Planned hardening</div><div class="v plan">Relocate PostGIS to a dedicated schema in a separately tested migration.</div></div>
+      </div>
+    </div>
+    <div class="track-card">
+      <h4>3 &nbsp; Leaked-password protection</h4>
+      <div class="tcols">
+        <div class="tcol"><div class="k">Observation</div><div class="v">The &ldquo;have I been pwned&rdquo; breached-password check is currently disabled.</div></div>
+        <div class="tcol"><div class="k">Current mitigation</div><div class="v">Standard Supabase Auth protections and password requirements remain in force.</div></div>
+        <div class="tcol"><div class="k">Planned hardening</div><div class="v plan">Enable breached-password screening, or raise the minimum password length.</div></div>
+      </div>
+    </div>
+    <div class="callout" style="margin-top:4mm;">To report a security concern, contact <b>support@whistleconnect.co.uk</b>. We aim to acknowledge security reports promptly and keep reporters informed through to resolution.</div>
+  </div>
+  <div class="page-footer">
+    <span>whistleconnect.co.uk &bull; Security &amp; Data Protection Overview</span>
+    <span>A2</span>
+  </div>
+</div>
+</body>
+</html>

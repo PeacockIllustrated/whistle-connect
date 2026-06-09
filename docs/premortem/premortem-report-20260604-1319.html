@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Whistle Connect premortem — app store and FA trial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; border-radius: 0; box-shadow: none; }
+:root {
+  --navy:#1b2537; --navy-deep:#0f1720; --red:#cd1719; --white:#ffffff;
+  --cream:#f8fafc; --dark:#0f172a; --mid:#475569; --light:#94a3b8; --border:#e2e8f0;
+  --crit:#cd1719; --high:#b45309; --med:#475569;
+}
+body { font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; background:#e5e7eb; color:var(--dark); line-height:1.55; }
+.wrap { max-width:1100px; margin:0 auto; background:var(--white); }
+
+/* Header */
+.masthead { background:var(--navy); color:#fff; padding:40px 48px 36px; border-bottom:4px solid var(--red); }
+.masthead .kicker { font-size:11px; font-weight:600; letter-spacing:0.28em; text-transform:uppercase; color:rgba(255,255,255,0.45); }
+.masthead h1 { font-size:32px; font-weight:800; line-height:1.1; margin-top:14px; letter-spacing:-0.02em; }
+.masthead .frame { margin-top:18px; padding:14px 18px; background:rgba(255,255,255,0.06); border-left:3px solid var(--red); font-size:14px; color:rgba(255,255,255,0.82); font-style:italic; max-width:760px; }
+.masthead .meta { margin-top:18px; font-size:11.5px; color:rgba(255,255,255,0.4); display:flex; gap:24px; flex-wrap:wrap; }
+
+/* Sections */
+.section { padding:36px 48px; }
+.section + .section { border-top:1px solid var(--border); }
+.section h2 { font-size:13px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--red); margin-bottom:20px; }
+
+/* Verdict cards */
+.verdicts { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--border); border:1px solid var(--border); }
+.verdict { background:var(--white); padding:22px 22px 24px; }
+.verdict .tag { font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--light); }
+.verdict h3 { font-size:17px; font-weight:800; color:var(--dark); margin-top:8px; line-height:1.2; }
+.verdict p { font-size:12.5px; color:var(--mid); margin-top:10px; }
+.verdict.most-likely { border-top:3px solid var(--high); }
+.verdict.most-dangerous { border-top:3px solid var(--crit); }
+.verdict.hidden { border-top:3px solid var(--navy); }
+.verdict .ref { display:inline-block; margin-top:12px; font-size:10.5px; font-weight:600; color:var(--navy); background:var(--cream); border:1px solid var(--border); padding:2px 7px; }
+
+/* Hidden assumption banner */
+.hidden-banner { background:var(--navy); color:#fff; padding:26px 30px; margin-top:1px; }
+.hidden-banner .tag { font-size:10.5px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:rgba(255,255,255,0.45); }
+.hidden-banner .big { font-size:21px; font-weight:800; line-height:1.3; margin-top:10px; max-width:880px; }
+.hidden-banner .sub { font-size:13px; color:rgba(255,255,255,0.7); margin-top:12px; max-width:880px; }
+
+/* Plan + checklist */
+.rows { display:flex; flex-direction:column; gap:1px; background:var(--border); border:1px solid var(--border); }
+.row { background:var(--white); padding:16px 20px; display:grid; grid-template-columns:64px 1fr; gap:16px; align-items:start; }
+.row .n { font-size:12px; font-weight:700; color:var(--white); background:var(--navy); padding:4px 8px; text-align:center; align-self:start; }
+.row .body { font-size:13px; color:var(--mid); }
+.row .body b { color:var(--dark); }
+.row .body .maps { display:block; font-size:10.5px; font-weight:600; color:var(--light); text-transform:uppercase; letter-spacing:0.06em; margin-top:6px; }
+.checklist .row .n { background:var(--red); }
+
+/* Failure cards */
+.cards { display:flex; flex-direction:column; gap:18px; }
+.card { border:1px solid var(--border); border-left:5px solid var(--med); }
+.card.crit { border-left-color:var(--crit); }
+.card.high { border-left-color:var(--high); }
+.card.med  { border-left-color:var(--med); }
+.card .head { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding:16px 22px 12px; background:var(--cream); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+.card .head .id { font-size:11px; font-weight:700; color:var(--light); letter-spacing:0.08em; }
+.card .head h3 { font-size:16px; font-weight:800; color:var(--dark); flex:1 1 60%; line-height:1.25; }
+.card .sev { font-size:10.5px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; padding:3px 9px; color:#fff; white-space:nowrap; }
+.card .sev.crit { background:var(--crit); }
+.card .sev.high { background:var(--high); }
+.card .sev.med  { background:var(--med); }
+.card .sev-meta { font-size:10.5px; color:var(--light); font-weight:600; }
+.card .content { padding:18px 22px 20px; }
+.card .story { font-size:13px; color:var(--mid); }
+.card .story p { margin-bottom:9px; }
+.card .block { margin-top:14px; padding-top:13px; border-top:1px solid var(--border); }
+.card .block .lbl { font-size:10.5px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--red); }
+.card .block p { font-size:12.5px; color:var(--mid); margin-top:5px; }
+.card .block.assume p { color:var(--dark); font-weight:500; }
+.card .block ul { list-style:none; margin-top:6px; }
+.card .block li { position:relative; padding-left:16px; font-size:12.5px; color:var(--mid); margin-bottom:5px; }
+.card .block li::before { content:''; position:absolute; left:0; top:7px; width:6px; height:6px; background:var(--red); }
+
+.footer { padding:26px 48px 40px; background:var(--navy-deep); color:rgba(255,255,255,0.4); font-size:11px; }
+.footer b { color:rgba(255,255,255,0.7); font-weight:600; }
+@media (max-width:760px){ .verdicts{grid-template-columns:1fr;} .section{padding:26px 22px;} .masthead{padding:30px 22px;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <div class="kicker">Premortem &bull; hybrid (software + commercial / regulatory)</div>
+    <h1>Whistle Connect: how the app store push and FA trial failed</h1>
+    <div class="frame">It is December 2026. The FA trial ran, or tried to. The app went to the stores, or tried to. It failed. This document looks back from that point to name, specifically, how it died, so the death can be prevented now.</div>
+    <div class="meta">
+      <span>Run mode: full fan-out, 11 investigators</span>
+      <span>Generated: 4 June 2026</span>
+      <span>Two of 11 findings confirmed against live code</span>
+    </div>
+  </div>
+
+  <!-- SYNTHESIS -->
+  <div class="section">
+    <h2>Synthesis</h2>
+    <div class="verdicts">
+      <div class="verdict most-likely">
+        <div class="tag">Most likely failure</div>
+        <h3>Notifications never reach phones</h3>
+        <p>The only failure already happening in production today. The VAPID keypair mismatch means zero web pushes leave the server, while in-app rows write perfectly, so it looks fine and is not. The fix is multi step and its back half (purge stale subs) is easy to skip; native APNs and FCM are not provisioned at all. A trial whose whole pitch is fast referee matching, run on an app where no phone ever buzzes, reads as user apathy and dies quietly.</p>
+        <span class="ref">Card 3 &bull; close seconds: cards 1, 11</span>
+      </div>
+      <div class="verdict most-dangerous">
+        <div class="tag">Most dangerous failure</div>
+        <h3>A safeguarding incident from an age-gate gap</h3>
+        <p>Confirmed in code: the under-16 messaging block only fires when date_of_birth is truthy, so any referee account with a NULL DOB bypasses the block entirely and an adult can message a child in app. NULL DOB is treated as eligible. One incident ends the trial, and the harm to a child and the fallout outlive the product. Insure against this regardless of its probability.</p>
+        <span class="ref">Card 10 &bull; confirmed in messages/actions.ts</span>
+      </div>
+      <div class="verdict hidden">
+        <div class="tag">The hidden assumption</div>
+        <h3>Built equals working</h3>
+        <p>That a control existing in the codebase is the same as the control working in production on the unhappy path. It recurs in nearly every card. A close second, on the commercial side: that the trial rides on software quality, when it actually rides on seeded liquidity, operational response and safeguarding process, none of which are code.</p>
+        <span class="ref">See banner below</span>
+      </div>
+    </div>
+
+    <div class="hidden-banner">
+      <div class="tag">The assumption so obvious it stopped looking like one</div>
+      <div class="big">"If it is built, written, or declared, it is working."</div>
+      <div class="sub">An in-app row equals a delivered push. A success toast equals a deleted account. A messaging block in code equals a protected child. RLS plus Stripe equals GDPR compliance. A printed support address equals a working channel. A folder of .sql files equals a reproducible schema. A server-action guard equals an enforced security boundary. Every failure below is the same gap: between "we built it" and "we proved it end to end, including the failure path and the malicious path." The premortem's value is naming that gap before reality does.</div>
+    </div>
+  </div>
+
+  <!-- REVISED PLAN -->
+  <div class="section">
+    <h2>The revised plan &mdash; concrete, doable this week</h2>
+    <div class="rows">
+      <div class="row"><div class="n">R1</div><div class="body"><b>Prove a push lands on a physical phone before anything else.</b> Regenerate the VAPID pair, set both Vercel vars from the same output (no quotes or whitespace), redeploy, then run DELETE FROM push_subscriptions WHERE platform='web', re-grant on a real device and confirm the buzz. Add a server-side delivery counter that logs actual web-push and FCM send results (not just validation) and a Sentry alert on push.failure. Provision the APNs key and google-services.json before the native build, or accept that the native app has no push and say so out loud. <span class="maps">Addresses card 3</span></div></div>
+      <div class="row"><div class="n">R2</div><div class="body"><b>Close the NULL-DOB safeguarding hole so it fails closed.</b> Exclude NULL-DOB referees from search, offer and accept; in messages/actions.ts treat NULL DOB on a referee as under-16 (block plus parent-email substitution). Add a DB constraint so a referee row cannot be created or flipped without a DOB. Run the query for referees with NULL DOB created after trial start, which must return zero. Reconcile the two reference points (eligibility at match date versus messaging at today) or document precisely why they differ. <span class="maps">Addresses cards 10, 2</span></div></div>
+      <div class="row"><div class="n">R3</div><div class="body"><b>Treat the REST RPC surface as the security boundary, not the server action.</b> Add auth.uid() ownership guards inside the money and booking SECDEF RPCs (escrow_refund, confirm_booking, mark_booking_complete, wallet_withdraw_*, claim_sos_booking), or move them to a private schema callable only by the service role. Add the missing "already held" guard to confirm_booking so it cannot overwrite escrow_amount_pence. Advisor 0029 is currently logged as accepted; with real money in front of the FA it is not. <span class="maps">Addresses card 4</span></div></div>
+      <div class="row"><div class="n">R4</div><div class="body"><b>Make irreversible system paths fail loud, not silent.</b> Where createAdminClient() returns null on an irreversible operation (account deletion, suspension, GDPR erasure), throw and surface an error to the user and Sentry; never show a success toast over a no-op. Confirm SUPABASE_SERVICE_ROLE_KEY is set in every environment including whatever the native build points at, and redeploy. Add a boot or health check that fails visibly if the key is absent. <span class="maps">Addresses card 5</span></div></div>
+      <div class="row"><div class="n">R5</div><div class="body"><b>Stand up the non-code obligations; they are the ones most likely to be skipped.</b> (a) Make support@whistleconnect.co.uk a real monitored mailbox, send a test email end to end, put it on a phone read daily. (b) Before printing "Data Controller (UK GDPR)", confirm Whistle Connect Ltd is incorporated and ICO-registered, write the DPIA for processing 14-to-17 data, document lawful basis and retention, and do a Children's Code check. (c) Write a one-page safeguarding incident procedure (who is told, the FA welfare contact, a target response time) and give safeguarding reports a tagged, alerting path so they do not sit in the same queue as wallet queries. If the regulatory pieces are not in place, do not hand the FA the security PDF that asserts they are. <span class="maps">Addresses cards 6, 7, 9</span></div></div>
+      <div class="row"><div class="n">R6</div><div class="body"><b>De-risk the app-store submission before sending it.</b> Add at least one genuine native capability (native push registration via Capacitor, which you need anyway) so the app is not a bare WebView. Make reporting and blocking reachable from the profile, not three taps inside a thread, and describe the safety controls in the store listing. Decide Sign in with Apple now, as it is likely required given email/password sign-up. Write reviewer notes that walk through the under-16 protections and give the reviewer a test path that actually hits the parent-email substitution. Expect at least one rejection; submit early enough that two rejection cycles do not sink the trial date. <span class="maps">Addresses cards 1, 2</span></div></div>
+      <div class="row"><div class="n">R7</div><div class="body"><b>Reconcile the migration history with production.</b> Run list_migrations against prod, line it up against the repo, and write the reconciling migration(s) so a fresh supabase db reset reproduces live. Delete RUN_THIS_NOW.sql. Confirm get_advisors on a fresh branch matches prod. Do this before writing any new migration (per-match pricing is the documented next one) against a baseline that does not match reality. <span class="maps">Addresses card 8</span></div></div>
+      <div class="row"><div class="n">R8</div><div class="body"><b>Seed both sides of the market in one place.</b> Pick the smallest viable geography (one town or league). Before launch, get a concrete count of coaches and adult referees signed up and available in the same radius and the same fixture window; do not count locked under-16s as available supply. Agree the trial success metric with the FA up front (completed bookings, not signups) so a liquidity miss is not misread as a product failure. <span class="maps">Addresses card 11</span></div></div>
+    </div>
+  </div>
+
+  <!-- CHECKLIST -->
+  <div class="section">
+    <h2>Pre-launch checklist &mdash; verify each before you commit</h2>
+    <div class="rows checklist">
+      <div class="row"><div class="n">1</div><div class="body"><b>Push proven on real hardware.</b> A real push received on a physical iPhone and a physical Android, with a server-side log confirming the actual send and a Sentry alert armed on push.failure. <span class="maps">Card 3</span></div></div>
+      <div class="row"><div class="n">2</div><div class="body"><b>Safeguarding fails closed.</b> SQL returns zero referee rows with NULL DOB created after trial start; a test under-16 account and a NULL-DOB account both cannot message a coach and show the parent-email CTA; a written incident procedure naming the FA welfare contact exists. <span class="maps">Cards 10, 9</span></div></div>
+      <div class="row"><div class="n">3</div><div class="body"><b>Money boundary holds from the browser.</b> From a plain logged-in session, a direct POST to /rest/v1/rpc/escrow_refund and /rest/v1/rpc/wallet_withdraw_begin is rejected by the database, not just by the app. <span class="maps">Card 4</span></div></div>
+      <div class="row"><div class="n">4</div><div class="body"><b>Irreversible ops fail loud and deletion works.</b> With the service-role key deliberately unset in a preview env, account deletion shows an error rather than a success toast; the key is confirmed set and deployed in prod; a reviewer can complete in-app account deletion end to end. <span class="maps">Card 5</span></div></div>
+      <div class="row"><div class="n">5</div><div class="body"><b>Channels and paperwork are real.</b> A test email to support@ arrives in an inbox read daily; ICO registration number, DPIA and retention policy exist as files; every claim in the security PDF is individually true. <span class="maps">Cards 6, 7</span></div></div>
+    </div>
+  </div>
+
+  <!-- FAILURE CARDS -->
+  <div class="section">
+    <h2>The eleven failure modes</h2>
+    <div class="cards">
+
+      <div class="card high">
+        <div class="head"><span class="id">Card 1</span><h3>Apple Guideline 4.2 rejection of the thin wrapper</h3><div><span class="sev high">High</span> <span class="sev-meta">likely &bull; high impact</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The submission slipped quietly. The Capacitor wrapper was a single WebView pointing at the live site, splash screen and icon, done. It passed Tom's own smoke test because it was just the website in a frame. The memory note said 4.2 was "noted, not a hard blocker", so he submitted in late October expecting a rubber stamp.</p>
+            <p>Apple rejected in 36 hours under 4.2: "limited experience, does not offer sufficient native functionality", flagged as a repackaged website. No push prompt fired in the native shell because web push does not bridge to APNs, so the reviewer saw zero native behaviour. The third round added Guideline 4.8: email/password sign-up with no Sign in with Apple. Two blockers, neither quick, for a solo operator with no native iOS code.</p>
+            <p>By the trial date the iOS app did not exist. Android shipped via the same wrapper. Half the coaches and the under-16 parents were on iPhones, pointed at "add to home screen". The trial looked half-finished to the very sponsor it most needed to impress.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That a thin remote WebView counts as an "app" to Apple, so the wrapper was a packaging step rather than a build of native capability.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>The Capacitor project contains zero native plugins and no APNs key; the wrapper only loads a URL.</li><li>The push permission prompt never appears inside the native iOS shell, because web push cannot reach APNs there.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card high">
+        <div class="head"><span class="id">Card 2</span><h3>Heightened store scrutiny of adults contacting minors</h3><div><span class="sev high">High</span> <span class="sev-meta">medium-high &bull; high impact</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The age-rating questionnaire was answered honestly: no mature content. What was not flagged was the structural fact that coaches can initiate contact with referees, and referees can be 14. The reviewer registered as a coach, reached a referee profile, and was matched with an adult referee, so never saw the correct "email the parent" substitution. From their seat it looked like an adult-to-stranger contact platform with no visible age gate at the front door and reporting tools three taps deep inside a thread. Rejection under Guideline 1.2.</p>
+            <p>The resubmission made it worse: a reviewer note explaining the under-16 lock told Apple explicitly that the platform knowingly serves children and facilitates adult contact, tripping the Kids and Families review thread. Google Play flagged a Data Safety mismatch (messages and DOB are shared personal data), went live for nine days, a parent complained, and it was pulled under the adult-child contact policy.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That the safeguarding controls being correct in code meant they would be legible to a reviewer who never triggers the under-16 path.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>A reviewer registering as a coach lands on an adult referee and never sees the parent-email substitution.</li><li>Reporting and blocking are reachable only inside an open thread, absent from the profile and the store listing's safety description.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card crit">
+        <div class="head"><span class="id">Card 3</span><h3>Notifications never reach real phones</h3><div><span class="sev crit">Critical</span> <span class="sev-meta">most likely &bull; kills core value</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The keypair was "fixed" on 14 June: regenerated, both values in Vercel, push-debug showed a matching fingerprint. What nobody did was DELETE FROM push_subscriptions WHERE platform='web', so every pre-existing sub was still bound to the old key and silently 410'd on send. The few subs created after the fix worked in a phone test, which read as "push is back". Sentry quietened because validation now passed; the failures had simply moved downstream to delivery, where nobody was looking.</p>
+            <p>On 2 September a settings tidy reordered Vercel env vars and the private key picked up a trailing newline. Validation correctly refused again. No alarm fired because nobody watched push.failure any more, and in-app rows kept writing perfectly. Native never entered the picture: APNs and google-services.json stayed on the post-trial backlog, so the Capacitor builds registered FCM tokens that resolved to nothing.</p>
+            <p>Through October the symptoms read as user apathy. SOS broadcasts sat unanswered, offers expired in the 24h window unseen, completion nudges never surfaced so escrow released only on the kickoff+48h fallback. The FA judged the trial on responsiveness and called it dead.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That an in-app notification row being written, plus a green push-debug fingerprint, proves a push actually arrived on a phone.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>Median time-to-first-offer-response climbs while in-app open rates stay flat: people act only once they open the app, never from a buzz.</li><li>push_subscriptions rows accumulate but server-side send success counts (deliveries, not validations) flatline, or are never logged at all.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card crit">
+        <div class="head"><span class="id">Card 4</span><h3>Direct SECURITY DEFINER RPC abuse drains money</h3><div><span class="sev crit">Critical</span> <span class="sev-meta">medium &bull; money loss in front of FA</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>Two weeks into the trial a referee notices the wallet figures in his browser network tab and the bare /rest/v1/rpc/ calls underneath. He works out that his own logged-in JWT is accepted by Supabase directly. He calls escrow_refund against a booking he was assigned to, the funds drop back to the coach's wallet, then re-runs confirm_booking with his own price. Because confirm_booking has no "already held" guard and overwrites escrow_amount_pence, the escrow row is now inconsistent: a hold stranded in escrow_pence while the coach is effectively charged twice. He then calls mark_booking_complete for both sides and wallet_withdraw_begin/finalise and pulls a clean payout.</p>
+            <p>Every server-action guard in bookings/actions.ts is bypassed; none run, because the REST endpoint never touches the Next.js layer. The weekly reconcile cron is the only safety net and it only runs Mondays, so the corruption compounds for days. The screenshot of a drained coach wallet lands in the FA pilot lead's inbox mid-trial. The 0029 advisor lint was read, logged as "accepted tradeoff", and left for a post-trial PR. Real money shipped over a documented, unfixed hole.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That attackers would only ever reach the RPCs through the app's server actions, so the server-action checks were treated as the security boundary.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>Postgres logs show escrow_refund, confirm_booking or wallet_withdraw_* firing without a matching preceding server-action log line, or at odd rates from one user.</li><li>The Monday reconcile cron reports balance mismatches and escrow stuck over seven days that no cancellation or dispute explains.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card crit">
+        <div class="head"><span class="id">Card 5</span><h3>Missing service-role key turns features into silent no-ops</h3><div><span class="sev crit">Critical</span> <span class="sev-meta">medium &bull; reject + GDPR breach</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The key was set once, locally, and never propagated. The createAdminClient() null guard, written for the cron-from-anon edge case, turned the missing service-role key into a silent amputation. The native build pointed at a Vercel environment where SUPABASE_SERVICE_ROLE_KEY had never been added. Every system path ran its null guard, returned early, and logged nothing loud enough to page a solo operator.</p>
+            <p>The Apple reviewer reached the in-app "Delete my account" flow built to satisfy 5.1.1(v). They tapped it. The block-when-money-in-flight check passed, then the anonymise step called the admin client, hit null, and returned a cheerful success toast while the row sat untouched. Reviewer refreshed, still logged in, still present. Rejected. The same week a coach confirmed a booking, ensureBookingThread no-opped, no thread row, and the referee was never reachable. An admin "suspended" an abusive parent who stayed active.</p>
+            <p>Worst of all, a GDPR erasure request came in, Tom clicked delete, saw success, and told the user it was done. It was not. The data persisted for weeks, now a reportable breach.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That a fail-soft null guard is always safer than a hard failure, when for irreversible legal obligations a silent no-op is the most dangerous outcome of all.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>Sentry shows zero msg.flow=ensure-thread.* events for days despite live confirmations: silence, not errors.</li><li>push-debug confirms VAPID is healthy while bookings quietly accrue no thread rows.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card high">
+        <div class="head"><span class="id">Card 6</span><h3>The support mailbox is a black hole</h3><div><span class="sev high">High</span> <span class="sev-meta">likely &bull; reject + ICO + FA silence</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The mailbox was a forwarding alias set up in five minutes before submission, pointing at personal Gmail, then quietly broke when the whistleconnect.co.uk DNS was migrated during the docs-pack work and the MX record was not recreated. From late October everything to support@ hard-bounced. Nobody noticed, because the address only existed to receive.</p>
+            <p>The App Store reviewer hit it first, emailing to query how under-16 referee data is handled. The mail bounced; with no answer to a safeguarding question they rejected under Guideline 5.1.4. Tom assumed a metadata nit and resubmitted twice before reading the note. Meanwhile a coach who quit emailed asking for deletion, citing the PDF's "deletable on demand". It sat in the bounce void. Day 31 passed. He complained to the ICO, attaching the branded Overview naming "Whistle Connect Ltd" as controller, a company never incorporated. Then on a Saturday the FA emailed about a youth-referee incident and got silence until the following week.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That a published contact address is a deliverable you tick off once, not a live channel that must be provisioned, tested end to end, and monitored daily.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>A test email to support@ never arrives or returns a delivery failure, and no one has ever deliberately sent one.</li><li>App Store Connect shows a rejection citing "we attempted to contact you" or Guideline 5.1.4, with no matching email in any inbox Tom reads.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card crit">
+        <div class="head"><span class="id">Card 7</span><h3>Regulatory gap behind the security-pack claims</h3><div><span class="sev crit">Critical</span> <span class="sev-meta">likely &bull; legal / regulatory</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The trial launched on the strength of the branded Security and Data Protection Overview. The technical controls were genuine and accurately described. The mistake was treating engineering controls as the whole of compliance. "Whistle Connect Ltd, Data Controller (UK GDPR)" was printed before anyone confirmed the company was incorporated, ICO-registered, or had paid the data protection fee. No DPIA was written for processing the data of 14-to-17-year-olds at scale, despite that being the clearest mandatory-DPIA trigger in UK law. No Children's Code assessment existed for a service plainly accessed by children.</p>
+            <p>It unravelled in November. A parent of a 15-year-old made a subject access request, then complained to the ICO. The ICO's opening letter asked for the DPIA, the record of processing, the documented lawful basis, and the retention schedule. None existed. The FA's routine due-diligence asked the same and got the same silence. The PDF stopped being reassurance and became the case against him: its confident claims showed the obligations were understood; their absence showed they were not met. The FA paused the trial, and the exposure sat with one solo, possibly uninsured, possibly unincorporated operator.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That building strong technical data-protection controls is the same thing as being legally compliant, so the paperwork could wait.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>A polished public claim of "Data Controller (UK GDPR)" while no DPIA file, ICO registration number, or retention schedule exists in the repo or company records.</li><li>The first subject access request or parental query arrives with no written procedure for who answers it, or by when.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card high">
+        <div class="head"><span class="id">Card 8</span><h3>Schema and migration drift, no clean rebuild</h3><div><span class="sev high">High</span> <span class="sev-meta">medium &bull; env divergence, regressions</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The reappearing bug starts at 0150, which recreates confirm_booking with CREATE OR REPLACE but omits the search_path pin and the GRANT EXECUTE that 0155 later had to restore. In the repo, 0155 sweeps that regression. But 0155, 0158, 0159 and 0160 were applied directly to production via the Supabase MCP on 3 June, out of band. When Tom later spins up a Supabase branch to test, it replays the tracked history, but 0155's tracking row does not line up with the repo filename, so the branch skips it or stops short. The branch ends up with a confirm_booking that has mutable search_path and no authenticated grant.</p>
+            <p>On the branch, every coach Accept fails silently. Tom "fixes" it with a new 0161 and pushes; but production already had 0155 by hand, so 0161 collides or re-grants what is already correct, while a real change ships against a baseline that does not match live. Later a CREATE OR REPLACE for per-match pricing lands written against the branch baseline, silently dropping the search_path pin again in production, escrow holds compute under a poisoned path, and a coach is double-charged exactly as the pre-0155 era. Neither environment rebuilds the other, so nobody can tell which is authoritative.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That the ordered .sql files in supabase/migrations/ faithfully rebuild the live production schema, so a branch, rollback or new developer gets the same database.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>A fresh branch or db reset produces a different get_advisors lint set than production, or list_migrations shows applied versions with no matching repo filename (0155/0156/0157 already in this state).</li><li>A bug fixed weeks ago, such as coach Accept failing or a search_path warning on confirm_booking, resurfaces in only one environment after a routine deploy.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card crit">
+        <div class="head"><span class="id">Card 9</span><h3>Solo-operator capacity collapse on a match day</h3><div><span class="sev crit">Critical</span> <span class="sev-meta">likely &bull; safeguarding response time</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>Saturday 11 October, 14:20. Forty-odd fixtures mid-kickoff. A coach marks a match complete; the 15-year-old referee does not, because his push never arrived (the in-app row wrote fine, so nothing looked broken). The coach's 35 pounds sits in escrow. He messages support. There is no address that reaches a rota, only Tom, on an Onesign client call under a four-hour acknowledgement clock. The booking sits half-confirmed and the cron will not release until both marks land or kickoff+48h. The coach reads this as theft.</p>
+            <p>15:05. A second message arrives through the moderation queue: a parent reports that an adult coach has been contacting their under-16 son directly, outside the app's parent-email gate, after getting the number off a team sheet. This is a safeguarding disclosure needing logging, suspension and escalation to the FA welfare officer within the hour. It lands in the same undifferentiated queue as the payment row. Tom does not see it until 18:40, after the call and a design deadline.</p>
+            <p>By Sunday the coach has opened a card chargeback and posted in the county WhatsApp; three coaches pause bookings. On Monday the FA's first question is not the chargeback. It is "when was the safeguarding report received, and what did you do in the first hour." The honest answer, three and a half hours and no logged action, ends the trial.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That one person, sharing weekends with two other businesses, could trustably triage real-money and child-safeguarding events in the hours they actually occur.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>The moderation queue and disputes have no severity tag and no out-of-band alert; a safeguarding report and a wallet query look identical and only surface when Tom next opens the tab.</li><li>First-weekend response times are already drifting past two hours, with no published support window or named second responder.</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card crit">
+        <div class="head"><span class="id">Card 10</span><h3>Safeguarding incident from an age-gate edge case</h3><div><span class="sev crit">Critical</span> <span class="sev-meta">most dangerous &bull; confirmed in code</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>A "club secretary" account registered in October through the email-confirmation flow, not the guided referee wizard, left date_of_birth NULL. It was later flipped to a referee profile by hand during a support fix, so it never passed through handle_new_user's consent-lock branch. NULL DOB is treated as eligible, so search, sendBookingRequest and acceptOffer all waved it through. The account belonged to a 15-year-old.</p>
+            <p>The real damage came from the messaging path. In messages/actions.ts the under-16 block only fires when date_of_birth is truthy: the guard short-circuits to false on a NULL DOB, the "email the parent" substitution never triggers, and a normal in-app thread opened. An adult coach and a child exchanged direct messages, unsupervised, for three weeks before a parent found the conversation and complained to the County FA. The split reference points compound it: eligibility is judged at match date while messaging is judged at today, so a 15-year-old booked the week before their 16th birthday can be lawfully assigned yet message freely on match day as a newly-"adult" user.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That every referee account reaches the system with a non-NULL DOB and through the trigger, so "NULL means legacy adult" was treated as safe rather than as the single highest-risk gap.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>Any row in profiles with role='referee' AND date_of_birth IS NULL created after the trial start date (one query; should be zero).</li><li>A confirmed booking whose referee has an open thread row but no under-16 tag or "email parent" CTA on /app/bookings/[id].</li></ul></div>
+        </div>
+      </div>
+
+      <div class="card high">
+        <div class="head"><span class="id">Card 11</span><h3>Marketplace cold-start: no seeded liquidity</h3><div><span class="sev high">High</span> <span class="sev-meta">likely &bull; trial reads as failure</span></div></div>
+        <div class="content">
+          <div class="story">
+            <p>The trial launched in one county area but the seeding was lopsided from day one. Referees were onboarded hard because they were the controllable side: roughly forty signed up. Coaches were treated as the side that would "just come" once the FA emailed clubs. They did not. By the second weekend there were eleven coach accounts against forty refs, and most coaches posted nothing because their league already used a WhatsApp ref pool that worked fine. Refs opened the app, saw an empty feed, and stopped checking. Of the eight bookings posted, four hit the under-16 consent lock or age filter (most keen sign-ups were 14 to 16) and returned zero eligible matches near the venue.</p>
+            <p>The geographic split finished it: active coaches clustered around one town, available adult refs thirty-plus miles away, so the distance search returned nobody inside a sensible travel radius even on valid posts. Both sides experienced the same empty screen on first use. By December the trial had produced single-digit completed bookings. The FA read that as "the product does not work", when nothing in the booking, escrow or messaging code had failed; the market was simply never seeded thick enough in one place at one time.</p>
+          </div>
+          <div class="block assume"><div class="lbl">Underlying assumption</div><p>That building the matching software well was the hard part, and supply and demand would show up on their own rather than needing to be seeded together in the same town and fixture window.</p></div>
+          <div class="block"><div class="lbl">Early warning signs</div><ul><li>A lopsided sign-up ratio in week one (forty refs, eleven coaches) combined with searches returning zero results.</li><li>Day-one users who search once, get an empty screen, and never return: near-zero booking posts per coach, refs whose last-seen stops within days of signup.</li></ul></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">
+    <b>Whistle Connect premortem</b> &bull; generated 4 June 2026 &bull; hybrid software + commercial/regulatory lens &bull; full fan-out, 11 investigators.<br>
+    The premise is fictional: nothing here has happened. It is written as though it had, to make the failure modes specific enough to prevent. Cards 8 and 10 were confirmed against the live codebase; the rest are reasoned from documented project state.
+  </div>
+
+</div>
+</body>
+</html>
