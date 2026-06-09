@@ -1,7 +1,7 @@
 'use server'
 
 import * as Sentry from '@sentry/nextjs'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { BookingFormData, BookingStatus, SearchCriteria, RefereeSearchResult, DBSStatus, FAVerificationStatus, ParentalConsentStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
@@ -490,7 +490,16 @@ export async function cancelBooking(bookingId: string) {
             booking.escrow_amount_pence > 0 &&
             !booking.escrow_released_at
         ) {
-            const { data: refundResult, error: refundError } = await supabase.rpc('escrow_refund', {
+            // escrow_refund is service-role-only as of migration 0162 (a
+            // signed-in user must not be able to trigger refunds directly over
+            // /rest/v1/rpc), so it runs via the admin client. This block is
+            // already before the status revert below, so failing here mutates
+            // nothing.
+            const admin = createAdminClient()
+            if (!admin) {
+                return { error: 'Refunds are temporarily unavailable. Please contact support.' }
+            }
+            const { data: refundResult, error: refundError } = await admin.rpc('escrow_refund', {
                 p_booking_id: bookingId,
             })
             if (refundError) {
@@ -583,19 +592,17 @@ export async function cancelBooking(bookingId: string) {
             link: `/app/bookings/${bookingId}`
         })
     } else {
-        // Coach is cancelling, or non-confirmed booking cancellation
-        const { error } = await supabase
-            .from('bookings')
-            .update({ status: 'cancelled' })
-            .eq('id', bookingId)
-
-        if (error) {
-            return { error: error.message }
-        }
-
-        // Refund escrow if funds were held for this booking
+        // Coach is cancelling, or non-confirmed booking cancellation.
+        // Refund any held escrow FIRST. escrow_refund is service-role-only as
+        // of migration 0162, so acquire the admin client before mutating the
+        // booking — that way a missing service-role key fails loudly here
+        // rather than leaving the booking cancelled with escrow stranded.
         if (booking.escrow_amount_pence && booking.escrow_amount_pence > 0 && !booking.escrow_released_at) {
-            const { data: refundResult, error: refundError } = await supabase.rpc('escrow_refund', {
+            const admin = createAdminClient()
+            if (!admin) {
+                return { error: 'Refunds are temporarily unavailable. Please contact support.' }
+            }
+            const { data: refundResult, error: refundError } = await admin.rpc('escrow_refund', {
                 p_booking_id: bookingId,
             })
 
@@ -604,6 +611,15 @@ export async function cancelBooking(bookingId: string) {
             } else if (refundResult?.error) {
                 console.error('Escrow refund returned error:', refundResult.error)
             }
+        }
+
+        const { error } = await supabase
+            .from('bookings')
+            .update({ status: 'cancelled' })
+            .eq('id', bookingId)
+
+        if (error) {
+            return { error: error.message }
         }
 
         // Withdraw all active offers for this booking so they no longer
