@@ -1,0 +1,21 @@
+[
+  "0001_initial_schema.sql",
+  "0001_reset_schema.sql",
+  "0003_auth_trigger.sql",
+  "000_complete_setup.sql",
+  "0099_master_fixes.sql",
+  "0110_fix_auth_trigger.sql",
+  "0111_fix_rls_policies.sql",
+  "0113_confirm_booking_rpc.sql",
+  "0115_geolocation_foundation.sql",
+  "0118_reliability_score.sql",
+  "0119_sos_bookings.sql",
+  "0128_wallet_rpc.sql",
+  "0129_update_confirm_booking_rpc.sql",
+  "0133_coach_sets_price_rpc.sql",
+  "0135_auto_heal_availability.sql",
+  "0137_booking_fee.sql",
+  "0148_wallet_descriptions_breakdown.sql",
+  "0150_confirm_booking_accepts_price.sql",
+  "0151_offer_per_user_archive.sql"
+]

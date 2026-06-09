@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: ESLint
+        run: npm run lint
+      - name: Migration lint (SECURITY DEFINER search_path + grants)
+        run: npm run lint:migrations
+# Note: `tsc --noEmit` is intentionally NOT run in CI yet — there are
+# pre-existing type errors confined to __tests__ (untyped Supabase client).
+# Add it once those are resolved, scoped to src/.
