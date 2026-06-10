@@ -83,7 +83,7 @@
                                 You've Been Invited! 🎉</h2>
 
                             <p style="color: #475569; font-size: 16px; margin: 0 0 8px 0;">
-                                Someone thinks you'd be a great fit for our community.
+                                Hi {{ if eq .Data.role "referee" }}Referee{{ else if eq .Data.role "coach" }}Coach{{ else }}there{{ end }}, someone thinks you'd be a great fit for our community.
                             </p>
 
                             <p style="color: #1d2557; font-size: 18px; font-weight: 600; margin: 0;">

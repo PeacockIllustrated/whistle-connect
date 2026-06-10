@@ -38,9 +38,13 @@
           <tr>
             <td style="padding: 40px;">
               <h2 style="color: #1d2557; font-size: 20px; font-weight: 600; margin-top: 0; margin-bottom: 16px;">Welcome to Whistle Connect!</h2>
-              
+
+              <p style="margin-bottom: 16px; color: #475569; font-size: 16px;">
+                Hi {{ if eq .Data.role "referee" }}Referee{{ else if eq .Data.role "coach" }}Coach{{ else }}there{{ end }},
+              </p>
+
               <p style="margin-bottom: 24px; color: #475569; font-size: 16px;">
-                You're just one step away from connecting with top referees and coaches. 
+                You're just one step away from connecting with top referees and coaches.
                 Please confirm your email address to unlock your dashboard, manage bookings, and update your profile.
               </p>
 
