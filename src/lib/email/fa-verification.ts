@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import * as Sentry from '@sentry/nextjs'
 import { escapeHtml } from '@/lib/utils'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendViaMake } from './send'
 
 const FALLBACK_RECIPIENT = 'tom@onesignanddigital.com'
 
@@ -257,6 +258,21 @@ export async function sendFAVerificationEmail({
 }): Promise<{ success: boolean; error?: string; recipient?: string; isFallback?: boolean }> {
     try {
         const { to, isFallback } = await resolveRecipient(county)
+
+        // Prefer the Make email hub when configured; Resend is the transition
+        // fallback (removable once Make is verified live). The app resolves the
+        // County FA recipient + builds the one-click URLs; Make just renders.
+        const baseUrl = getBaseUrl()
+        const confirmUrl = responseToken ? `${baseUrl}/api/fa-verify?token=${responseToken}&action=confirmed` : null
+        const rejectUrl = responseToken ? `${baseUrl}/api/fa-verify?token=${responseToken}&action=rejected` : null
+        const viaMake = await sendViaMake({
+            type: 'fa_verification',
+            to,
+            subject: `FA Number Verification Request — ${refereeName} (${faId})`,
+            data: { refereeName, faId, county: county ?? null, confirmUrl, rejectUrl },
+        })
+        if (viaMake === 'sent') return { success: true, recipient: to, isFallback }
+
         const resend = getResend()
         const html = buildVerificationEmail({ refereeName, faId, county, responseToken })
 

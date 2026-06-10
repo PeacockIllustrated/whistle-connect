@@ -505,8 +505,15 @@ WEB_PUSH_ENABLED=true
 # Mapbox
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=
 
-# Resend (FA verification emails)
+# Resend (FA verification + parental-consent emails) — TRANSITION FALLBACK only.
+# Used when the Make email hub is not configured; remove once Make is verified live.
 RESEND_API_KEY=
+
+# Make.com email hub — the app POSTs every transactional email to one webhook.
+# Account-agnostic: set these once the dedicated Whistle Connect Make account
+# exists (no code change needed). See docs/make-email-hub.md.
+MAKE_EMAIL_WEBHOOK_URL=                   # custom-webhook URL; unset ⇒ fall back to Resend
+MAKE_WEBHOOK_SECRET=                      # shared secret, sent as x-wc-email-secret; scenario filters on it
 ```
 
 **Important**: Vercel does NOT hot-reload env vars. After changing any value, redeploy via Vercel UI (Deployments tab → ⋯ → Redeploy) or push a new commit.

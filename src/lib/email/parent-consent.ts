@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 import * as Sentry from '@sentry/nextjs'
 import { escapeHtml } from '@/lib/utils'
+import { sendViaMake } from './send'
 
 /**
  * Parent / guardian consent email for under-18 referees. Mirrors the FA
@@ -132,6 +133,19 @@ export async function sendParentConsentEmail({
     responseToken: string
 }): Promise<{ success: boolean; error?: string }> {
     try {
+        // Prefer the Make email hub when configured; Resend is the transition
+        // fallback (removable once Make is verified live).
+        const baseUrl = getBaseUrl()
+        const approveUrl = `${baseUrl}/api/parent-consent?token=${responseToken}&action=approved`
+        const declineUrl = `${baseUrl}/api/parent-consent?token=${responseToken}&action=rejected`
+        const viaMake = await sendViaMake({
+            type: 'parental_consent',
+            to: parentEmail,
+            subject: `Parental consent needed for ${childName} on Whistle Connect`,
+            data: { childName, approveUrl, declineUrl },
+        })
+        if (viaMake === 'sent') return { success: true }
+
         const resend = getResend()
         const html = buildConsentEmail({ childName, responseToken })
 
