@@ -53,7 +53,7 @@ export async function sendMessage(threadId: string, body: string) {
         }
     }
 
-    // Safeguarding: under-16 users cannot use in-app messaging (age computed
+    // Safeguarding: under-18 users cannot use in-app messaging (age computed
     // at today). Coaches contact the parent/guardian instead (see booking
     // detail "Email parent for important updates").
     const { data: senderProfile } = await supabase
@@ -69,14 +69,14 @@ export async function sendMessage(threadId: string, body: string) {
     }
 
     // Fails closed for referees: a referee with no DOB on file is treated as
-    // under-16. Coaches are not age-gated, so a missing coach DOB does not
+    // under-18. Coaches are not age-gated, so a missing coach DOB does not
     // block them.
-    const senderUnder16 =
+    const senderUnder18 =
         senderProfile?.role === 'referee'
             ? requiresParentalConsent(senderProfile.date_of_birth)
             : !!senderProfile?.date_of_birth && ageOnDate(senderProfile.date_of_birth) < PARENTAL_CONSENT_AGE
-    if (senderUnder16) {
-        return { error: 'In-app messaging is unavailable for under-16 referees. Important updates are sent to your parent or guardian.' }
+    if (senderUnder18) {
+        return { error: 'In-app messaging is unavailable for under-18 referees. Important updates are sent to your parent or guardian.' }
     }
 
     // Insert message and return the created ID

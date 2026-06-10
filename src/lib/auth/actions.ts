@@ -265,7 +265,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
         }).catch(() => { /* geocoding is best-effort at signup */ })
     }
 
-    // Under-16 referee: the trigger has already locked the account
+    // Under-18 referee: the trigger has already locked the account
     // (parental_consent_status='awaiting') and created the parental_consents
     // row. Send the parent the one-click approve email (best-effort — the
     // account stays locked regardless, so a missed send is recoverable).

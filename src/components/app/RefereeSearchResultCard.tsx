@@ -92,7 +92,7 @@ export function RefereeSearchResultCard({
                         {referee.is_under_18 && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-purple-50 text-purple-700 border border-purple-200">
                                 <ShieldCheck className="w-3 h-3" />
-                                {referee.is_under_16 ? 'Under 16 — parent contact' : 'Youth (under 18)'}
+                                Under 18 — parent contact
                             </span>
                         )}
                     </div>

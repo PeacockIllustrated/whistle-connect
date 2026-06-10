@@ -3,7 +3,7 @@ import * as Sentry from '@sentry/nextjs'
 import { escapeHtml } from '@/lib/utils'
 
 /**
- * Parent / guardian consent email for under-16 referees. Mirrors the FA
+ * Parent / guardian consent email for under-18 referees. Mirrors the FA
  * verification pattern (src/lib/email/fa-verification.ts): a one-click token
  * link, no login required, handled by /api/parent-consent. The referee's
  * account stays locked (referee_profiles.parental_consent_status='awaiting')
@@ -69,7 +69,7 @@ function buildConsentEmail({
 
               <p style="margin-bottom: 16px; color: #475569; font-size: 15px;">
                 <strong>${safeChild}</strong> has registered as a referee on Whistle Connect.
-                Because they are under 16, we need a parent or guardian to confirm consent
+                Because they are under 18, we need a parent or guardian to confirm consent
                 before the account can be used.
               </p>
 

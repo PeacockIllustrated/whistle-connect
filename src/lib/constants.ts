@@ -61,8 +61,11 @@ export function requiresDBS(ageGroup: string | null | undefined): boolean {
 /** Minimum age a referee can be (FA safeguarding). Under-14s cannot register. */
 export const MINIMUM_REFEREE_AGE = 14
 
-/** Age below which a referee requires parental consent + has in-app messaging blocked. */
-export const PARENTAL_CONSENT_AGE = 16
+/** Age below which a referee requires parental consent + has in-app messaging
+ *  blocked. Policy (Terms §2/§5, Privacy §5): referees under 18 (ages 14–17)
+ *  need verified parent/guardian consent before the account can be used, and
+ *  have in-app messaging disabled. Minimum registration age stays 14. */
+export const PARENTAL_CONSENT_AGE = 18
 
 /**
  * Whole-years age on a given date. Both args accept a Date or an
@@ -118,7 +121,7 @@ export function refereeEligibleForAgeGroup(
 /**
  * Whether a referee REQUIRES parental consent (and has in-app messaging
  * blocked). FAILS CLOSED: a null/unparseable DOB is treated as requiring
- * consent, so a referee with no DOB on file can never slip the under-16 gate.
+ * consent, so a referee with no DOB on file can never slip the under-18 gate.
  * Apply only to referees — coaches are not age-gated. Age computed at `onDate`
  * (default today, the reference point for the messaging block).
  */

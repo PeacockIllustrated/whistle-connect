@@ -1273,7 +1273,6 @@ export async function searchReferees(criteria: SearchCriteria): Promise<{ data?:
                 average_rating: null,
                 match_score: null,
                 is_under_18: false,
-                is_under_16: false,
             }
         })
 
@@ -1513,7 +1512,7 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
     const filteredResults = (results || []).filter((r: RefereeProfileQueryResult) => {
         if (dbsRequired && r.dbs_status !== 'verified') return false
 
-        // Parental-consent gate: under-16 accounts are locked until a parent
+        // Parental-consent gate: under-18 accounts are locked until a parent
         // approves. Only 'not_required' / 'verified' may be booked.
         if (r.parental_consent_status === 'awaiting' || r.parental_consent_status === 'rejected') {
             return false
@@ -1563,7 +1562,6 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
                 average_rating: r.average_rating ?? null,
                 match_score: score,
                 is_under_18: refAge !== null && refAge < 18,
-                is_under_16: refAge !== null && refAge < 16,
             }
         })
         .sort((a, b) => (b.match_score ?? 0) - (a.match_score ?? 0))

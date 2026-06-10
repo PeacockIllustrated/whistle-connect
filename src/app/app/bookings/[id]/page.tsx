@@ -78,19 +78,19 @@ export default async function BookingDetailPage({
         ? booking.thread[0]
         : booking.thread
 
-    // Safeguarding: under-16 referees cannot use in-app messaging. The coach
-    // contacts the parent/guardian instead, and the under-16 referee sees a
+    // Safeguarding: under-18 referees cannot use in-app messaging. The coach
+    // contacts the parent/guardian instead, and the under-18 referee sees a
     // note rather than a (blocked) message button.
-    // Fail closed: a referee with a null/unknown DOB is treated as under-16.
+    // Fail closed: a referee with a null/unknown DOB is treated as under-18.
     // The assigned ref is always a referee, so NULL DOB routes the coach to the
-    // parent-email path. viewerIsUnder16 only applies to a referee viewer
+    // parent-email path. viewerIsUnder18 only applies to a referee viewer
     // (coaches are not age-gated).
     const assignedRefDob: string | null = assignment?.referee?.date_of_birth ?? null
-    const assignedRefUnder16 = requiresParentalConsent(assignedRefDob)
-    const viewerIsUnder16 = isReferee && requiresParentalConsent(profile?.date_of_birth)
+    const assignedRefUnder18 = requiresParentalConsent(assignedRefDob)
+    const viewerIsUnder18 = isReferee && requiresParentalConsent(profile?.date_of_birth)
 
     let assignedRefParentEmail: string | null = null
-    if (isCoach && assignedRefUnder16 && assignment?.referee_id) {
+    if (isCoach && assignedRefUnder18 && assignment?.referee_id) {
         const { data: consent } = await supabase
             .from('parental_consents')
             .select('parent_email')
@@ -272,9 +272,9 @@ export default async function BookingDetailPage({
                         </div>
                     </div>
                     {(booking.status === 'confirmed' || booking.status === 'completed') && (
-                        viewerIsUnder16 ? (
+                        viewerIsUnder18 ? (
                             <p className="mt-3 text-xs text-[var(--foreground-muted)] bg-[var(--neutral-50)] rounded-lg p-3">
-                                In-app messaging is unavailable for under-16 referees.
+                                In-app messaging is unavailable for under-18 referees.
                                 Important updates about this match are sent to your parent
                                 or guardian.
                             </p>
@@ -307,7 +307,7 @@ export default async function BookingDetailPage({
                         <StatusChip status="verified" size="sm" />
                     </div>
                     {(booking.status === 'confirmed' || booking.status === 'completed') && (
-                        assignedRefUnder16 ? (
+                        assignedRefUnder18 ? (
                             assignedRefParentEmail ? (
                                 <a
                                     href={`mailto:${assignedRefParentEmail}?subject=${encodeURIComponent('Whistle Connect — match update')}`}
@@ -318,7 +318,7 @@ export default async function BookingDetailPage({
                                 </a>
                             ) : (
                                 <p className="mt-3 text-xs text-[var(--foreground-muted)] bg-[var(--neutral-50)] rounded-lg p-3">
-                                    This referee is under 16. In-app messaging is unavailable —
+                                    This referee is under 18. In-app messaging is unavailable —
                                     important updates must go via their parent/guardian. No
                                     parent contact email is on file; please contact support.
                                 </p>
