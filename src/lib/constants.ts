@@ -149,8 +149,11 @@ export function refereeBlockedFromAgeGroup(
     return !refereeEligibleForAgeGroup(ageOnDate(dob, onDate), ageGroup)
 }
 
-/** Platform booking fee added to coach's total per booking, in pence. */
-export const BOOKING_FEE_PENCE = 99
+/** Platform booking fee added to coach's total per booking, in pence.
+ *  Refunded to the coach (with the rest of the purse) if the booking is
+ *  cancelled. Persisted source of truth is platform_settings.booking_fee_pence
+ *  (migration 0164); this constant is the fallback when that row is absent. */
+export const BOOKING_FEE_PENCE = 100
 
 /**
  * Premium fee charged to the coach's wallet on SOS broadcast creation.

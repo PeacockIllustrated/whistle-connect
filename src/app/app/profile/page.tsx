@@ -83,8 +83,12 @@ export default async function ProfilePage() {
                 bundle so end users don't see a "fire test notification" panel. */}
             {process.env.NODE_ENV !== 'production' && <NotificationTester />}
 
-            {/* Sign Out */}
-            <SignOutButton />
+            {/* Sign Out — mt-8 keeps a clear gap above it for coaches, who
+                don't get the Quick Links card (refs/admins) that otherwise
+                separates Sign Out from the section above. */}
+            <div className="mt-8">
+                <SignOutButton />
+            </div>
         </div>
     )
 }
