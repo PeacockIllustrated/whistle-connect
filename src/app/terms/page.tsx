@@ -37,7 +37,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">2. Eligibility</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed mb-4">
-                            You must be at least 16 years old to hold an account independently. Referees aged 14 and 15 may use the service only with verified consent from a parent or guardian; until that consent is verified, the account is locked.
+                            You must be at least 18 years old to hold an account independently. Referees aged 14 to 17 may use the service only with verified consent from a parent or guardian; until that consent is verified, the account is locked.
                         </p>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             You must provide an accurate date of birth when you register. We use it to enforce age-eligibility and safeguarding rules, and providing false age information is a breach of these terms.
@@ -72,7 +72,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">5. Safeguarding of Minors</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
-                            The service is used by minors. Referees under the age of 16 require verified parental or guardian consent before their account can be used, and in-app messaging is disabled for them. To meet safeguarding obligations, we share registration and match-related data with The Football Association (the FA). All users must act in a way that protects the welfare of young people; any conduct that endangers a minor will result in immediate action, including removal from the platform and, where appropriate, referral to the relevant authorities.
+                            The service is used by minors. Referees under the age of 18 require verified parental or guardian consent before their account can be used, and in-app messaging is disabled for them. To meet safeguarding obligations, we share registration and match-related data with The Football Association (the FA). All users must act in a way that protects the welfare of young people; any conduct that endangers a minor will result in immediate action, including removal from the platform and, where appropriate, referral to the relevant authorities.
                         </p>
                     </section>
 
