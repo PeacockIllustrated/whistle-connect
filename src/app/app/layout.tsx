@@ -7,6 +7,7 @@ import { PushNotificationManager } from '@/components/app/PushNotificationManage
 import { InstallPrompt } from '@/components/app/InstallPrompt'
 import { UnreadMessagesProvider } from '@/components/app/UnreadMessagesProvider'
 import { BookingUpdatesProvider } from '@/components/app/BookingUpdatesProvider'
+import { ParentalConsentBanner } from '@/components/app/ParentalConsentBanner'
 import SplashScreen from '@/components/ui/SplashScreen'
 
 export default async function AppLayout({
@@ -76,6 +77,28 @@ export default async function AppLayout({
         offerCount = count || 0
     }
 
+    // Under-18 referees: surface a banner while the account is locked pending
+    // (or after a declined) parental/guardian consent. The hard gates are
+    // enforced server-side elsewhere; this just makes the state visible.
+    let parentalConsentStatus: string | null = null
+    let parentConsentEmail: string | null = null
+    if (profile?.role === 'referee') {
+        const { data: refProfile } = await supabase
+            .from('referee_profiles')
+            .select('parental_consent_status')
+            .eq('profile_id', user.id)
+            .single()
+        parentalConsentStatus = refProfile?.parental_consent_status ?? null
+        if (parentalConsentStatus === 'awaiting' || parentalConsentStatus === 'rejected') {
+            const { data: consent } = await supabase
+                .from('parental_consents')
+                .select('parent_email')
+                .eq('referee_id', user.id)
+                .maybeSingle()
+            parentConsentEmail = consent?.parent_email ?? null
+        }
+    }
+
     return (
         <ToastProvider>
             <SplashScreen />
@@ -94,6 +117,12 @@ export default async function AppLayout({
                         <InstallPrompt />
 
                         <main className="pt-[calc(var(--header-height)+24px)] pb-[calc(var(--bottom-nav-height)+24px)]">
+                            {(parentalConsentStatus === 'awaiting' || parentalConsentStatus === 'rejected') && (
+                                <ParentalConsentBanner
+                                    status={parentalConsentStatus as 'awaiting' | 'rejected'}
+                                    parentEmail={parentConsentEmail}
+                                />
+                            )}
                             {children}
                         </main>
 
