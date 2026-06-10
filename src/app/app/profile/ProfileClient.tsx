@@ -10,7 +10,8 @@ import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
 import { Modal } from '@/components/ui/Modal'
 import { updateFANumber, deleteMyAccount, exportMyData } from './actions'
-import { Pencil, ShieldCheck, BadgeCheck, Trash2, AlertTriangle, Download } from 'lucide-react'
+import { requestPasswordReset } from '@/lib/auth/actions'
+import { Pencil, ShieldCheck, BadgeCheck, Trash2, AlertTriangle, Download, KeyRound } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile } from '@/lib/types'
 
@@ -113,12 +114,59 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
                 <RefereeDetailsCard refereeProfile={refereeProfile} onUpdate={() => router.refresh()} />
             )}
 
+            {/* Security — self-service password reset */}
+            <SecurityCard email={user.email} />
+
             {/* Your data — GDPR export (right to data portability) */}
             <DataExport />
 
             {/* Danger zone — account deletion (App/Play Store requirement) */}
             <DangerZone />
         </>
+    )
+}
+
+function SecurityCard({ email }: { email?: string }) {
+    const [loading, setLoading] = useState(false)
+    const [message, setMessage] = useState('')
+    const [error, setError] = useState('')
+
+    async function handleReset() {
+        if (!email) {
+            setError('No email address is on file for this account.')
+            return
+        }
+        setLoading(true)
+        setError('')
+        setMessage('')
+        const result = await requestPasswordReset(email)
+        setLoading(false)
+        if (result?.error) {
+            setError(result.error)
+            return
+        }
+        setMessage(result?.message || `We've emailed ${email} a secure link to set a new password.`)
+    }
+
+    return (
+        <Card variant="default" padding="md" className="mb-4">
+            <h2 className="text-sm font-semibold text-[var(--foreground-muted)] uppercase tracking-wide mb-2">
+                Security
+            </h2>
+            <p className="text-sm text-[var(--foreground-muted)] mb-4">
+                We&apos;ll email you a secure link to choose a new password.
+            </p>
+            {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
+            {message && <p className="text-sm text-emerald-600 mb-3">{message}</p>}
+            <button
+                onClick={handleReset}
+                disabled={loading}
+                className="inline-flex items-center gap-2 rounded-lg border border-[var(--border-color)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--neutral-100)] disabled:opacity-50"
+            >
+                <KeyRound className="w-4 h-4" />
+                {loading ? 'Sending…' : 'Reset password'}
+            </button>
+        </Card>
     )
 }
 
