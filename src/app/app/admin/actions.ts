@@ -26,12 +26,17 @@ export async function verifyReferee(refereeId: string, verified: boolean) {
     const user = await requireAdmin(supabase)
     if (!user) return { error: 'Admin access required' }
 
-    // When verifying, also promote fa_verification_status so the referee
-    // sees the change on their profile page (which reads fa_verification_status).
-    // When un-verifying, reset fa_verification_status to 'pending' only if it was 'verified'.
+    // When verifying, promote FA, DBS and safeguarding together. Per the admin
+    // process a referee can't hold an FA number without DBS and safeguarding
+    // clearance, so confirming the FA number confirms all three — and the
+    // referee's own profile plus the referee cards coaches see read these
+    // statuses. When un-verifying we roll the same three back so we never show
+    // verified credentials for a referee who is no longer verified.
     const updateData: Record<string, unknown> = { verified }
     if (verified) {
         updateData.fa_verification_status = 'verified'
+        updateData.dbs_status = 'verified'
+        updateData.safeguarding_status = 'verified'
     }
 
     const { error } = await supabase
@@ -39,13 +44,22 @@ export async function verifyReferee(refereeId: string, verified: boolean) {
         .update(updateData)
         .eq('profile_id', refereeId)
 
-    // If un-verifying, only reset FA status if it was 'verified' (don't overwrite 'pending'/'rejected')
+    // If un-verifying, roll back only the statuses we'd have promoted, and only
+    // where they're currently 'verified' (don't clobber 'pending'/'rejected'/
+    // 'expired'/'provided' set through other flows).
     if (!verified) {
-        await supabase
-            .from('referee_profiles')
-            .update({ fa_verification_status: 'pending' })
-            .eq('profile_id', refereeId)
-            .eq('fa_verification_status', 'verified')
+        const rollbacks: Array<[string, string]> = [
+            ['fa_verification_status', 'pending'],
+            ['dbs_status', 'provided'],
+            ['safeguarding_status', 'provided'],
+        ]
+        for (const [column, resetValue] of rollbacks) {
+            await supabase
+                .from('referee_profiles')
+                .update({ [column]: resetValue })
+                .eq('profile_id', refereeId)
+                .eq(column, 'verified')
+        }
     }
 
     if (error) {
