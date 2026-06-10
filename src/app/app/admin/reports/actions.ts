@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { logAdminAction } from '@/lib/admin/audit'
 
 /** Verify the current user is an admin. Returns the user id on success. */
 async function requireAdmin(): Promise<{ userId: string } | { error: string }> {
@@ -136,6 +137,15 @@ export async function suspendUser(userId: string, reason?: string): Promise<{ su
         return { error: 'User flagged as suspended, but login could not be disabled. Please retry.' }
     }
 
+    await logAdminAction({
+        actorId: auth.userId,
+        action: 'user.suspend',
+        summary: reason?.trim() ? `Suspended user — ${reason.trim()}` : 'Suspended user',
+        targetType: 'user',
+        targetId: userId,
+        detail: { reason: reason?.trim() || null },
+    })
+
     revalidatePath('/app/admin/reports')
     return { success: true }
 }
@@ -168,6 +178,14 @@ export async function unsuspendUser(userId: string): Promise<{ success?: boolean
     if (banError) {
         return { error: 'Suspension cleared, but login could not be re-enabled. Please retry.' }
     }
+
+    await logAdminAction({
+        actorId: auth.userId,
+        action: 'user.unsuspend',
+        summary: 'Lifted user suspension',
+        targetType: 'user',
+        targetId: userId,
+    })
 
     revalidatePath('/app/admin/reports')
     return { success: true }

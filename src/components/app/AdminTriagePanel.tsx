@@ -8,6 +8,7 @@ import {
     ShieldAlert,
     Webhook,
     CheckCircle2,
+    UserCheck,
     type LucideIcon,
 } from 'lucide-react'
 
@@ -36,8 +37,18 @@ function buildTiles(triage: AdminTriage): TriageTile[] {
     const withdrawals = triage.failedOrPendingWithdrawals
     const dbs = triage.dbsExpiringSoon
     const webhooks = triage.webhookFailures24h
+    const minors = triage.minorsPendingConsent
 
     return [
+        {
+            key: 'minors',
+            label: 'Minors awaiting consent',
+            count: minors.awaiting,
+            detail: minors.rejected > 0 ? `${minors.rejected} rejected` : undefined,
+            href: '/app/admin/safeguarding',
+            icon: UserCheck,
+            tone: minors.rejected > 0 ? 'red' : minors.awaiting > 0 ? 'amber' : 'green',
+        },
         {
             key: 'fa',
             label: 'Pending FA verifications',
