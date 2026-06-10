@@ -88,7 +88,7 @@ export const signUpSchema = z.object({
         ctx.addIssue({
             code: 'custom',
             path: ['parent_email'],
-            message: "A parent or guardian's email is required for referees under 16",
+            message: "A parent or guardian's email is required for referees under 18",
         })
     }
 })

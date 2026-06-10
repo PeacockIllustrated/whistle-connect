@@ -75,7 +75,7 @@ export default function PrivacyPage() {
                             Under the UK GDPR we rely on the following legal bases:
                         </p>
                         <ul className="list-disc pl-5 space-y-2 text-[var(--neutral-600)]">
-                            <li><strong>Consent</strong> &mdash; for sending push notifications, and for verified parental or guardian consent where a referee is under 16. You can withdraw consent at any time.</li>
+                            <li><strong>Consent</strong> &mdash; for sending push notifications, and for verified parental or guardian consent where a referee is under 18. You can withdraw consent at any time.</li>
                             <li><strong>Performance of a contract</strong> &mdash; to provide the booking, payment and messaging features you have asked us to provide under our Terms of Service.</li>
                             <li><strong>Legitimate interests</strong> &mdash; to keep the platform secure, prevent fraud and abuse, diagnose errors, and improve the service, balanced against your rights and freedoms.</li>
                             <li><strong>Legal obligation</strong> &mdash; to meet safeguarding duties, retain financial and transactional records, and respond to lawful requests.</li>
@@ -89,8 +89,8 @@ export default function PrivacyPage() {
                         </p>
                         <ul className="list-disc pl-5 space-y-2 text-[var(--neutral-600)]">
                             <li>We collect date of birth at registration so we can apply age-based eligibility rules and ensure referees are only matched to age-appropriate fixtures.</li>
-                            <li>Referees under the age of 16 require verified parental or guardian consent before their account can be used. Until consent is verified, the account is locked.</li>
-                            <li>In-app messaging is disabled for referees under 16; coaches are directed to contact a parent or guardian by email for important match updates instead.</li>
+                            <li>Referees under the age of 18 require verified parental or guardian consent before their account can be used. Until consent is verified, the account is locked.</li>
+                            <li>In-app messaging is disabled for referees under 18; coaches are directed to contact a parent or guardian by email for important match updates instead.</li>
                             <li>To meet safeguarding obligations, we share registration and match-related data with The Football Association (the FA). This helps ensure that officials are appropriately registered and that matches involving young people are properly overseen.</li>
                         </ul>
                     </section>

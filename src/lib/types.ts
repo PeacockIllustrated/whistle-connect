@@ -269,10 +269,9 @@ export interface RefereeSearchResult {
     total_matches_completed: number | null
     average_rating: number | null
     match_score: number | null
-    /** Computed from DOB at the match date — drives the youth tag on the card. */
+    /** Computed from DOB at the match date. Under-18 referees need parental
+     *  consent and have in-app messaging blocked — coaches contact the parent. */
     is_under_18: boolean
-    /** Under-16 referees: in-app messaging is blocked; coach contacts the parent. */
-    is_under_16: boolean
 }
 
 export interface AvailabilitySlot {

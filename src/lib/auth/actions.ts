@@ -143,6 +143,13 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                 phone: data.phone || null,
                 postcode: data.postcode || null,
                 date_of_birth: data.date_of_birth || null,
+                // The handle_new_user trigger reads these from metadata to
+                // persist the referee's FA number (fa_id, item 3) and to create
+                // the parental_consents row for under-18s (item 4). Without them
+                // here the trigger has nothing to act on — the FA number was
+                // dropped and the consent row/approval email never created.
+                fa_number: data.fa_number || null,
+                parent_email: data.parent_email || null,
                 terms_accepted_at: consentAcceptedAt,
                 privacy_accepted_at: consentAcceptedAt,
             },
@@ -265,7 +272,7 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
         }).catch(() => { /* geocoding is best-effort at signup */ })
     }
 
-    // Under-16 referee: the trigger has already locked the account
+    // Under-18 referee: the trigger has already locked the account
     // (parental_consent_status='awaiting') and created the parental_consents
     // row. Send the parent the one-click approve email (best-effort — the
     // account stays locked regardless, so a missed send is recoverable).

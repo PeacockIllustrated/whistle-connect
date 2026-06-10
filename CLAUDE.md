@@ -113,7 +113,7 @@ supabase/
 | `messages` | Individual messages |
 | `notifications` | In-app notifications |
 | `push_subscriptions` | Web push subscriptions |
-| `parental_consents` | Under-16 referee parental-consent queue (token-driven, mirrors `fa_verification_requests`) |
+| `parental_consents` | Under-18 referee parental-consent queue (token-driven, mirrors `fa_verification_requests`) |
 | `tournament_matches` | Per-fixture schedule for a tournament/central booking (child of `bookings`; one booking booked as a unit) |
 
 ### Key Relationships
@@ -244,8 +244,8 @@ all in `src/lib/constants.ts`:
 
 - **Min age 14** — under-14 cannot register (`signUpSchema` superRefine + client mirror).
 - **Age-based eligibility** — `refereeEligibleForAgeGroup(age, ageGroup)`: 18+=all, 17=≤U16, 16=≤U15, 15=≤U14, 14=≤U13; adult/veterans require 18. Age computed **at the match date**. Applied in `searchRefereesForBooking` (filter), `sendBookingRequest` + `acceptOffer` (re-validation). NULL DOB ⇒ treated eligible (internal/legacy accounts only — pre-trial).
-- **Under-16 → parental consent + account LOCKED** — `referee_profiles.parental_consent_status` (`not_required|awaiting|verified|rejected`). The `handle_new_user` trigger sets `awaiting` + creates the `parental_consents` row atomically (path-independent of the JS signup branch). `signUp` then sends the parent a one-click email (`src/lib/email/parent-consent.ts` → `/api/parent-consent?token=&action=` → `/parent-consent/{complete,error}`) — mirrors the FA-verification pattern exactly. Locked refs are excluded from search and rejected by `sendBookingRequest`/`acceptOffer`.
-- **Under-16 in-app messaging blocked** — hard rule, age at *today*. `sendMessage` rejects; on `/app/bookings/[id]` the "Message {name}" CTA is **replaced** with "Email parent for important updates" (mailto the `parent_email`); a youth tag shows on the referee card + booking detail.
+- **Under-18 → parental consent + account LOCKED** — `referee_profiles.parental_consent_status` (`not_required|awaiting|verified|rejected`). Threshold is `PARENTAL_CONSENT_AGE = 18` (Terms §2/§5, Privacy §5 — referees 14–17 need verified parent/guardian consent). The `handle_new_user` trigger sets `awaiting` + creates the `parental_consents` row atomically (path-independent of the JS signup branch). `signUp` then sends the parent a one-click email (`src/lib/email/parent-consent.ts` → `/api/parent-consent?token=&action=` → `/parent-consent/{complete,error}`) — mirrors the FA-verification pattern exactly. Locked refs are excluded from search and rejected by `sendBookingRequest`/`acceptOffer`. (Threshold raised 16→18 in migration `0165`; trigger only fires on new signups — existing 16–17 refs are not retroactively locked.)
+- **Under-18 in-app messaging blocked** — hard rule, age at *today*. `sendMessage` rejects; on `/app/bookings/[id]` the "Message {name}" CTA is **replaced** with "Email parent for important updates" (mailto the `parent_email`); a youth tag ("Under 18 — parent contact") shows on the referee card + booking detail.
 
 Don't reintroduce a JS-only lock — the lock must stay in the trigger so the
 email-confirmation signup branch can't bypass it.
@@ -411,12 +411,14 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0153 | `add_tournament_booking_type` — tournament booking type |
 | 0154 | `sos_premium_fee` — SOS premium fee (uses booking ref type) |
 | 0155 | `security_advisor_resweep` — re-pin `search_path` + revoke `anon`/`PUBLIC` EXECUTE on owned SECDEF functions (regressed by 0143–0154 `CREATE OR REPLACE`). **Apply via the normal migration/deploy flow.** |
-| 0156 | `referee_dob_and_parental_consent` — `profiles.date_of_birth`, `referee_profiles.parental_consent_status`, `parental_consents` table; `handle_new_user` trigger extended to copy DOB + atomically lock & create the consent row for under-16 referees. |
+| 0156 | `referee_dob_and_parental_consent` — `profiles.date_of_birth`, `referee_profiles.parental_consent_status`, `parental_consents` table; `handle_new_user` trigger extended to copy DOB + atomically lock & create the consent row for minors (under-16 at the time; raised to under-18 in `0165`). |
 | 0157 | `tournament_matches` — `bookings.tournament_name` + `tournament_matches` child table (RLS mirrors booking-child pattern). Tournament/central = one booking + child schedule rows. |
 | 0158 | `account_deletion` — `request_account_deletion` RPC (blocks on money-in-flight, anonymises). |
 | 0159 | `moderation_reports_blocks` — report/block + admin queue. NB: a legacy remote `0159 tournament_opt_in` predates this, and the repo also has `0160_referee_tournament_opt_in.sql` (number collisions — see `MIGRATIONS.md`). |
 | 0160 | `user_suspension` — reversible auth ban + `suspended_at` marker. |
 | 0161 | `referee_dob_fail_closed` — `handle_new_user` locks NULL-DOB / under-16 referees as `awaiting` regardless of `parent_email` (premortem WS-A). |
+| 0164 | `booking_fee_one_pound` — platform booking fee 99p → £1.00 (`platform_settings`). |
+| 0165 | `parental_consent_under_18` — `handle_new_user` consent/lock threshold 16 → 18 (Terms/Privacy alignment). New signups only. |
 | 0162 | `money_rpc_stop_bleed` — revoke `escrow_refund` / `claim_sos_booking` from `authenticated`; drop legacy `wallet_withdraw`; `confirm_booking` already-held (double-charge) guard (WS-B). |
 | 0163 | `lockdown_notification_rpcs` — revoke `create_notification` (spoofing) + `handle_new_user` from `authenticated` (WS-C). |
 

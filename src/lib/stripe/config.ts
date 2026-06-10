@@ -1,4 +1,9 @@
-const STRIPE_PERCENTAGE = 0.025
+// Stripe's actual UK domestic card fee is 1.5% + 20p. The coach is charged a
+// grossed-up amount at top-up so that, after Stripe deducts this, the wallet
+// is credited with the full amount the coach asked for (see calculateChargeAmount).
+// On the rare non-UK card the real fee is higher and the platform absorbs the
+// few-pence difference rather than passing it on.
+const STRIPE_PERCENTAGE = 0.015
 const STRIPE_FIXED_PENCE = 20
 
 export const STRIPE_CONFIG = {

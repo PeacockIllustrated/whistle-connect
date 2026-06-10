@@ -61,8 +61,11 @@ export function requiresDBS(ageGroup: string | null | undefined): boolean {
 /** Minimum age a referee can be (FA safeguarding). Under-14s cannot register. */
 export const MINIMUM_REFEREE_AGE = 14
 
-/** Age below which a referee requires parental consent + has in-app messaging blocked. */
-export const PARENTAL_CONSENT_AGE = 16
+/** Age below which a referee requires parental consent + has in-app messaging
+ *  blocked. Policy (Terms §2/§5, Privacy §5): referees under 18 (ages 14–17)
+ *  need verified parent/guardian consent before the account can be used, and
+ *  have in-app messaging disabled. Minimum registration age stays 14. */
+export const PARENTAL_CONSENT_AGE = 18
 
 /**
  * Whole-years age on a given date. Both args accept a Date or an
@@ -118,7 +121,7 @@ export function refereeEligibleForAgeGroup(
 /**
  * Whether a referee REQUIRES parental consent (and has in-app messaging
  * blocked). FAILS CLOSED: a null/unparseable DOB is treated as requiring
- * consent, so a referee with no DOB on file can never slip the under-16 gate.
+ * consent, so a referee with no DOB on file can never slip the under-18 gate.
  * Apply only to referees — coaches are not age-gated. Age computed at `onDate`
  * (default today, the reference point for the messaging block).
  */
@@ -149,8 +152,11 @@ export function refereeBlockedFromAgeGroup(
     return !refereeEligibleForAgeGroup(ageOnDate(dob, onDate), ageGroup)
 }
 
-/** Platform booking fee added to coach's total per booking, in pence. */
-export const BOOKING_FEE_PENCE = 99
+/** Platform booking fee added to coach's total per booking, in pence.
+ *  Refunded to the coach (with the rest of the purse) if the booking is
+ *  cancelled. Persisted source of truth is platform_settings.booking_fee_pence
+ *  (migration 0164); this constant is the fallback when that row is absent. */
+export const BOOKING_FEE_PENCE = 100
 
 /**
  * Premium fee charged to the coach's wallet on SOS broadcast creation.
@@ -159,6 +165,38 @@ export const BOOKING_FEE_PENCE = 99
  * so the cost-of-attention is real.
  */
 export const SOS_FEE_PENCE = 199
+
+/**
+ * UK grassroots referee fee guide (2025/26 averages). Single source of truth
+ * for the /app/price-guide page and the inline budget hint on the booking form.
+ * `ageGroups` lists the AGE_GROUPS values each row covers; `min`/`max` are the
+ * typical match-fee range in whole pounds (`max` is a soft floor for the "+"
+ * tiers). These are guidance only — coaches set their own budget.
+ */
+export const REFEREE_FEE_GUIDE = [
+    { label: 'U7–U8', ageGroups: ['u7', 'u8'], feeLabel: '£15–£20', min: 15, max: 20, format: '5v5' },
+    { label: 'U9–U10', ageGroups: ['u9', 'u10'], feeLabel: '£20–£25', min: 20, max: 25, format: '7v7' },
+    { label: 'U11–U12', ageGroups: ['u11', 'u12'], feeLabel: '£25–£30', min: 25, max: 30, format: '9v9' },
+    { label: 'U13–U14', ageGroups: ['u13', 'u14'], feeLabel: '£30–£35', min: 30, max: 35, format: '11v11' },
+    { label: 'U15–U16', ageGroups: ['u15', 'u16'], feeLabel: '£35–£40', min: 35, max: 40, format: '11v11' },
+    { label: 'U17–U18', ageGroups: ['u17', 'u18'], feeLabel: '£40–£45', min: 40, max: 45, format: '11v11' },
+    { label: 'Adult Grassroots', ageGroups: ['adult', 'veterans'], feeLabel: '£45–£60+', min: 45, max: 60, format: '11v11' },
+] as const
+
+/**
+ * Suggested referee fee range for a booking age-group value (an AGE_GROUPS
+ * `value` such as 'u13' | 'adult'). Returns null for an unknown/empty value.
+ */
+export function suggestedFeeForAgeGroup(
+    ageGroup: string | null | undefined,
+): (typeof REFEREE_FEE_GUIDE)[number] | null {
+    if (!ageGroup) return null
+    return (
+        REFEREE_FEE_GUIDE.find((row) =>
+            (row.ageGroups as readonly string[]).includes(ageGroup),
+        ) ?? null
+    )
+}
 
 /**
  * Double-booking window. Bookings store a kickoff but no end-time/duration,

@@ -82,7 +82,7 @@ export default function RegisterPage() {
                 return
             }
             if (age < PARENTAL_CONSENT_AGE && !parentEmail) {
-                setError("A parent or guardian's email is required for referees under 16")
+                setError("A parent or guardian's email is required for referees under 18")
                 setLoading(false)
                 return
             }
@@ -259,7 +259,7 @@ export default function RegisterPage() {
                                 value={dob}
                                 onChange={(e) => setDob(e.target.value)}
                                 max={todayStr}
-                                hint="Referees must be at least 14. Under-16s need a parent or guardian to approve the account."
+                                hint="Referees must be at least 14. Under-18s need a parent or guardian to approve the account."
                                 required
                             />
                         )}

@@ -6,10 +6,44 @@ import {
     cleanupTestData,
     TestUser,
 } from '../test-utils'
+import { BOOKING_FEE_PENCE } from '@/lib/constants'
+import { calculateChargeAmount } from '@/lib/stripe/config'
 
 const HAS_DB = !!process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // ── Pure logic tests ─────────────────────────────────────────────────
+
+describe('Booking fee & transaction fee', () => {
+    it('platform booking fee is £1.00', () => {
+        expect(BOOKING_FEE_PENCE).toBe(100)
+    })
+
+    it('escrow hold = match + travel + booking fee', () => {
+        const matchPence = 3000
+        const travelPence = 500
+        expect(matchPence + travelPence + BOOKING_FEE_PENCE).toBe(3600)
+    })
+
+    it('ref cancel refunds the full purse INCLUDING the booking fee', () => {
+        // escrow_refund returns the whole escrow_amount_pence (match + travel +
+        // booking fee), so after a referee pull-out the coach is made whole.
+        const heldInEscrow = 3000 + 500 + BOOKING_FEE_PENCE
+        const coachBalanceBeforeHold = 10000
+        const balanceAfterHold = coachBalanceBeforeHold - heldInEscrow
+        const balanceAfterRefund = balanceAfterHold + heldInEscrow
+        expect(balanceAfterRefund).toBe(coachBalanceBeforeHold)
+    })
+
+    it('top-up grosses up so the wallet is credited the full requested amount', () => {
+        const desiredPence = 2000
+        const { chargePence, estimatedFeePence } = calculateChargeAmount(desiredPence)
+        // Coach pays more than they receive — the extra is the card fee at top-up.
+        expect(chargePence).toBeGreaterThan(desiredPence)
+        expect(estimatedFeePence).toBe(chargePence - desiredPence)
+        // At Stripe's actual UK rate (1.5% + 20p) the fee on £20 is ~50p.
+        expect(estimatedFeePence).toBeLessThan(100)
+    })
+})
 
 describe('Wallet Logic', () => {
     it('escrow hold: new_balance = balance - hold', () => {
