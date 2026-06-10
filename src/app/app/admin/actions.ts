@@ -6,6 +6,7 @@ import type { FAVerificationStatus } from '@/lib/types'
 import { createNotification } from '@/lib/notifications'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { sendFAVerificationEmail } from '@/lib/email/fa-verification'
+import { logAdminAction } from '@/lib/admin/audit'
 
 async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
     const { data: { user } } = await supabase.auth.getUser()
@@ -66,6 +67,16 @@ export async function verifyReferee(refereeId: string, verified: boolean) {
         return { error: error.message }
     }
 
+    await logAdminAction({
+        actorId: user.id,
+        action: verified ? 'referee.verify' : 'referee.unverify',
+        summary: verified
+            ? 'Verified referee (FA, DBS & Safeguarding)'
+            : 'Removed referee verification',
+        targetType: 'referee',
+        targetId: refereeId,
+    })
+
     revalidatePath('/app/admin/referees')
     revalidatePath(`/app/admin/referees/${refereeId}`)
     revalidatePath('/app/admin/verification')
@@ -114,6 +125,15 @@ export async function updateFAVerificationStatus(
             link: '/app/profile',
         })
     }
+
+    await logAdminAction({
+        actorId: user.id,
+        action: 'fa.status',
+        summary: `Set FA verification status to "${status}"`,
+        targetType: 'referee',
+        targetId: refereeId,
+        detail: { status },
+    })
 
     revalidatePath('/app/admin/referees')
     revalidatePath(`/app/admin/referees/${refereeId}`)
@@ -246,6 +266,15 @@ export async function resolveVerificationRequest(
             : 'Your FA number could not be verified by your County FA. Please check it is correct.',
         type: resolution === 'confirmed' ? 'success' : 'warning',
         link: '/app/profile',
+    })
+
+    await logAdminAction({
+        actorId: user.id,
+        action: 'fa.verification.resolve',
+        summary: `${resolution === 'confirmed' ? 'Confirmed' : 'Rejected'} FA verification request`,
+        targetType: 'referee',
+        targetId: request.referee_id,
+        detail: { requestId, resolution, notes: notes || null },
     })
 
     revalidatePath('/app/admin/referees')
@@ -383,6 +412,15 @@ export async function updatePlatformSetting(
 
     if (error) return { error: error.message }
 
+    await logAdminAction({
+        actorId: user.id,
+        action: 'setting.update',
+        summary: `Updated platform setting "${key}" to "${value}"`,
+        targetType: 'setting',
+        targetId: key,
+        detail: { key, value },
+    })
+
     revalidatePath('/app/admin/settings')
     return { success: true }
 }
@@ -396,6 +434,7 @@ export type AdminTriage = {
     failedOrPendingWithdrawals: { count: number }
     dbsExpiringSoon: { count: number }
     webhookFailures24h: { count: number }
+    minorsPendingConsent: { awaiting: number; rejected: number }
 }
 
 function hoursSince(iso: string | null | undefined): number | null {
@@ -434,6 +473,7 @@ export async function getAdminTriage(): Promise<{ data?: AdminTriage; error?: st
         withdrawalsBad,
         dbsExpiring,
         webhookFails,
+        minorsConsent,
     ] = await Promise.all([
         admin
             .from('fa_verification_requests')
@@ -466,6 +506,10 @@ export async function getAdminTriage(): Promise<{ data?: AdminTriage; error?: st
             .select('id', { count: 'exact', head: true })
             .gte('received_at', twentyFourHoursAgo.toISOString())
             .not('error', 'is', null),
+        admin
+            .from('referee_profiles')
+            .select('parental_consent_status')
+            .in('parental_consent_status', ['awaiting', 'rejected']),
     ])
 
     const faRows = faPending.data || []
@@ -480,6 +524,10 @@ export async function getAdminTriage(): Promise<{ data?: AdminTriage; error?: st
 
     const disputeRows = disputesOpen.data || []
     const oldestDisputeAge = disputeRows.length > 0 ? hoursSince(disputeRows[0].created_at as string | null) : null
+
+    const minorRows = minorsConsent.data || []
+    const minorsAwaiting = minorRows.filter((r) => r.parental_consent_status === 'awaiting').length
+    const minorsRejected = minorRows.filter((r) => r.parental_consent_status === 'rejected').length
 
     return {
         data: {
@@ -496,6 +544,7 @@ export async function getAdminTriage(): Promise<{ data?: AdminTriage; error?: st
             failedOrPendingWithdrawals: { count: withdrawalsBad.count || 0 },
             dbsExpiringSoon: { count: dbsExpiring.count || 0 },
             webhookFailures24h: { count: webhookFails.count || 0 },
+            minorsPendingConsent: { awaiting: minorsAwaiting, rejected: minorsRejected },
         },
     }
 }

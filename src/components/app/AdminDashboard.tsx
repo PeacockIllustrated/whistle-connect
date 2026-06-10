@@ -9,14 +9,13 @@ import { BookingCardCompact } from '@/components/app/BookingCard'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminTriagePanel } from '@/components/app/AdminTriagePanel'
-import { AdminAuditPanel } from '@/components/app/AdminAuditPanel'
 import type { StatItem } from '@/components/app/DashboardStats'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import type { AdminTriage } from '@/app/app/admin/actions'
 import {
     ShieldCheck, FileCheck, CalendarDays, Plus, Clock,
     ClipboardList, Siren, Banknote, Eye, Monitor, Users,
-    AlertOctagon, Settings, Flag
+    AlertOctagon, Settings, Flag, UserCheck, ScrollText
 } from 'lucide-react'
 
 type ViewMode = 'admin' | 'coach' | 'referee'
@@ -93,8 +92,6 @@ export function AdminDashboard({
                 <>
                     {triage && <AdminTriagePanel triage={triage} />}
 
-                    <AdminAuditPanel />
-
                     <div className="mb-6">
                         <DashboardStats stats={adminStats} />
                     </div>
@@ -120,6 +117,12 @@ export function AdminDashboard({
                             subtitle="Review pending County FA responses"
                         />
                         <ActionCard
+                            href="/app/admin/safeguarding"
+                            icon={<UserCheck className="w-6 h-6" />}
+                            title="Safeguarding"
+                            subtitle="Under-18 accounts awaiting parental consent"
+                        />
+                        <ActionCard
                             href="/app/bookings"
                             icon={<CalendarDays className="w-6 h-6" />}
                             title="All Bookings"
@@ -142,6 +145,12 @@ export function AdminDashboard({
                             icon={<Settings className="w-6 h-6" />}
                             title="Platform Settings"
                             subtitle="Travel rate, booking fee and other tunables"
+                        />
+                        <ActionCard
+                            href="/app/admin/audit"
+                            icon={<ScrollText className="w-6 h-6" />}
+                            title="Audit Log"
+                            subtitle="Record of every admin action"
                         />
                     </div>
                 </>
