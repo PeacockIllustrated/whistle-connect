@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { Select } from '@/components/ui/Select'
 import { createBooking } from '../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
-import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
+import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS, BOOKING_FEE_PENCE, suggestedFeeForAgeGroup } from '@/lib/constants'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { ChevronLeft, Banknote } from 'lucide-react'
 import { toLocalDateString } from '@/lib/utils'
@@ -445,6 +445,26 @@ export default function NewBookingPage() {
                             <p className="text-xs text-[var(--foreground-muted)] mb-3">
                                 The amount you&apos;ll pay the referee for this match. Refs will see this when browsing nearby games.
                             </p>
+                            {(() => {
+                                const feeHint = suggestedFeeForAgeGroup(formData.age_group)
+                                return feeHint ? (
+                                    <div className="mb-3 rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-xs">
+                                        <p className="text-emerald-800">
+                                            Typical fee for <span className="font-semibold">{feeHint.label}</span>:{' '}
+                                            <span className="font-bold">{feeHint.feeLabel}</span>
+                                        </p>
+                                        <Link href="/price-guide" target="_blank" className="text-emerald-700 font-medium hover:underline">
+                                            See the full price guide →
+                                        </Link>
+                                    </div>
+                                ) : (
+                                    <p className="mb-3 text-xs">
+                                        <Link href="/price-guide" target="_blank" className="text-[var(--color-primary)] font-medium hover:underline">
+                                            See the referee price guide →
+                                        </Link>
+                                    </p>
+                                )
+                            })()}
                             <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--foreground-muted)] font-medium">&pound;</span>
                                 <input
@@ -463,7 +483,7 @@ export default function NewBookingPage() {
                                 />
                             </div>
                             <p className="text-[10px] text-[var(--foreground-muted)] mt-2">
-                                Travel costs and the £0.99 booking fee are added on top when you send an offer.
+                                Travel costs and the £{(BOOKING_FEE_PENCE / 100).toFixed(2)} booking fee are added on top when you send an offer.
                             </p>
                         </div>
 

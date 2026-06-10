@@ -167,6 +167,38 @@ export const BOOKING_FEE_PENCE = 100
 export const SOS_FEE_PENCE = 199
 
 /**
+ * UK grassroots referee fee guide (2025/26 averages). Single source of truth
+ * for the /app/price-guide page and the inline budget hint on the booking form.
+ * `ageGroups` lists the AGE_GROUPS values each row covers; `min`/`max` are the
+ * typical match-fee range in whole pounds (`max` is a soft floor for the "+"
+ * tiers). These are guidance only — coaches set their own budget.
+ */
+export const REFEREE_FEE_GUIDE = [
+    { label: 'U7–U8', ageGroups: ['u7', 'u8'], feeLabel: '£15–£20', min: 15, max: 20, format: '5v5' },
+    { label: 'U9–U10', ageGroups: ['u9', 'u10'], feeLabel: '£20–£25', min: 20, max: 25, format: '7v7' },
+    { label: 'U11–U12', ageGroups: ['u11', 'u12'], feeLabel: '£25–£30', min: 25, max: 30, format: '9v9' },
+    { label: 'U13–U14', ageGroups: ['u13', 'u14'], feeLabel: '£30–£35', min: 30, max: 35, format: '11v11' },
+    { label: 'U15–U16', ageGroups: ['u15', 'u16'], feeLabel: '£35–£40', min: 35, max: 40, format: '11v11' },
+    { label: 'U17–U18', ageGroups: ['u17', 'u18'], feeLabel: '£40–£45', min: 40, max: 45, format: '11v11' },
+    { label: 'Adult Grassroots', ageGroups: ['adult', 'veterans'], feeLabel: '£45–£60+', min: 45, max: 60, format: '11v11' },
+] as const
+
+/**
+ * Suggested referee fee range for a booking age-group value (an AGE_GROUPS
+ * `value` such as 'u13' | 'adult'). Returns null for an unknown/empty value.
+ */
+export function suggestedFeeForAgeGroup(
+    ageGroup: string | null | undefined,
+): (typeof REFEREE_FEE_GUIDE)[number] | null {
+    if (!ageGroup) return null
+    return (
+        REFEREE_FEE_GUIDE.find((row) =>
+            (row.ageGroups as readonly string[]).includes(ageGroup),
+        ) ?? null
+    )
+}
+
+/**
  * Double-booking window. Bookings store a kickoff but no end-time/duration,
  * so for clash detection a confirmed booking is assumed to occupy the
  * referee from kickoff for MATCH_DURATION_MINUTES plus a fixed travel buffer.
