@@ -143,6 +143,13 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
                 phone: data.phone || null,
                 postcode: data.postcode || null,
                 date_of_birth: data.date_of_birth || null,
+                // The handle_new_user trigger reads these from metadata to
+                // persist the referee's FA number (fa_id, item 3) and to create
+                // the parental_consents row for under-18s (item 4). Without them
+                // here the trigger has nothing to act on — the FA number was
+                // dropped and the consent row/approval email never created.
+                fa_number: data.fa_number || null,
+                parent_email: data.parent_email || null,
                 terms_accepted_at: consentAcceptedAt,
                 privacy_accepted_at: consentAcceptedAt,
             },

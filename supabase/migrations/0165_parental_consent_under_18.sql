@@ -1,12 +1,23 @@
 -- ============================================================================
--- Migration 0165: Parental consent threshold 16 -> 18 (safeguarding)
+-- Migration 0165: Parental consent threshold 16 -> 18 + persist FA number
 -- Date: 2026-06-10
 --
--- Policy correction. The Terms (§2/§5) and Privacy (§5) state that referees
--- under 18 (ages 14–17) require verified parent/guardian consent before the
--- account can be used, and have in-app messaging disabled. The implementation
--- previously gated this at under-16. This recreates handle_new_user to lock at
--- under-18 to match the stated policy. Minimum registration age stays 14.
+-- Recreates handle_new_user for two related fixes:
+--
+-- (1) Parental-consent threshold 16 -> 18 (safeguarding). Terms (§2/§5) and
+--     Privacy (§5) state referees under 18 (ages 14–17) require verified
+--     parent/guardian consent before the account can be used, and have in-app
+--     messaging disabled. The implementation previously gated at under-16.
+--     Minimum registration age stays 14.
+--
+-- (2) Persist the FA number at signup (item 3). The trigger now copies
+--     fa_number from the signup metadata into referee_profiles.fa_id (+ sets
+--     fa_verification_status='pending'), guarded so a constraint violation
+--     can't orphan the account. Previously fa_id was only set on the rare JS
+--     fallback path where the trigger failed, so a referee's FA number was
+--     dropped in the normal flow. (signUp now also passes fa_number AND
+--     parent_email in auth metadata so this + the consent row have data to act
+--     on — the consent-row branch below already reads parent_email.)
 --
 -- This is the path-independent lock: it must stay in the trigger so the
 -- email-confirmation JS signup branch (which early-returns before the app-side
@@ -65,6 +76,23 @@ BEGIN
         INSERT INTO public.referee_profiles (profile_id)
         VALUES (NEW.id)
         ON CONFLICT (profile_id) DO NOTHING;
+
+        -- Persist the FA number captured at signup (item 3 — drives admin
+        -- verification). Guarded in its own sub-block: a UNIQUE/CHECK violation
+        -- on fa_id must NOT roll back account creation (the function-level
+        -- handler would otherwise orphan the auth row). The app pre-validates
+        -- format + uniqueness so this normally succeeds; on the rare conflict
+        -- the referee can re-enter it from their profile.
+        IF COALESCE(NEW.raw_user_meta_data->>'fa_number', '') <> '' THEN
+            BEGIN
+                UPDATE public.referee_profiles
+                SET fa_id = NEW.raw_user_meta_data->>'fa_number',
+                    fa_verification_status = 'pending'::fa_verification_status
+                WHERE profile_id = NEW.id;
+            EXCEPTION WHEN OTHERS THEN
+                RAISE WARNING 'handle_new_user: could not set fa_id for %: %', NEW.id, SQLERRM;
+            END;
+        END IF;
 
         -- FAIL CLOSED: lock the account (parental_consent_status='awaiting')
         -- when the referee has no DOB on file OR is under 18. The lock is set
