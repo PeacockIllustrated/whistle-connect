@@ -9,6 +9,8 @@ import {
     validate,
     signInSchema,
     signUpSchema,
+    signUpGenericSchema,
+    finishSetupSchema,
     resetPasswordRequestSchema,
     updatePasswordSchema,
 } from '@/lib/validation'
@@ -313,6 +315,219 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
     }
 
     return { success: true, redirectTo: sanitizeRedirectUrl(redirectTo) }
+}
+
+/**
+ * Generic (deferred-role) signup for the World Cup sweepstake funnel. Creates a
+ * full Whistle Connect account WITHOUT picking coach/referee:
+ * profiles.setup_complete=false + the existing 'coach' placeholder role. The
+ * /app gate (middleware) later routes them to /finish-setup. No DOB/FA/referee
+ * fields are touched here — the under-18 safeguarding gate is enforced at
+ * /finish-setup when (and only when) the user actively chooses the referee role.
+ */
+export async function signUpGeneric(
+    data: { email: string; password: string; full_name: string; terms_accepted: boolean; privacy_accepted: boolean },
+    redirectTo: string = '/world-cup',
+) {
+    const validationError = validate(signUpGenericSchema, data)
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    const rateLimitError = checkAuthRateLimit(data.email.toLowerCase())
+    if (rateLimitError) {
+        return { error: rateLimitError }
+    }
+
+    const supabase = await createClient()
+    const consentAcceptedAt = new Date().toISOString()
+
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+            data: {
+                role: 'coach', // placeholder; overwritten at /finish-setup
+                full_name: data.full_name,
+                // The trigger (0168) reads this and persists
+                // profiles.setup_complete=false, gating the main app.
+                setup_complete: false,
+                terms_accepted_at: consentAcceptedAt,
+                privacy_accepted_at: consentAcceptedAt,
+            },
+        },
+    })
+
+    if (authError) {
+        console.error('Generic signup error:', authError)
+        if (authError.message.includes('already registered')) {
+            return { error: 'An account with this email already exists. Please sign in instead.' }
+        }
+        if (authError.message.includes('Database error saving new user')) {
+            return { error: 'Unable to create account. Please try again or contact support if the problem persists.' }
+        }
+        return { error: authError.message }
+    }
+
+    if (!authData.user) {
+        return { error: 'Failed to create user account' }
+    }
+
+    if (authData.user && !authData.session) {
+        return {
+            success: true,
+            message: 'Please check your email to confirm your account, then come back to set up your sweepstake.',
+        }
+    }
+
+    // Belt-and-braces: if the trigger didn't create the profile, insert it with
+    // setup_complete=false via the admin client so the gate still fires.
+    const profileCreated = await waitForProfile(supabase, authData.user.id)
+    if (!profileCreated) {
+        const adminClient = createAdminClient()
+        if (adminClient) {
+            await adminClient.from('profiles').insert({
+                id: authData.user.id,
+                role: 'coach',
+                full_name: data.full_name,
+                setup_complete: false,
+            })
+        }
+    }
+
+    return { success: true, redirectTo: sanitizeRedirectUrl(redirectTo) }
+}
+
+/**
+ * Completes a generic account: the user picks coach/referee and supplies the
+ * role-specific details. This is the second half of registration, deferred.
+ *
+ * For referees it reproduces the exact safeguarding behaviour of signUp +
+ * handle_new_user: creates referee_profiles, persists the FA number, and — when
+ * under 18 — LOCKS the account (parental_consent_status='awaiting'), creates the
+ * parental_consents row, and sends the one-click parent approval email. The gate
+ * moves here; it never disappears.
+ */
+export async function completeAccountSetup(data: {
+    role: 'coach' | 'referee'
+    phone?: string
+    postcode?: string
+    fa_number?: string
+    date_of_birth?: string
+    parent_email?: string
+}) {
+    const validationError = validate(finishSetupSchema, data)
+    if (validationError) {
+        return { error: validationError }
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        return { error: 'Unauthorized' }
+    }
+
+    // FA number format + uniqueness (referees only).
+    if (data.role === 'referee' && data.fa_number) {
+        if (!isValidFANumber(data.fa_number)) {
+            return { error: 'FA number must be 8-10 digits' }
+        }
+        const { data: existing } = await supabase
+            .from('referee_profiles')
+            .select('profile_id')
+            .eq('fa_id', data.fa_number)
+            .neq('profile_id', user.id)
+            .maybeSingle()
+        if (existing) {
+            return { error: 'This FA number is already registered to another referee' }
+        }
+    }
+
+    const admin = createAdminClient()
+    if (!admin) {
+        return { error: 'Account setup is temporarily unavailable. Please try again shortly.' }
+    }
+
+    // 1. Promote the profile to the chosen role and mark setup complete.
+    const { error: profileError } = await admin
+        .from('profiles')
+        .update({
+            role: data.role,
+            phone: data.phone || null,
+            postcode: data.postcode || null,
+            date_of_birth: data.date_of_birth || null,
+            setup_complete: true,
+        })
+        .eq('id', user.id)
+
+    if (profileError) {
+        console.error('completeAccountSetup profile update failed:', profileError)
+        return { error: 'Could not save your details. Please try again.' }
+    }
+
+    // 2. Referee: create referee_profiles + run the under-18 consent gate.
+    if (data.role === 'referee') {
+        const underage = !!data.date_of_birth && ageOnDate(data.date_of_birth) < PARENTAL_CONSENT_AGE
+
+        await admin
+            .from('referee_profiles')
+            .upsert({
+                profile_id: user.id,
+                fa_id: data.fa_number || null,
+                fa_verification_status: data.fa_number ? 'pending' : 'not_provided',
+                is_available: true,
+                // FAIL CLOSED: lock under-18s (and any missing DOB) pending consent.
+                parental_consent_status: underage || !data.date_of_birth ? 'awaiting' : 'not_required',
+            }, { onConflict: 'profile_id' })
+
+        if (underage && data.parent_email && data.date_of_birth) {
+            const { data: consentRow } = await admin
+                .from('parental_consents')
+                .upsert({
+                    referee_id: user.id,
+                    parent_email: data.parent_email,
+                    child_name: (await getDisplayName(admin, user.id)) || 'Referee',
+                    child_dob: data.date_of_birth,
+                    status: 'awaiting',
+                }, { onConflict: 'referee_id' })
+                .select('response_token')
+                .maybeSingle()
+
+            if (consentRow?.response_token) {
+                sendParentConsentEmail({
+                    parentEmail: data.parent_email,
+                    childName: (await getDisplayName(admin, user.id)) || 'Referee',
+                    responseToken: consentRow.response_token,
+                }).catch(() => { /* best-effort; account stays locked regardless */ })
+            }
+        }
+
+        if (data.fa_number) {
+            const refereeName = (await getDisplayName(admin, user.id)) || 'Referee'
+            sendFAVerificationEmail({ refereeName, faId: data.fa_number, county: null })
+                .catch(() => { /* best-effort */ })
+        }
+    }
+
+    // 3. Geocode postcode (best-effort, non-blocking).
+    if (data.postcode) {
+        geocodePostcode(data.postcode).then(async (geo) => {
+            if (geo) {
+                await admin
+                    .from('profiles')
+                    .update({ latitude: geo.lat, longitude: geo.lng })
+                    .eq('id', user.id)
+            }
+        }).catch(() => { /* best-effort */ })
+    }
+
+    return { success: true, redirectTo: '/app' }
+}
+
+/** Fetch a profile's full_name for emails (small helper, admin client). */
+async function getDisplayName(admin: SupabaseClient, userId: string): Promise<string | null> {
+    const { data } = await admin.from('profiles').select('full_name').eq('id', userId).maybeSingle()
+    return data?.full_name ?? null
 }
 
 export async function signOut() {

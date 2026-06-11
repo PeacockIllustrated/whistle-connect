@@ -422,6 +422,8 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0162 | `money_rpc_stop_bleed` — revoke `escrow_refund` / `claim_sos_booking` from `authenticated`; drop legacy `wallet_withdraw`; `confirm_booking` already-held (double-charge) guard (WS-B). |
 | 0163 | `lockdown_notification_rpcs` — revoke `create_notification` (spoofing) + `handle_new_user` from `authenticated` (WS-C). |
 | 0167 | `escrow_refund_keep_fee` — coach-cancel refund that retains the £1 booking fee (refunds match+travel, writes the fee as a `platform_fee` debit). Referee pull-out still uses `escrow_refund` (full). `SECURITY DEFINER`, `search_path` pinned, `service_role`-only. |
+| 0168 | `profile_setup_complete` — `profiles.setup_complete boolean DEFAULT true` (existing accounts + normal signups unaffected). Recreates `handle_new_user` to persist `setup_complete` from metadata; **all 0165 safeguarding invariants preserved verbatim** (under-18 fail-closed lock, fa_id, pinned search_path, anon/PUBLIC revoke). Powers the generic (deferred-role) World Cup signup → `/finish-setup` funnel. |
+| 0169 | `world_cup_sweepstake` — `wc_teams`, `wc_matches`, `wc_sweepstakes`, `wc_sweepstake_entries`, `wc_sweepstake_entry_teams`. Public-read tournament data (anon SELECT; writes only via service-role cron). Organiser-scoped sweepstakes; public share + claim go through the admin client (parent-consent pattern). Fully isolated from booking/escrow/money. |
 
 > Note: the repo uses `0xxx_*` filenames but the **remote** migration tracking
 > table uses a mix of legacy `0xxx` and post-reset timestamped (`20260429…`)

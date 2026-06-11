@@ -39,6 +39,13 @@ export interface Profile {
     longitude: number | null
     /** ISO date (YYYY-MM-DD). Null for legacy/internal accounts created before DOB capture. */
     date_of_birth: string | null
+    /**
+     * False only for "generic" signups (e.g. via the World Cup sweepstake) that
+     * deferred choosing coach/referee. The /app gate routes these users to
+     * /app/welcome to finish setup. Defaults true for every existing account
+     * and every normal coach/referee signup (migration 0168).
+     */
+    setup_complete: boolean
     created_at: string
     updated_at: string
 }
