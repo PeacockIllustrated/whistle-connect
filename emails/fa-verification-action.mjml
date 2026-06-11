@@ -38,10 +38,17 @@
       </mj-column>
     </mj-section>
 
-    <!-- Reply-to-confirm note (no one-click token available) -->
-    <mj-section background-color="#ffffff" padding="22px 30px 32px">
+    <!-- Buttons -->
+    <mj-section background-color="#ffffff" padding="20px 30px 2px">
       <mj-column>
-        <mj-text padding="0">Please simply <strong style="color:#1b2537">reply to this email</strong> to confirm or deny this registration — a one-line reply is all we need.</mj-text>
+        <mj-button href="{{1.data.confirmUrl}}" background-color="#10B981" color="#ffffff" font-size="16px" font-weight="700" border-radius="10px" inner-padding="16px 30px" padding="0 0 12px" width="100%">&#10003;&nbsp;&nbsp;Confirm registration</mj-button>
+        <mj-button href="{{1.data.rejectUrl}}" background-color="#ffffff" color="#cd1719" border="2px solid #ecd2d2" font-size="15px" font-weight="700" border-radius="10px" inner-padding="13px 30px" padding="0" width="100%">Not found</mj-button>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="14px 30px 30px">
+      <mj-column>
+        <mj-text align="center" font-size="13px" color="#94a3b8" padding="0">One click — no login or account required.</mj-text>
       </mj-column>
     </mj-section>
 
