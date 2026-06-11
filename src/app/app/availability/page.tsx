@@ -231,7 +231,7 @@ export default function AvailabilityPage() {
     }
 
     return (
-        <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto">
+        <div className="px-4 py-6 max-w-[var(--content-max-width)] lg:max-w-5xl mx-auto">
             {/* Celebration Overlay */}
             {celebration && (
                 <CelebrationOverlay
