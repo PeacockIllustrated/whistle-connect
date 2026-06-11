@@ -33,10 +33,13 @@ export interface BookingCardProps {
     showReferee?: boolean
     /** True when this card is rendered inside the Archived tab — flips Archive → Unarchive. */
     archivedForViewer?: boolean
+    /** In-app messaging unavailable for the viewer (under-18 referee) — hides
+     *  the quick-message icon. */
+    messagingBlocked?: boolean
     className?: string
 }
 
-export function BookingCard({ booking, showCoach, showReferee, archivedForViewer, className }: BookingCardProps) {
+export function BookingCard({ booking, showCoach, showReferee, archivedForViewer, messagingBlocked, className }: BookingCardProps) {
     const [isLoading, setIsLoading] = useState(false)
     const { showToast } = useToast()
 
@@ -184,7 +187,7 @@ export function BookingCard({ booking, showCoach, showReferee, archivedForViewer
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    {booking.thread && booking.status === 'confirmed' && (
+                    {booking.thread && booking.status === 'confirmed' && !messagingBlocked && (
                         <span
                             onClick={(e) => {
                                 e.preventDefault()

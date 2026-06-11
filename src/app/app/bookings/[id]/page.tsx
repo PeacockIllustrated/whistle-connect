@@ -8,7 +8,7 @@ import { SOSStatusPanel } from '@/components/app/SOSStatusPanel'
 import { CoachOfferRow } from '@/components/app/CoachOfferRow'
 import { BookingOffer, Profile } from '@/lib/types'
 import { requiresParentalConsent } from '@/lib/constants'
-import { ChevronLeft, CalendarDays, MapPin, MessageCircle, Mail } from 'lucide-react'
+import { ChevronLeft, CalendarDays, MapPin, MessageCircle, Mail, AlertTriangle } from 'lucide-react'
 import { VenueMap } from '@/components/ui/VenueMap'
 
 export default async function BookingDetailPage({
@@ -129,6 +129,29 @@ export default async function BookingDetailPage({
                 </div>
                 <StatusChip status={booking.status} />
             </div>
+
+            {/* Coach warning: a booking that didn't geocode is invisible to the
+                referee feed (find_bookings_near_referee filters on location).
+                Only relevant while the booking is still seeking a referee. */}
+            {isCoach
+                && (booking.latitude == null || booking.longitude == null)
+                && ['pending', 'offered'].includes(booking.status) && (
+                <div className="card p-4 mb-4 border-amber-200 bg-amber-50/60">
+                    <div className="flex gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="text-sm font-semibold text-amber-800">
+                                Referees can&apos;t find this match in their feed
+                            </p>
+                            <p className="text-xs text-amber-800/80 mt-1">
+                                We couldn&apos;t pin this venue&apos;s location, so it won&apos;t appear in
+                                nearby referees&apos; feeds. Check the postcode is correct (edit the
+                                booking), or invite referees directly with Find Referees below.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Main Card */}
             <div className={`card p-4 mb-4 ${getStatusCardStyle(booking.status)}`}>
@@ -356,6 +379,12 @@ export default async function BookingDetailPage({
                 isCoach={isCoach}
                 isReferee={isReferee}
                 threadId={thread?.id}
+                // In-app messaging is unavailable when an under-18 referee is
+                // involved: either the viewer is the under-18 ref, or the coach
+                // is viewing a booking whose assigned referee is under 18. The
+                // cards above already surface the parent-email path / blocked
+                // notice, so suppress the duplicate in-app "Message" CTAs here.
+                messagingBlocked={viewerIsUnder18 || (isCoach && !!assignment && assignedRefUnder18)}
             />
 
             {/* Offers List (for coaches) — always show when offers exist and no

@@ -79,6 +79,25 @@ export async function sendMessage(threadId: string, body: string) {
         return { error: 'In-app messaging is unavailable for under-18 referees. Important updates are sent to your parent or guardian.' }
     }
 
+    // Bidirectional: no one may message INTO a thread that includes an under-18
+    // referee either. The minor can't read it (the thread page is blocked) and
+    // comms must go via the parent/guardian — so a coach mustn't be able to send
+    // into a minor's thread and have it pile up unseen. Fails closed: a referee
+    // participant with no DOB is treated as under-18.
+    const otherParticipantIds = (blockCheckParticipants ?? []).map((p) => p.profile_id)
+    if (otherParticipantIds.length > 0) {
+        const { data: otherParticipants } = await supabase
+            .from('profiles')
+            .select('role, date_of_birth')
+            .in('id', otherParticipantIds)
+        const threadHasMinorReferee = (otherParticipants ?? []).some(
+            (p) => p.role === 'referee' && requiresParentalConsent(p.date_of_birth),
+        )
+        if (threadHasMinorReferee) {
+            return { error: 'In-app messaging is unavailable for matches with an under-18 referee. Please contact their parent or guardian by email instead.' }
+        }
+    }
+
     // Insert message and return the created ID
     const { data: insertedMessage, error } = await supabase
         .from('messages')

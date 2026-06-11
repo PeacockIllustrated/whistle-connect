@@ -8,6 +8,7 @@ import { InstallPrompt } from '@/components/app/InstallPrompt'
 import { UnreadMessagesProvider } from '@/components/app/UnreadMessagesProvider'
 import { BookingUpdatesProvider } from '@/components/app/BookingUpdatesProvider'
 import { ParentalConsentBanner } from '@/components/app/ParentalConsentBanner'
+import { requiresParentalConsent } from '@/lib/constants'
 import SplashScreen from '@/components/ui/SplashScreen'
 
 export default async function AppLayout({
@@ -128,6 +129,7 @@ export default async function AppLayout({
 
                         <BottomNav
                             userRole={profile?.role}
+                            messagingDisabled={profile?.role === 'referee' && requiresParentalConsent(profile?.date_of_birth)}
                         />
                     </div>
                 </BookingUpdatesProvider>

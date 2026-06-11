@@ -20,6 +20,7 @@ export default function FeedPage() {
     const [offers, setOffers] = useState<FeedOffer[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [locationMissing, setLocationMissing] = useState(false)
     const [celebration, setCelebration] = useState<{ title: string; subtitle: string } | null>(null)
     const { showToast } = useToast()
     const { offerCount } = useBookingUpdates()
@@ -31,6 +32,7 @@ export default function FeedPage() {
             setError(result.error)
         } else {
             setBookings(result.data || [])
+            setLocationMissing(!!result.locationMissing)
         }
         setLoading(false)
     }, [])
@@ -161,21 +163,38 @@ export default function FeedPage() {
                         </div>
                     )}
 
-                    {/* Empty state */}
+                    {/* Empty state — distinguish "no location set" (nothing can
+                        ever show) from "genuinely nothing nearby". */}
                     {!loading && !error && bookings.length === 0 && (
-                        <div className="card p-8 text-center">
-                            <MapPin className="w-12 h-12 mx-auto mb-3 text-[var(--neutral-300)]" />
-                            <h2 className="font-semibold text-sm mb-1">No matches nearby</h2>
-                            <p className="text-xs text-[var(--foreground-muted)] mb-4">
-                                There are no available matches in your area right now. Check back later or increase your travel radius in Availability settings.
-                            </p>
-                            <Link
-                                href="/app/availability"
-                                className="text-sm font-medium text-[var(--brand-primary)] hover:underline"
-                            >
-                                Update travel radius
-                            </Link>
-                        </div>
+                        locationMissing ? (
+                            <div className="card p-8 text-center">
+                                <MapPin className="w-12 h-12 mx-auto mb-3 text-amber-400" />
+                                <h2 className="font-semibold text-sm mb-1">Add your location to see matches</h2>
+                                <p className="text-xs text-[var(--foreground-muted)] mb-4">
+                                    We match you to nearby bookings using your location. Add your postcode in your profile and matches in your area will appear here.
+                                </p>
+                                <Link
+                                    href="/app/profile"
+                                    className="text-sm font-medium text-[var(--brand-primary)] hover:underline"
+                                >
+                                    Set your location
+                                </Link>
+                            </div>
+                        ) : (
+                            <div className="card p-8 text-center">
+                                <MapPin className="w-12 h-12 mx-auto mb-3 text-[var(--neutral-300)]" />
+                                <h2 className="font-semibold text-sm mb-1">No matches nearby</h2>
+                                <p className="text-xs text-[var(--foreground-muted)] mb-4">
+                                    There are no available matches in your area right now. Check back later or increase your travel radius in Availability settings.
+                                </p>
+                                <Link
+                                    href="/app/availability"
+                                    className="text-sm font-medium text-[var(--brand-primary)] hover:underline"
+                                >
+                                    Update travel radius
+                                </Link>
+                            </div>
+                        )
                     )}
 
                     {/* SOS Bookings */}
