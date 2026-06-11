@@ -1477,19 +1477,39 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
         return { data: [] }
     }
 
-    // 4. Step 2: Get referee profiles for those who have availability
-    // If booking has coordinates, use spatial RPC for distance enrichment (not hard filtering)
+    // 4. Step 2: Get referee profiles for those who have availability.
+    // When the booking is geocoded, the spatial RPC is a HARD radius filter:
+    // only referees within SEARCH_RADIUS_KM of the venue are shown, so travel is
+    // measurable and bounded for everyone (the coach never sees a ref with a
+    // huge travel cost). Referees with NO location on file can't be measured —
+    // they're kept (distance unknown ⇒ £0 travel + an explicit note in the UI)
+    // rather than silently dropped. locatedRefIds lets us tell "located but
+    // beyond the radius" (exclude) apart from "no location at all" (keep).
+    const SEARCH_RADIUS_KM = 50
+    const bookingGeocoded = !!(booking.latitude && booking.longitude)
     let spatialMap: Map<string, number> | null = null
-    if (booking.latitude && booking.longitude) {
-        const { data: spatialResults } = await supabase.rpc('find_referees_within_radius', {
+    let locatedRefIds = new Set<string>()
+    let radiusFilterActive = false
+    if (bookingGeocoded) {
+        const { data: spatialResults, error: spatialError } = await supabase.rpc('find_referees_within_radius', {
             p_latitude: booking.latitude,
             p_longitude: booking.longitude,
-            p_radius_km: 50,
+            p_radius_km: SEARCH_RADIUS_KM,
         })
-        if (spatialResults && spatialResults.length > 0) {
+        // Only enforce the radius filter if the lookup actually succeeded — on
+        // RPC error fall back to the county path rather than hiding everyone.
+        if (!spatialError && spatialResults) {
             spatialMap = new Map(
                 (spatialResults as { profile_id: string; distance_km: number }[]).map(r => [r.profile_id, r.distance_km])
             )
+            radiusFilterActive = true
+
+            const { data: locatedRows } = await supabase
+                .from('profiles')
+                .select('id')
+                .in('id', refereeIds)
+                .not('location', 'is', null)
+            locatedRefIds = new Set((locatedRows ?? []).map(r => r.id))
         }
     }
 
@@ -1517,8 +1537,9 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
         .eq('is_available', true)
         .in('profile_id', refereeIds)
 
-    // When no spatial data is available, filter by county instead
-    if (!spatialMap && booking.county) {
+    // When the booking isn't geocoded we can't measure distance, so fall back to
+    // a county match instead of the radius filter.
+    if (!radiusFilterActive && booking.county) {
         query = query.eq('county', booking.county)
     }
 
@@ -1552,6 +1573,14 @@ export async function searchRefereesForBooking(bookingId: string): Promise<{
         // closed: a referee with no DOB on file is excluded from results.
         const profile = Array.isArray(r.profile) ? r.profile[0] : r.profile
         if (refereeBlockedFromAgeGroup(profile?.date_of_birth, booking.age_group, matchDate)) {
+            return false
+        }
+
+        // Radius hard-filter (geocoded bookings): exclude referees who HAVE a
+        // location but fall outside SEARCH_RADIUS_KM — so travel stays bounded
+        // and consistent. Referees with no location on file aren't in
+        // locatedRefIds, so they pass through (shown with £0 travel + note).
+        if (radiusFilterActive && locatedRefIds.has(profile.id) && !spatialMap?.has(profile.id)) {
             return false
         }
         return true
