@@ -23,11 +23,15 @@ export function ClaimPanel({
     const [busy, setBusy] = useState<string | null>(null)
     const [error, setError] = useState('')
 
-    async function claim(token: string) {
+    async function claim(token: string, name: string) {
         setError('')
         if (!isLoggedIn) {
+            // Not signed in: send them to a quick sign-up with their name + spot
+            // carried through, so the account is created and the spot claimed in
+            // one smooth step.
             const returnTo = `/world-cup/s/${shareId}`
-            router.push(`/world-cup/signup?claim=${encodeURIComponent(token)}&returnTo=${encodeURIComponent(returnTo)}`)
+            const params = new URLSearchParams({ claim: token, name, returnTo })
+            router.push(`/world-cup/signup?${params.toString()}`)
             return
         }
         setBusy(token)
@@ -43,14 +47,16 @@ export function ClaimPanel({
                 <UserCheck className="h-4 w-4 text-[var(--wc-blue)]" /> One of these you?
             </h2>
             <p className="mt-1 text-xs text-[var(--foreground-muted)]">
-                Claim your spot to follow your teams, and unlock the full Whistle Connect app.
+                {isLoggedIn
+                    ? 'Claim your spot to follow your teams, and unlock the full Whistle Connect app.'
+                    : 'Tap your name to create a free account and lock in your spot. Takes a few seconds.'}
             </p>
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <div className="mt-3 flex flex-wrap gap-2">
                 {entries.map((e) => (
                     <button
                         key={e.token}
-                        onClick={() => claim(e.token)}
+                        onClick={() => claim(e.token, e.name)}
                         disabled={busy === e.token}
                         className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-color)] bg-white px-3 py-1.5 text-sm font-medium text-[var(--foreground)] transition-colors hover:border-[var(--wc-blue)] disabled:opacity-50"
                     >

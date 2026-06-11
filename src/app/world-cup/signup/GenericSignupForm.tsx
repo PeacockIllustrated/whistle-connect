@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/Input'
 import { signUpGeneric } from '@/lib/auth/actions'
 import { claimEntry } from '@/lib/world-cup/actions'
 
-export function GenericSignupForm({ claimToken, returnTo }: { claimToken?: string; returnTo: string }) {
-    const [fullName, setFullName] = useState('')
+export function GenericSignupForm({ claimToken, prefillName, returnTo }: { claimToken?: string; prefillName?: string; returnTo: string }) {
+    const [fullName, setFullName] = useState(prefillName ?? '')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [terms, setTerms] = useState(false)

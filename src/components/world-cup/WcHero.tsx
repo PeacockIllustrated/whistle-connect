@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { motion, type Variants } from 'framer-motion'
 import { Trophy, Shuffle, BarChart3, ArrowRight } from 'lucide-react'
 import { NationsTicker } from './NationsTicker'
@@ -37,8 +38,19 @@ export function WcHero({ champion }: { champion?: string | null }) {
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="relative mx-auto w-full max-w-4xl px-4 pt-14 pb-10 sm:pt-20 sm:pb-14"
+                className="relative mx-auto w-full max-w-4xl px-4 pt-12 pb-10 sm:pt-16 sm:pb-14"
             >
+                <motion.div variants={item} className="mb-7">
+                    <Image
+                        src="/assets/logo-main-white.svg"
+                        alt="Whistle Connect"
+                        width={232}
+                        height={80}
+                        priority
+                        className="h-14 w-auto sm:h-16"
+                    />
+                </motion.div>
+
                 <motion.span
                     variants={item}
                     className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] backdrop-blur"

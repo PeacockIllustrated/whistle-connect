@@ -40,9 +40,15 @@ export function WcShell({ children }: { children: React.ReactNode }) {
                                 Whistle Connect is the FA-partnered app for booking qualified grassroots
                                 referees in seconds. This World Cup tool is a free gift from our team to yours.
                             </p>
-                            <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 ring-1 ring-white/15">
-                                <ShieldCheck className="h-4 w-4 text-emerald-300" />
-                                <span className="text-xs font-semibold text-white/80">In partnership with The FA</span>
+                            <div className="mt-4 flex flex-wrap items-center gap-3">
+                                <div className="flex items-center gap-3 rounded-xl bg-white px-3 py-2 shadow-sm">
+                                    <Image src="/assets/FA For All.png" alt="The FA, For All" width={84} height={48} className="h-9 w-auto object-contain" unoptimized />
+                                    <span className="h-7 w-px bg-[var(--border-color)]" aria-hidden />
+                                    <Image src="/assets/NFA Logo.png" alt="Northumberland FA" width={48} height={48} className="h-9 w-auto object-contain" unoptimized />
+                                </div>
+                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-white/70">
+                                    <ShieldCheck className="h-4 w-4 text-emerald-300" /> In partnership with The FA
+                                </span>
                             </div>
                         </div>
 
@@ -57,8 +63,9 @@ export function WcShell({ children }: { children: React.ReactNode }) {
 
                     <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-5 text-xs text-white/55 sm:flex-row">
                         <span>© Whistle Connect. Grassroots referee bookings made simple.</span>
-                        <div className="flex items-center gap-4">
+                        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
                             <Link href="/terms" className="hover:text-white hover:underline">Terms</Link>
+                            <a href="mailto:support@whistleconnect.co.uk" className="hover:text-white hover:underline">support@whistleconnect.co.uk</a>
                             <Link href="/privacy" className="hover:text-white hover:underline">Privacy</Link>
                             <Link href="/" className="hover:text-white hover:underline">Main app</Link>
                         </div>
