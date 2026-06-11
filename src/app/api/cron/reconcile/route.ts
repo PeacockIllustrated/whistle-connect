@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
 import { getStripe } from '@/lib/stripe/server'
+import { describeWalletMismatch } from '@/lib/reconcile/wallet-balance'
 import * as Sentry from '@sentry/nextjs'
 
 export async function GET(req: NextRequest) {
@@ -16,40 +17,48 @@ export async function GET(req: NextRequest) {
     }
 
     const now = new Date()
+
+    // ── 1. Reconcile wallet balances ────────────────────────────────────
+    // balance_pence must equal the running balance the ledger itself last
+    // recorded; escrow_pence must equal escrow still held against the user's
+    // bookings. A naive Σ(credit)−Σ(debit) check is wrong (it false-flagged
+    // every coach with escrow history) — see describeWalletMismatch for why.
     const mismatches: string[] = []
 
-    // 1. Reconcile wallet balances against transaction sums
     const { data: wallets } = await supabase
         .from('wallets')
         .select('id, user_id, balance_pence, escrow_pence')
 
-    if (wallets) {
-        for (const wallet of wallets) {
-            const { data: transactions } = await supabase
-                .from('wallet_transactions')
-                .select('amount_pence, direction')
-                .eq('wallet_id', wallet.id)
+    const { data: heldBookings } = await supabase
+        .from('bookings')
+        .select('coach_id, escrow_amount_pence')
+        .not('escrow_amount_pence', 'is', null)
+        .is('escrow_released_at', null)
 
-            if (!transactions) continue
+    const heldEscrowByUser = new Map<string, number>()
+    for (const b of heldBookings ?? []) {
+        if (!b.coach_id || b.escrow_amount_pence == null) continue
+        heldEscrowByUser.set(
+            b.coach_id,
+            (heldEscrowByUser.get(b.coach_id) ?? 0) + b.escrow_amount_pence
+        )
+    }
 
-            let expectedBalance = 0
-            for (const tx of transactions) {
-                if (tx.direction === 'credit') {
-                    expectedBalance += tx.amount_pence
-                } else {
-                    expectedBalance -= tx.amount_pence
-                }
-            }
+    for (const wallet of wallets ?? []) {
+        const { data: latestTx } = await supabase
+            .from('wallet_transactions')
+            .select('balance_after_pence')
+            .eq('wallet_id', wallet.id)
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(1)
+            .maybeSingle()
 
-            const actualTotal = wallet.balance_pence + wallet.escrow_pence
-            if (actualTotal !== expectedBalance) {
-                mismatches.push(
-                    `Wallet ${wallet.id} (user ${wallet.user_id}): ` +
-                    `expected ${expectedBalance}, actual ${actualTotal} ` +
-                    `(balance: ${wallet.balance_pence}, escrow: ${wallet.escrow_pence})`
-                )
-            }
-        }
+        const expectedBalance = latestTx ? latestTx.balance_after_pence : 0
+        const expectedEscrow = heldEscrowByUser.get(wallet.user_id) ?? 0
+
+        const msg = describeWalletMismatch(wallet, expectedBalance, expectedEscrow)
+        if (msg) mismatches.push(msg)
     }
 
     // 2. Check for stuck escrow (>7 days past match date)
