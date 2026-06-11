@@ -42,7 +42,14 @@ export type MakeSendOutcome = 'sent' | 'not_configured' | 'error'
  */
 export async function sendViaMake(input: SendEmailInput): Promise<MakeSendOutcome> {
     const url = process.env.MAKE_EMAIL_WEBHOOK_URL
-    if (!url) return 'not_configured'
+    if (!url) {
+        console.error(`[email] MAKE_EMAIL_WEBHOOK_URL not set — "${input.type}" NOT sent`)
+        Sentry.captureMessage('MAKE_EMAIL_WEBHOOK_URL not configured — transactional email not sent', {
+            level: 'error',
+            tags: { 'email.transport': 'make', 'email.type': input.type, 'email.failure': 'not-configured' },
+        })
+        return 'not_configured'
+    }
 
     try {
         const res = await fetch(url, {
