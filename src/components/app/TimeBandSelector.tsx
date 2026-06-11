@@ -19,7 +19,7 @@ interface TimeBandSelectorProps {
 
 export function TimeBandSelector({ selectedBands, onToggle, className }: TimeBandSelectorProps) {
     return (
-        <div className={cn("grid grid-cols-2 gap-3", className)}>
+        <div className={cn("grid grid-cols-2 md:grid-cols-3 gap-3", className)}>
             {TIME_BANDS.map((band) => {
                 const isSelected = selectedBands.includes(band.start)
                 return (

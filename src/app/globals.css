@@ -673,6 +673,15 @@ body {
   }
 }
 
+/* Desktop only (≥768px): widen the content column so pages aren't pinned to a
+   narrow 480px strip on a wide screen. The mobile rule above (≤640px = 100%)
+   and the 480px base are deliberately left untouched. */
+@media (min-width: 768px) {
+  :root {
+    --content-max-width: 720px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
 
   *,
