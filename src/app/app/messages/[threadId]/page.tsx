@@ -5,6 +5,8 @@ import Image from 'next/image'
 import { ThreadView } from './ThreadView'
 import { markThreadAsRead } from '../actions'
 import { ReportBlockMenu } from '@/components/app/ReportBlockMenu'
+import { MessagingBlockedNotice } from '@/components/app/MessagingBlockedNotice'
+import { requiresParentalConsent, ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
 import { ChevronLeft, AlertTriangle, Info } from 'lucide-react'
 
 export default async function ThreadPage({
@@ -18,6 +20,20 @@ export default async function ThreadPage({
 
     if (!user) {
         redirect('/auth/login')
+    }
+
+    // Safeguarding: under-18 referees cannot use in-app messaging (mirrors the
+    // sendMessage server-side block). Block the thread view too, not just sends.
+    const { data: viewerProfile } = await supabase
+        .from('profiles')
+        .select('role, date_of_birth')
+        .eq('id', user.id)
+        .single()
+    const viewerUnder18 = viewerProfile?.role === 'referee'
+        ? requiresParentalConsent(viewerProfile.date_of_birth)
+        : !!viewerProfile?.date_of_birth && ageOnDate(viewerProfile.date_of_birth) < PARENTAL_CONSENT_AGE
+    if (viewerUnder18) {
+        return <MessagingBlockedNotice />
     }
 
     // Get thread with messages - use maybeSingle to avoid 404 on slight delays

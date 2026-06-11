@@ -10,6 +10,7 @@ import { acceptOffer, declineOffer, cancelBooking, completeBooking } from '../ac
 import { expressInterest } from '@/app/app/feed/actions'
 import { Siren } from 'lucide-react'
 import { BookingOffer, BookingWithDetails } from '@/lib/types'
+import { BOOKING_FEE_PENCE } from '@/lib/constants'
 // Input no longer needed — referee doesn't set price
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { RatingModal } from '@/components/app/RatingModal'
@@ -493,7 +494,7 @@ export function BookingActions({
                             message={
                                 isReferee
                                     ? 'Are you sure you want to pull out? The coach will be notified and the booking will be reopened for another referee.'
-                                    : 'Are you sure you want to cancel this booking? The assigned referee will be notified.'
+                                    : `Are you sure you want to cancel this booking? The assigned referee will be notified. Your match fee and travel are refunded to your wallet; the £${(BOOKING_FEE_PENCE / 100).toFixed(2)} booking fee is non-refundable on cancellation.`
                             }
                             confirmLabel={isReferee ? 'Yes, Pull Out' : 'Yes, Cancel'}
                             variant="danger"

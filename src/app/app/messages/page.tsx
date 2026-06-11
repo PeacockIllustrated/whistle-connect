@@ -1,5 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { ThreadListClient, ThreadListItem } from '@/components/app/ThreadListClient'
+import { MessagingBlockedNotice } from '@/components/app/MessagingBlockedNotice'
+import { requiresParentalConsent, ageOnDate, PARENTAL_CONSENT_AGE } from '@/lib/constants'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
@@ -17,6 +19,21 @@ export default async function MessagesPage({
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return null
+
+    // Safeguarding: under-18 referees cannot use in-app messaging — comms go via
+    // the parent/guardian. Mirrors the sendMessage server-side block (fail-closed
+    // for referees with no DOB; coaches are not age-gated).
+    const { data: viewerProfile } = await supabase
+        .from('profiles')
+        .select('role, date_of_birth')
+        .eq('id', user.id)
+        .single()
+    const viewerUnder18 = viewerProfile?.role === 'referee'
+        ? requiresParentalConsent(viewerProfile.date_of_birth)
+        : !!viewerProfile?.date_of_birth && ageOnDate(viewerProfile.date_of_birth) < PARENTAL_CONSENT_AGE
+    if (viewerUnder18) {
+        return <MessagingBlockedNotice />
+    }
 
     // Fetch the viewer's row from thread_participants — including archived_at
     // so we can decorate each thread with the viewer's archive state and

@@ -8,7 +8,7 @@ import { Select } from '@/components/ui/Select'
 import { Button } from '@/components/ui/Button'
 import { getBooking, updateBooking } from '../../actions'
 import { BookingFormData, MatchFormat, CompetitionType } from '@/lib/types'
-import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS } from '@/lib/constants'
+import { UK_COUNTIES, MATCH_FORMATS, COMPETITION_TYPES, AGE_GROUPS, BOOKING_FEE_PENCE } from '@/lib/constants'
 import { use } from 'react'
 import { ChevronLeft, Banknote, Lock } from 'lucide-react'
 import { toLocalDateString } from '@/lib/utils'
@@ -314,7 +314,7 @@ export default function EditBookingPage({
                                 />
                             </div>
                             <p className="text-[10px] text-[var(--foreground-muted)] mt-2">
-                                Travel costs and the £0.99 booking fee are added on top when you send an offer.
+                                Travel costs and the £{(BOOKING_FEE_PENCE / 100).toFixed(2)} booking fee are added on top when you send an offer.
                             </p>
                         </div>
 

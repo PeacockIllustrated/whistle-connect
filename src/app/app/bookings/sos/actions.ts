@@ -37,7 +37,7 @@ export async function createSOSBooking(data: SOSBookingData) {
     if (validationError) return { error: validationError }
 
     // The £1.99 SOS fee is no longer charged upfront — it's bundled into the
-    // booking's platform fee (alongside the £0.99 booking fee) when the
+    // booking's platform fee (alongside the £1.00 booking fee) when the
     // coach confirms a referee, so it's held in escrow with the rest of the
     // total and only realised once a referee actually accepts. See
     // acceptOffer / coachConfirmInterest for the platform-fee bump.

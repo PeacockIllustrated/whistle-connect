@@ -153,8 +153,9 @@ export function refereeBlockedFromAgeGroup(
 }
 
 /** Platform booking fee added to coach's total per booking, in pence.
- *  Refunded to the coach (with the rest of the purse) if the booking is
- *  cancelled. Persisted source of truth is platform_settings.booking_fee_pence
+ *  Refunded to the coach (with the rest of the purse) if the REFEREE pulls
+ *  out; retained by the platform if the COACH cancels (see escrow_refund_keep_fee,
+ *  migration 0167). Persisted source of truth is platform_settings.booking_fee_pence
  *  (migration 0164); this constant is the fallback when that row is absent. */
 export const BOOKING_FEE_PENCE = 100
 
