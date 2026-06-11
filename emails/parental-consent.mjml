@@ -6,12 +6,26 @@
       <mj-all font-family="Helvetica Neue, Helvetica, Arial, sans-serif" />
       <mj-text font-size="15px" color="#475569" line-height="1.65" />
     </mj-attributes>
-    <mj-style>a { color: #1b2537; }</mj-style>
+    <mj-style>a { color: #1b2537; }
+      :root { color-scheme: light dark; supported-color-schemes: light dark; }
+      @media (prefers-color-scheme: dark) {
+        body, .wc-body-bg { background-color: #0f1320 !important; }
+        .wc-bg, .wc-bg table, .wc-bg td { background-color: #0f1320 !important; }
+        .wc-card, .wc-card table, .wc-card td { background-color: #1a2130 !important; }
+        .wc-card div { color: #cbd5e1 !important; }
+        .wc-card strong { color: #eef2f8 !important; }
+        .wc-h div { color: #f8fafc !important; }
+        .wc-accent div { color: #ff6163 !important; }
+        .wc-footer, .wc-footer table, .wc-footer td { background-color: #11151f !important; }
+        .wc-footer div { color: #94a3b8 !important; }
+        .wc-footer strong { color: #e2e8f0 !important; }
+      }
+    </mj-style>
   </mj-head>
   <mj-body background-color="#eef1f6" width="600px">
-    <mj-section background-color="#eef1f6" padding="24px 0 0"><mj-column><mj-text padding="0" line-height="1px">&nbsp;</mj-text></mj-column></mj-section>
+    <mj-section css-class="wc-bg" background-color="#eef1f6" padding="24px 0 0"><mj-column><mj-text padding="0" line-height="1px">&nbsp;</mj-text></mj-column></mj-section>
 
-    <!-- Header -->
+    <!-- Header (navy in both light and dark) -->
     <mj-section background-color="#1b2537" padding="34px 24px 30px" border-bottom="3px solid #cd1719" border-radius="16px 16px 0 0">
       <mj-column>
         <mj-image src="https://www.whistleconnect.co.uk/assets/logo-email.png" alt="Whistle Connect" width="190px" padding="0" />
@@ -19,37 +33,37 @@
     </mj-section>
 
     <!-- Body -->
-    <mj-section background-color="#ffffff" padding="34px 30px 8px">
+    <mj-section css-class="wc-card" background-color="#ffffff" padding="34px 30px 8px">
       <mj-column>
-        <mj-text font-size="12px" font-weight="700" color="#cd1719" letter-spacing="1.5px" text-transform="uppercase" padding="0 0 10px">Safeguarding</mj-text>
-        <mj-text font-size="24px" font-weight="700" color="#1b2537" line-height="1.3" padding="0 0 18px">A parent or guardian needs to approve this account</mj-text>
+        <mj-text css-class="wc-accent" font-size="12px" font-weight="700" color="#cd1719" letter-spacing="1.5px" text-transform="uppercase" padding="0 0 10px">Safeguarding</mj-text>
+        <mj-text css-class="wc-h" font-size="24px" font-weight="700" color="#1b2537" line-height="1.3" padding="0 0 18px">A parent or guardian needs to approve this account</mj-text>
         <mj-text padding="0 0 14px">Dear Parent or Guardian,</mj-text>
         <mj-text padding="0"><strong style="color:#1b2537">{{1.data.childName}}</strong> has registered as a referee on Whistle Connect. Because they&apos;re under 18, we need your consent before the account can be used — it&apos;s a quick, one-click confirmation.</mj-text>
       </mj-column>
     </mj-section>
 
     <!-- Buttons -->
-    <mj-section background-color="#ffffff" padding="22px 30px 2px">
+    <mj-section css-class="wc-card" background-color="#ffffff" padding="22px 30px 2px">
       <mj-column>
         <mj-button href="{{1.data.approveUrl}}" background-color="#10B981" color="#ffffff" font-size="16px" font-weight="700" border-radius="10px" inner-padding="16px 30px" padding="0 0 12px" width="100%">&#10003;&nbsp;&nbsp;Approve account</mj-button>
         <mj-button href="{{1.data.declineUrl}}" background-color="#ffffff" color="#cd1719" border="2px solid #ecd2d2" font-size="15px" font-weight="700" border-radius="10px" inner-padding="13px 30px" padding="0" width="100%">Decline</mj-button>
       </mj-column>
     </mj-section>
 
-    <mj-section background-color="#ffffff" padding="14px 30px 30px">
+    <mj-section css-class="wc-card" background-color="#ffffff" padding="14px 30px 30px">
       <mj-column>
         <mj-text align="center" font-size="13px" color="#94a3b8" padding="0">No account or login needed — the buttons do everything.</mj-text>
       </mj-column>
     </mj-section>
 
     <!-- Footer -->
-    <mj-section background-color="#f7f9fc" padding="22px 30px" border-radius="0 0 16px 16px">
+    <mj-section css-class="wc-footer" background-color="#f7f9fc" padding="22px 30px" border-radius="0 0 16px 16px">
       <mj-column>
         <mj-text align="center" font-size="13px" color="#64748b" padding="0 0 6px"><strong style="color:#1b2537">Whistle Connect</strong> &mdash; grassroots football, properly officiated.</mj-text>
         <mj-text align="center" font-size="12px" color="#94a3b8" padding="0"><a href="https://www.whistleconnect.co.uk" style="color:#64748b;font-weight:600;">whistleconnect.co.uk</a> &nbsp;·&nbsp; If you weren&apos;t expecting this, you can safely ignore it.</mj-text>
       </mj-column>
     </mj-section>
 
-    <mj-section background-color="#eef1f6" padding="0 0 28px"><mj-column><mj-text padding="0" line-height="1px">&nbsp;</mj-text></mj-column></mj-section>
+    <mj-section css-class="wc-bg" background-color="#eef1f6" padding="0 0 28px"><mj-column><mj-text padding="0" line-height="1px">&nbsp;</mj-text></mj-column></mj-section>
   </mj-body>
 </mjml>
