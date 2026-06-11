@@ -24,7 +24,7 @@ describe('Booking fee & transaction fee', () => {
         expect(matchPence + travelPence + BOOKING_FEE_PENCE).toBe(3600)
     })
 
-    it('ref cancel refunds the full purse INCLUDING the booking fee', () => {
+    it('ref pull-out refunds the full purse INCLUDING the booking fee', () => {
         // escrow_refund returns the whole escrow_amount_pence (match + travel +
         // booking fee), so after a referee pull-out the coach is made whole.
         const heldInEscrow = 3000 + 500 + BOOKING_FEE_PENCE
@@ -32,6 +32,19 @@ describe('Booking fee & transaction fee', () => {
         const balanceAfterHold = coachBalanceBeforeHold - heldInEscrow
         const balanceAfterRefund = balanceAfterHold + heldInEscrow
         expect(balanceAfterRefund).toBe(coachBalanceBeforeHold)
+    })
+
+    it('coach cancel refunds match + travel but the platform retains the booking fee', () => {
+        // escrow_refund_keep_fee: clears the full hold from escrow, refunds
+        // (escrow − fee) to balance, keeps the fee as platform revenue.
+        const heldInEscrow = 3000 + 500 + BOOKING_FEE_PENCE
+        const coachBalanceBeforeHold = 10000
+        const balanceAfterHold = coachBalanceBeforeHold - heldInEscrow
+        const refund = heldInEscrow - BOOKING_FEE_PENCE
+        const balanceAfterCancel = balanceAfterHold + refund
+        expect(refund).toBe(3500)
+        // Coach is out exactly the booking fee vs their pre-hold balance.
+        expect(coachBalanceBeforeHold - balanceAfterCancel).toBe(BOOKING_FEE_PENCE)
     })
 
     it('top-up grosses up so the wallet is credited the full requested amount', () => {

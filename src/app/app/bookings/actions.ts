@@ -612,14 +612,20 @@ export async function cancelBooking(bookingId: string) {
             if (!admin) {
                 return { error: 'Refunds are temporarily unavailable. Please contact support.' }
             }
-            const { data: refundResult, error: refundError } = await admin.rpc('escrow_refund', {
+            // Coach-initiated cancellation of a confirmed booking: the platform
+            // retains the booking fee; match fee + travel are refunded. (Referee
+            // pull-outs refund in full — see the branch above. A non-confirmed
+            // booking has no escrow, so this block is skipped for those.)
+            const feePence = await getBookingFeePence()
+            const { data: refundResult, error: refundError } = await admin.rpc('escrow_refund_keep_fee', {
                 p_booking_id: bookingId,
+                p_fee_pence: feePence,
             })
 
             if (refundError) {
-                console.error('Escrow refund failed:', refundError)
+                console.error('Escrow refund (keep fee) failed:', refundError)
             } else if (refundResult?.error) {
-                console.error('Escrow refund returned error:', refundResult.error)
+                console.error('Escrow refund (keep fee) returned error:', refundResult.error)
             }
         }
 
