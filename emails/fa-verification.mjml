@@ -1,0 +1,37 @@
+<mjml>
+  <mj-head>
+    <mj-title>FA number verification — Whistle Connect</mj-title>
+    <mj-preview>Please confirm whether this referee's FA registration number is valid.</mj-preview>
+    <mj-attributes>
+      <mj-all font-family="Helvetica Neue, Helvetica, Arial, sans-serif" />
+      <mj-text font-size="15px" color="#475569" line-height="1.6" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#f3f4f6">
+    <!-- Header -->
+    <mj-section background-color="#1d2557" padding="28px 0">
+      <mj-column>
+        <mj-image src="https://www.whistleconnect.co.uk/assets/logo-email.png" alt="Whistle Connect" width="180px" padding="0" />
+      </mj-column>
+    </mj-section>
+
+    <!-- Body -->
+    <mj-section background-color="#ffffff" padding="32px 24px">
+      <mj-column>
+        <mj-text font-size="20px" font-weight="700" color="#1d2557" padding-bottom="14px">FA number verification request</mj-text>
+        <mj-text>We are verifying a referee registered on the Whistle Connect platform. Please confirm whether the following FA registration number is valid and currently active.</mj-text>
+        <mj-text padding="8px 0 0"><strong>Referee:</strong> {{1.data.refereeName}}<br /><strong>FA number:</strong> {{1.data.faId}}<br /><strong>County FA:</strong> {{1.data.county}}</mj-text>
+        <mj-button href="{{1.data.confirmUrl}}" background-color="#16a34a" color="#ffffff" font-size="15px" font-weight="700" border-radius="8px" inner-padding="14px 28px" padding="22px 0 6px">Confirm registration</mj-button>
+        <mj-button href="{{1.data.rejectUrl}}" background-color="#ffffff" color="#dc2626" border="2px solid #dc2626" font-size="15px" font-weight="700" border-radius="8px" inner-padding="12px 28px" padding="0 0 8px">Not found</mj-button>
+        <mj-text align="center" font-size="13px" color="#94a3b8">One click — no login or account required.</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#f8fafc" padding="20px 24px">
+      <mj-column>
+        <mj-text font-size="12px" color="#94a3b8" align="center" line-height="1.5">Whistle Connect — grassroots football referee management. Thank you for helping keep grassroots football safe.</mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>
