@@ -106,7 +106,7 @@ export default function BookInterstitialPage() {
 
                 <div className="space-y-4">
                     <ActionCard
-                        onClick={() => handleChoice('/book/individual')}
+                        onClick={() => handleChoice('/app/bookings/new?type=individual')}
                         title="Individual Games"
                         subtitle="Book a referee for a single match or specific event"
                         icon={
@@ -117,7 +117,7 @@ export default function BookInterstitialPage() {
                     />
 
                     <ActionCard
-                        onClick={() => handleChoice('/book/central')}
+                        onClick={() => handleChoice('/app/bookings/new?type=central')}
                         title="Central Venue"
                         subtitle="Arrange referees for multiple games at a fixed location"
                         icon={
@@ -128,7 +128,7 @@ export default function BookInterstitialPage() {
                     />
 
                     <ActionCard
-                        onClick={() => handleChoice('/book/central?type=tournament')}
+                        onClick={() => handleChoice('/app/bookings/new?type=tournament')}
                         title="Tournament"
                         subtitle="Cover a tournament day across multiple matches"
                         icon={
