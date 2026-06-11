@@ -379,6 +379,12 @@ export default async function BookingDetailPage({
                 isCoach={isCoach}
                 isReferee={isReferee}
                 threadId={thread?.id}
+                // In-app messaging is unavailable when an under-18 referee is
+                // involved: either the viewer is the under-18 ref, or the coach
+                // is viewing a booking whose assigned referee is under 18. The
+                // cards above already surface the parent-email path / blocked
+                // notice, so suppress the duplicate in-app "Message" CTAs here.
+                messagingBlocked={viewerIsUnder18 || (isCoach && !!assignment && assignedRefUnder18)}
             />
 
             {/* Offers List (for coaches) — always show when offers exist and no

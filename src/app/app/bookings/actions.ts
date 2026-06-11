@@ -9,7 +9,7 @@ import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { checkBookingRateLimit, checkSearchRateLimit, checkOfferRateLimit } from '@/lib/rate-limit'
 import { validate, bookingSchema, confirmPriceSchema, offerPriceSchema } from '@/lib/validation'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
-import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE, ageOnDate, refereeBlockedFromAgeGroup, bookingsClash, MATCH_BLOCK_MINUTES, minutesSinceMidnight } from '@/lib/constants'
+import { requiresDBS, BOOKING_FEE_PENCE, SOS_FEE_PENCE, ageOnDate, refereeBlockedFromAgeGroup, requiresParentalConsent, bookingsClash, MATCH_BLOCK_MINUTES, minutesSinceMidnight } from '@/lib/constants'
 
 /** Fetch the current travel cost rate from platform settings */
 export async function getTravelRate(): Promise<number> {
@@ -1116,19 +1116,33 @@ export async function coachConfirmInterest(
         })
     }
 
+    // Under-18 referees (verified-consent minors are still bookable) have no
+    // in-app messaging — point them at the booking, not the chat, and suppress
+    // threadId in the return so the coach lands on the booking detail (which
+    // shows the parent-email path) rather than a chat they can't use.
+    const { data: refProfileRow } = await supabase
+        .from('profiles')
+        .select('date_of_birth')
+        .eq('id', offer.referee_id)
+        .single()
+    const refereeUnder18 = requiresParentalConsent(refProfileRow?.date_of_birth)
+
     // Notify the referee that the coach accepted their availability
+    const venue = booking.ground_name || booking.location_postcode
     await createNotification({
         userId: offer.referee_id,
         title: 'You\'re Booked In!',
-        message: `The coach confirmed you for ${booking.ground_name || booking.location_postcode}. Open the chat to finalise details.`,
+        message: refereeUnder18
+            ? `The coach confirmed you for ${venue}. Match updates will be sent to your parent or guardian.`
+            : `The coach confirmed you for ${venue}. Open the chat to finalise details.`,
         type: 'success',
-        link: threadId ? `/app/messages/${threadId}` : `/app/bookings/${offer.booking_id}`,
+        link: (threadId && !refereeUnder18) ? `/app/messages/${threadId}` : `/app/bookings/${offer.booking_id}`,
     })
 
     revalidatePath(`/app/bookings/${offer.booking_id}`)
     revalidatePath('/app/bookings')
 
-    return { success: true, threadId }
+    return { success: true, threadId: refereeUnder18 ? undefined : threadId }
 }
 
 /**

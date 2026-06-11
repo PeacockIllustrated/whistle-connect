@@ -9,6 +9,7 @@ import { LocalStorageArchiveMigration } from '@/components/app/LocalStorageArchi
 import { AdminBookingsView } from '@/components/app/AdminBookingsView'
 import type { AdminBooking } from '@/components/app/AdminBookingsView'
 import { BookingStatus, BookingWithDetails } from '@/lib/types'
+import { requiresParentalConsent } from '@/lib/constants'
 import { toLocalDateString } from '@/lib/utils'
 import { CalendarDays, XCircle } from 'lucide-react'
 import { Pagination } from '@/components/app/Pagination'
@@ -103,13 +104,16 @@ export default async function BookingsPage({
 
     const { data: profile } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, date_of_birth')
         .eq('id', user.id)
         .single()
 
     const isCoach = profile?.role === 'coach'
     const isReferee = profile?.role === 'referee'
     const isAdmin = profile?.role === 'admin'
+    // Under-18 referees have no in-app messaging — hide the quick-message icon
+    // on their booking cards (the booking detail surfaces the parent-email path).
+    const viewerMessagingBlocked = isReferee && requiresParentalConsent(profile?.date_of_birth)
     const statusFilter = params.status as BookingStatus | 'all' | undefined
     const tab: ListTab = (params.tab === 'past' || params.tab === 'archived') ? params.tab : 'upcoming'
     const currentPage = Math.max(1, parseInt(params.page || '1', 10) || 1)
@@ -645,6 +649,7 @@ export default async function BookingsPage({
                                     showCoach={isReferee}
                                     showReferee={isCoach && !!booking.assignment?.referee}
                                     archivedForViewer={booking.archivedForViewer}
+                                    messagingBlocked={viewerMessagingBlocked}
                                 />
                             ))}
 

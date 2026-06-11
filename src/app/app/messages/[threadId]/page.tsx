@@ -91,7 +91,7 @@ export default async function ThreadPage({
         .select('profile:profiles(*)')
         .eq('thread_id', threadId)
 
-    type ProfileData = { id: string; full_name: string; avatar_url: string | null; club_name: string | null; role: string }
+    type ProfileData = { id: string; full_name: string; avatar_url: string | null; club_name: string | null; role: string; date_of_birth?: string | null }
     type ParticipantRow = { profile: ProfileData | ProfileData[] }
     const getProfile = (p: ParticipantRow): ProfileData | undefined =>
         Array.isArray(p.profile) ? p.profile[0] : p.profile
@@ -100,6 +100,15 @@ export default async function ThreadPage({
         (p) => getProfile(p)?.id !== user.id
     )
     const otherProfile = otherParticipant ? getProfile(otherParticipant) : undefined
+
+    // Safeguarding: if the other participant is an under-18 referee, in-app
+    // messaging is unavailable for everyone in this thread (the minor can't read
+    // it; comms go via the parent/guardian). Blocks e.g. a coach who reaches a
+    // minor's thread from their own messages list. Mirrors the bidirectional
+    // sendMessage block. Fails closed on a null DOB.
+    if (otherProfile?.role === 'referee' && requiresParentalConsent(otherProfile.date_of_birth)) {
+        return <MessagingBlockedNotice reason="counterpart-minor" />
+    }
 
     // Get current user's profile for optimistic sending
     const currentParticipant = (participants as ParticipantRow[] | null)?.find(

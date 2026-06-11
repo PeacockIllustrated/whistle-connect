@@ -11,6 +11,9 @@ import type { LucideIcon } from 'lucide-react'
 
 interface BottomNavProps {
     userRole?: string
+    /** Under-18 referee — in-app messaging is unavailable, so hide the
+     *  Messages tab entirely (the page itself also blocks it). */
+    messagingDisabled?: boolean
 }
 
 interface NavItem {
@@ -20,7 +23,7 @@ interface NavItem {
     animation: string
 }
 
-const getNavItems = (userRole?: string): NavItem[] => {
+const getNavItems = (userRole?: string, messagingDisabled = false): NavItem[] => {
     const items: NavItem[] = [
         { label: 'Home', href: '/app', icon: Home, animation: 'icon-animate-bounce' },
         { label: 'Bookings', href: '/app/bookings', icon: CalendarDays, animation: 'icon-animate-pop' },
@@ -52,7 +55,7 @@ const getNavItems = (userRole?: string): NavItem[] => {
         })
     }
 
-    if (userRole !== 'admin') {
+    if (userRole !== 'admin' && !messagingDisabled) {
         items.push(
             { label: 'Messages', href: '/app/messages', icon: MessageCircle, animation: 'icon-animate-pop' },
         )
@@ -65,11 +68,11 @@ const getNavItems = (userRole?: string): NavItem[] => {
     return items
 }
 
-export function BottomNav({ userRole }: BottomNavProps) {
+export function BottomNav({ userRole, messagingDisabled }: BottomNavProps) {
     const pathname = usePathname()
     const { totalUnread } = useUnreadMessages()
     const { offerCount } = useBookingUpdates()
-    const navItems = getNavItems(userRole)
+    const navItems = getNavItems(userRole, messagingDisabled)
     const [animatingHref, setAnimatingHref] = useState<string | null>(null)
 
     const isActive = (href: string) => {

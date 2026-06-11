@@ -23,6 +23,10 @@ interface BookingActionsProps {
     isCoach: boolean
     isReferee: boolean
     threadId?: string
+    /** In-app messaging unavailable for this booking pair (under-18 referee
+     *  involved). Suppresses the in-app "Message" CTAs — the booking detail
+     *  shows the parent-email path / blocked notice instead. */
+    messagingBlocked?: boolean
 }
 
 export function BookingActions({
@@ -30,7 +34,8 @@ export function BookingActions({
     userOffer,
     isCoach,
     isReferee,
-    threadId
+    threadId,
+    messagingBlocked = false,
 }: BookingActionsProps) {
     const router = useRouter()
     const { showToast } = useToast()
@@ -61,7 +66,7 @@ export function BookingActions({
         setErrorMessage('')
         try {
             const result = await acceptOffer(userOffer.id)
-            if (result.success && result.threadId) {
+            if (result.success && result.threadId && !messagingBlocked) {
                 const threadId = result.threadId
                 setCelebration({
                     icon: 'party-popper',
@@ -358,8 +363,10 @@ export function BookingActions({
         return (
             <div className="space-y-3">
                 {/* Message button — explicitly names the other party so it
-                    reads as a clear next-action, not a generic icon row. */}
-                {threadId && (() => {
+                    reads as a clear next-action, not a generic icon row.
+                    Suppressed when messaging is blocked (under-18 referee) — the
+                    booking detail surfaces the parent-email path instead. */}
+                {threadId && !messagingBlocked && (() => {
                     const otherName = isCoach
                         ? (booking.assignment?.referee?.full_name || 'the referee')
                         : (booking.coach?.full_name || 'the coach')
@@ -706,8 +713,9 @@ export function BookingActions({
                     )}
                 </div>
 
-                {/* Message link if thread exists */}
-                {threadId && (
+                {/* Message link if thread exists (hidden when messaging is
+                    blocked for an under-18 referee). */}
+                {threadId && !messagingBlocked && (
                     <Link href={`/app/messages/${threadId}`}>
                         <Button fullWidth variant="outline">
                             <MessageCircle className="w-5 h-5 mr-2" />
