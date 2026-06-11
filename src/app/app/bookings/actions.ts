@@ -60,6 +60,16 @@ export async function createBooking(data: BookingFormData) {
         return { error: 'Unauthorized' }
     }
 
+    // Only coaches may create bookings — defence in depth behind the UI gate.
+    const { data: bookerProfile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+    if (bookerProfile?.role !== 'coach') {
+        return { error: 'Only coaches can create bookings.' }
+    }
+
     const rateLimitError = checkBookingRateLimit(user.id)
     if (rateLimitError) {
         return { error: rateLimitError }

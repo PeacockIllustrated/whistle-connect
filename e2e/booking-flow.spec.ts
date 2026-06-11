@@ -111,11 +111,12 @@ test.describe('Booking Flow - Public Pages', () => {
         await page.waitForLoadState('networkidle')
     })
 
-    test('individual booking form loads', async ({ page }) => {
-        await page.goto('/book/individual')
+    test('booking route is auth-gated (redirects to login)', async ({ page }) => {
+        // The individual/central/tournament forms are now the single
+        // /app/bookings/new form (the /book interstitial routes here with ?type).
+        // Unauthenticated visits redirect to login.
+        await page.goto('/app/bookings/new?type=individual')
         await page.waitForLoadState('networkidle')
-
-        // Should see form fields
-        await expect(page.locator('text=Match Date, label:has-text("Date")')).toBeVisible({ timeout: 10000 })
+        await expect(page).toHaveURL(/\/auth\/login/)
     })
 })
