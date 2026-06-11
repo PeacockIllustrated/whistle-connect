@@ -20,7 +20,13 @@ export interface FeedBooking {
     away_team: string | null
 }
 
-export async function getMatchFeed(): Promise<{ data?: FeedBooking[]; error?: string }> {
+export async function getMatchFeed(): Promise<{
+    data?: FeedBooking[]
+    error?: string
+    /** True when the referee has no geocoded location, so find_bookings_near_referee
+     *  can only ever return nothing. Lets the feed explain the empty state. */
+    locationMissing?: boolean
+}> {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -34,6 +40,17 @@ export async function getMatchFeed(): Promise<{ data?: FeedBooking[]; error?: st
         .single()
 
     if (profile?.role !== 'referee') return { error: 'Referee access required' }
+
+    // The feed RPC hard-returns nothing if the referee has no location, so an
+    // empty result is ambiguous (no location vs. no nearby matches). Resolve it
+    // up front: a row comes back only when location is set.
+    const { data: locRow } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .not('location', 'is', null)
+        .maybeSingle()
+    const locationMissing = !locRow
 
     // Call the find_bookings_near_referee RPC
     const { data: refereeProfile } = await supabase
@@ -53,7 +70,7 @@ export async function getMatchFeed(): Promise<{ data?: FeedBooking[]; error?: st
 
     // Get IDs of bookings the referee already has offers for
     const bookingIds = (data || []).map((b: { id: string }) => b.id)
-    if (bookingIds.length === 0) return { data: [] }
+    if (bookingIds.length === 0) return { data: [], locationMissing }
 
     const { data: existingOffers } = await supabase
         .from('booking_offers')
@@ -96,7 +113,7 @@ export async function getMatchFeed(): Promise<{ data?: FeedBooking[]; error?: st
             away_team: b.away_team,
         }))
 
-    return { data: feedBookings }
+    return { data: feedBookings, locationMissing }
 }
 
 export interface FeedOffer {

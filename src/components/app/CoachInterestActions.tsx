@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { useToast } from '@/components/ui/Toast'
 import { ConfirmDialog } from '@/components/ui/Modal'
 import { coachConfirmInterest, coachDeclineInterest } from '@/app/app/bookings/actions'
-import { Check, X } from 'lucide-react'
+import { Check, X, Wallet } from 'lucide-react'
 
 interface CoachInterestActionsProps {
     offerId: string
@@ -30,6 +31,9 @@ export function CoachInterestActions({
         defaultPricePounds != null && defaultPricePounds > 0 ? defaultPricePounds : null
     const [price, setPrice] = useState<string>(lockedPrice != null ? String(lockedPrice) : '')
     const [showDecline, setShowDecline] = useState(false)
+    // When confirming fails for a wallet reason, surface a persistent top-up CTA
+    // (a transient toast is a dead-end — the coach can't act on it).
+    const [fundsPrompt, setFundsPrompt] = useState<string | null>(null)
     const [isPending, startTransition] = useTransition()
 
     const handleAccept = () => {
@@ -38,13 +42,14 @@ export function CoachInterestActions({
             showToast({ message: 'Enter a match fee before confirming', type: 'error' })
             return
         }
+        setFundsPrompt(null)
         startTransition(async () => {
             const result = await coachConfirmInterest(offerId, num)
             if (result.error) {
                 if (result.code === 'INSUFFICIENT_FUNDS') {
-                    showToast({ message: 'Not enough funds in your wallet — top up first.', type: 'error' })
+                    setFundsPrompt("There aren't enough funds in your wallet to cover this booking. Top up to confirm.")
                 } else if (result.code === 'NO_WALLET') {
-                    showToast({ message: 'Set up your wallet before confirming.', type: 'error' })
+                    setFundsPrompt('Set up and top up your wallet to confirm this booking.')
                 } else {
                     showToast({ message: result.error, type: 'error' })
                 }
@@ -121,6 +126,19 @@ export function CoachInterestActions({
                         Decline
                     </button>
                 </div>
+
+                {fundsPrompt && (
+                    <div className="rounded-lg border border-[var(--border-color)] bg-white p-3">
+                        <p className="text-xs text-[var(--foreground-muted)] mb-2">{fundsPrompt}</p>
+                        <Link
+                            href="/app/wallet/top-up"
+                            className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg text-sm font-bold text-white bg-[var(--brand-primary)] hover:opacity-90 transition-opacity"
+                        >
+                            <Wallet className="w-4 h-4" />
+                            Top up wallet
+                        </Link>
+                    </div>
+                )}
             </div>
 
             <ConfirmDialog
