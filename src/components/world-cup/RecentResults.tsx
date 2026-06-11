@@ -1,12 +1,31 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import type { RecentResult } from '@/lib/world-cup/data'
 import { FlagImage } from './TeamBits'
 import { cn } from '@/lib/utils'
 
 const STORAGE_KEY = 'wc-hide-results'
+const HIDE_EVENT = 'wc-hide-results-change'
+
+function readHidden(): boolean {
+    try {
+        return localStorage.getItem(STORAGE_KEY) === '1'
+    } catch {
+        return false
+    }
+}
+
+// Subscribe to same-tab changes (custom event) + other-tab changes (storage).
+function subscribeHidden(onChange: () => void): () => void {
+    window.addEventListener(HIDE_EVENT, onChange)
+    window.addEventListener('storage', onChange)
+    return () => {
+        window.removeEventListener(HIDE_EVENT, onChange)
+        window.removeEventListener('storage', onChange)
+    }
+}
 
 function stageLabel(r: RecentResult): string {
     switch (r.stage) {
@@ -67,33 +86,21 @@ function ResultCard({ r, hidden }: { r: RecentResult; hidden: boolean }) {
 }
 
 export function RecentResults({ results }: { results: RecentResult[] }) {
-    const [hidden, setHidden] = useState(false)
-    const [ready, setReady] = useState(false)
+    // Read the saved preference from localStorage without an effect-driven
+    // setState. useSyncExternalStore returns the server snapshot (false) during
+    // SSR/hydration and the real value on the client, with no hydration mismatch.
+    const hidden = useSyncExternalStore(subscribeHidden, readHidden, () => false)
 
-    useEffect(() => {
+    const toggle = useCallback(() => {
         try {
-            setHidden(localStorage.getItem(STORAGE_KEY) === '1')
+            localStorage.setItem(STORAGE_KEY, readHidden() ? '0' : '1')
         } catch {
             /* localStorage may be unavailable */
         }
-        setReady(true)
+        window.dispatchEvent(new Event(HIDE_EVENT))
     }, [])
 
-    function toggle() {
-        setHidden((h) => {
-            const next = !h
-            try {
-                localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
-            } catch {
-                /* ignore */
-            }
-            return next
-        })
-    }
-
-    // Blur until we've read the saved preference, so a spoiler-avoider never
-    // sees a flash of scores on load.
-    const blurScores = hidden || !ready
+    const blurScores = hidden
 
     return (
         <section className="mx-auto w-full max-w-4xl px-4 py-12">
