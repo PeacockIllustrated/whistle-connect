@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShieldCheck, Clock, Bell, Users } from 'lucide-react'
+import { ShieldCheck, Clock, Bell, Users, CalendarX, Wallet, MapPin, CalendarCheck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import SplashScreen from '@/components/ui/SplashScreen'
 import { createClient } from '@/lib/supabase/server'
@@ -14,19 +14,25 @@ export default async function LandingPage() {
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
   ])
 
-  const challengeStats = [
-    { value: '73%', label: 'of coaches say finding referees is their #1 headache' },
-    { value: '5+ hrs', label: 'a week lost to calls, texts and WhatsApp chasing officials' },
-    { value: '30%', label: 'of grassroots matches hit by late referee cancellations' },
+  const coachPains = [
+    { Icon: Users, value: '73%', label: 'of coaches say finding referees is their #1 headache' },
+    { Icon: Clock, value: '5+ hrs', label: 'a week lost to calls, texts and WhatsApp chasing officials' },
+    { Icon: CalendarX, value: '30%', label: 'of grassroots matches hit by late referee cancellations' },
+  ]
+
+  const refereePoints = [
+    { Icon: Wallet, title: 'Paid for every game', body: 'Match fees are held when a coach books and paid into your wallet after kick-off. No chasing cash, no awkward touchline maths.' },
+    { Icon: MapPin, title: 'Games that fit your life', body: 'Set your availability once and get offers for matches near you, with distance, kick-off and fee shown up front.' },
+    { Icon: CalendarCheck, title: 'No wasted journeys', body: 'Every booking is confirmed in the app before you travel, so you only turn up to games that are actually on.' },
   ]
 
   // Question-led FAQ, mirrored into FAQPage JSON-LD below for answer-engine
-  // optimisation (AEO) — concise, direct answers to the questions coaches and
+  // optimisation (AEO) - concise, direct answers to the questions coaches and
   // referees actually ask.
   const faqs = [
     {
       q: 'How do I book a referee on Whistle Connect?',
-      a: 'Post your match details, see FA-verified referees near you with ratings and distance, then send an offer — most matches are confirmed in the app within minutes.',
+      a: 'Post your match details, see FA-verified referees near you with ratings and distance, then send an offer, and most matches are confirmed in the app within minutes.',
     },
     {
       q: 'Are the referees FA-verified?',
@@ -34,7 +40,7 @@ export default async function LandingPage() {
     },
     {
       q: 'How does payment work?',
-      a: 'Your payment is held securely when you confirm a booking and only released to the referee after the match is played — no cash on the touchline, no chasing invoices.',
+      a: 'Your payment is held securely when you confirm a booking and only released to the referee after the match is played. No cash on the touchline, no chasing invoices.',
     },
     {
       q: 'What if my referee cancels last-minute?',
@@ -141,7 +147,7 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* Why Whistle Connect — feature highlights */}
+      {/* Why Whistle Connect - feature highlights */}
       <section className="py-10 bg-[var(--surface)]">
         <div className="max-w-[var(--content-max-width)] mx-auto px-4">
           <div className="rounded-3xl bg-white border border-[var(--border-color)] shadow-sm px-4 py-8 sm:px-8">
@@ -168,30 +174,81 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      {/* The Challenge — pains (grabs attention, sets up the solution) */}
+      {/* For coaches - the pain we solve (navy-accented, on brand) */}
       <section className="py-12 bg-[var(--surface)]">
-        <div className="max-w-[var(--content-max-width)] mx-auto px-4 text-center">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--wc-blue)] leading-tight">
-            Finding a referee shouldn&apos;t be the hard part
-          </h2>
-          <p className="mt-3 text-sm sm:text-base text-[var(--foreground-muted)] max-w-md mx-auto">
-            Grassroots coaches lose hours every week chasing officials. Whistle Connect replaces the calls, texts and no-shows with one simple app.
-          </p>
+        <div className="max-w-[var(--content-max-width)] mx-auto px-4">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--wc-blue)]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--wc-blue)]">
+              <Users className="h-3.5 w-3.5" /> For coaches
+            </span>
+            <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-[var(--wc-blue)] leading-tight">
+              Finding a referee shouldn&apos;t be the hard part
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-[var(--foreground-muted)] max-w-md mx-auto">
+              Grassroots coaches lose hours every week chasing officials. Whistle Connect replaces the calls, texts and no-shows with one simple app.
+            </p>
+          </div>
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {challengeStats.map((s) => (
+            {coachPains.map((p) => (
               <div
-                key={s.value}
-                className="rounded-2xl bg-white border border-[var(--border-color)] shadow-sm px-5 py-6"
+                key={p.value}
+                className="relative overflow-hidden rounded-2xl bg-white border border-[var(--border-color)] shadow-sm px-5 py-6 text-left"
               >
-                <div className="text-3xl font-extrabold text-[var(--wc-red)]">{s.value}</div>
-                <p className="mt-2 text-xs sm:text-sm text-[var(--foreground-muted)] leading-snug">{s.label}</p>
+                <span className="absolute inset-x-0 top-0 h-1 bg-[var(--wc-blue)]" />
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--wc-blue)]/10 text-[var(--wc-blue)]">
+                    <p.Icon className="h-5 w-5" />
+                  </span>
+                  <div className="text-3xl font-extrabold text-[var(--wc-blue)]">{p.value}</div>
+                </div>
+                <p className="mt-3 text-xs sm:text-sm text-[var(--foreground-muted)] leading-snug">{p.label}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* FAQ — question-led content + FAQPage schema for answer-engine optimisation */}
+      {/* For referees - their pain we solve (red-accented, tinted panel) */}
+      <section className="py-12 bg-[#fdf2f2] border-y border-[var(--border-color)]">
+        <div className="max-w-[var(--content-max-width)] mx-auto px-4">
+          <div className="text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[var(--wc-red)]/10 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[var(--wc-red)]">
+              <Wallet className="h-3.5 w-3.5" /> For referees
+            </span>
+            <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-[var(--wc-blue)] leading-tight">
+              More games. Less hassle. Paid every time.
+            </h2>
+            <p className="mt-3 text-sm sm:text-base text-[var(--foreground-muted)] max-w-md mx-auto">
+              Chasing match fees and filling quiet weekends is the worst part of the job. Whistle Connect sorts both, so you can just referee.
+            </p>
+          </div>
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {refereePoints.map((p) => (
+              <div
+                key={p.title}
+                className="relative overflow-hidden rounded-2xl bg-white border border-[var(--border-color)] shadow-sm px-5 py-6 text-left"
+              >
+                <span className="absolute inset-x-0 top-0 h-1 bg-[var(--wc-red)]" />
+                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#fdecec] text-[var(--wc-red)]">
+                  <p.Icon className="h-5 w-5" />
+                </span>
+                <h3 className="mt-3 text-sm sm:text-base font-bold text-[var(--wc-blue)]">{p.title}</h3>
+                <p className="mt-1.5 text-xs sm:text-sm text-[var(--foreground-muted)] leading-snug">{p.body}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/auth/register?role=referee"
+              className="inline-block px-8 py-3.5 bg-[var(--wc-red)] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-md"
+            >
+              Register as a Referee
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ - question-led content + FAQPage schema for answer-engine optimisation */}
       <section className="py-12 bg-[var(--background)]" aria-labelledby="faq-heading">
         <div className="max-w-[var(--content-max-width)] mx-auto px-4">
           <h2
@@ -256,7 +313,7 @@ export default async function LandingPage() {
             <div className="flex flex-col items-center gap-1.5">
               <Image
                 src="/assets/FA For All.png"
-                alt="The FA — For All"
+                alt="The FA - For All"
                 width={96}
                 height={56}
                 className="object-contain h-14"
@@ -279,13 +336,16 @@ export default async function LandingPage() {
           <p className="text-sm text-[var(--foreground-muted)]">
             &copy; {new Date().getFullYear()} Whistle Connect
           </p>
-          <div className="flex justify-center gap-4 mt-2">
+          <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 mt-2">
             <Link href="/privacy" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
               Privacy
             </Link>
             <Link href="/terms" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
               Terms
             </Link>
+            <a href="mailto:support@whistleconnect.co.uk" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
+              support@whistleconnect.co.uk
+            </a>
           </div>
         </div>
       </footer>

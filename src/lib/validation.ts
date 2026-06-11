@@ -93,6 +93,62 @@ export const signUpSchema = z.object({
     }
 })
 
+// ── Generic (deferred-role) signup ───────────────────────────────────────
+// Used by the World Cup sweepstake funnel: create an account without picking
+// coach/referee. No role/DOB/FA fields — those are captured later at
+// /finish-setup. Still requires Terms + Privacy acceptance.
+
+export const signUpGenericSchema = z.object({
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    full_name: z.string().min(2, 'Full name must be at least 2 characters').max(100, 'Full name is too long'),
+    terms_accepted: z.literal(true, {
+        message: 'You must accept the Terms of Service to create an account',
+    }),
+    privacy_accepted: z.literal(true, {
+        message: 'You must accept the Privacy Policy to create an account',
+    }),
+})
+
+// ── Finish setup (a generic account choosing coach/referee) ───────────────
+// Mirrors the role-specific rules of signUpSchema, minus email/password (the
+// account already exists). The under-18 parental-consent gate is preserved.
+
+export const finishSetupSchema = z.object({
+    role: z.enum(['coach', 'referee'], { message: 'Choose whether you are a coach or a referee' }),
+    phone: z.string().max(20, 'Phone number is too long').optional().or(z.literal('')),
+    postcode: z.string().regex(UK_POSTCODE, 'Invalid UK postcode').optional().or(z.literal('')),
+    fa_number: z.string()
+        .regex(/^\d{8,10}$/, 'FA number must be 8-10 digits')
+        .optional()
+        .or(z.literal('')),
+    date_of_birth: z.string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date of birth must be in YYYY-MM-DD format')
+        .optional()
+        .or(z.literal('')),
+    parent_email: z.string()
+        .email('Invalid parent/guardian email address')
+        .optional()
+        .or(z.literal('')),
+}).superRefine((data, ctx) => {
+    if (data.role !== 'referee') return
+
+    if (!data.date_of_birth) {
+        ctx.addIssue({ code: 'custom', path: ['date_of_birth'], message: 'Date of birth is required for referees' })
+        return
+    }
+
+    const age = ageOnDate(data.date_of_birth)
+    if (age < MINIMUM_REFEREE_AGE) {
+        ctx.addIssue({ code: 'custom', path: ['date_of_birth'], message: `Referees must be at least ${MINIMUM_REFEREE_AGE} years old` })
+        return
+    }
+
+    if (age < PARENTAL_CONSENT_AGE && !data.parent_email) {
+        ctx.addIssue({ code: 'custom', path: ['parent_email'], message: "A parent or guardian's email is required for referees under 18" })
+    }
+})
+
 // ── Booking schemas ──────────────────────────────────────────────────────
 
 export const bookingSchema = z.object({

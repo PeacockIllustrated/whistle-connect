@@ -55,6 +55,7 @@ export function MessageInput({
                     latitude: null,
                     longitude: null,
                     date_of_birth: null,
+                    setup_complete: true,
                     created_at: '',
                     updated_at: '',
                 },

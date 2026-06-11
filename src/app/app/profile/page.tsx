@@ -89,6 +89,13 @@ export default async function ProfilePage() {
             <div className="mt-8">
                 <SignOutButton />
             </div>
+
+            <p className="mt-6 text-center text-xs text-[var(--foreground-subtle)]">
+                Need a hand?{' '}
+                <a href="mailto:support@whistleconnect.co.uk" className="hover:underline">
+                    support@whistleconnect.co.uk
+                </a>
+            </p>
         </div>
     )
 }

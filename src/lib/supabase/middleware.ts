@@ -49,5 +49,26 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
+    // Deferred-onboarding gate. A "generic" signup (e.g. via the World Cup
+    // sweepstake) has profiles.setup_complete=false and a placeholder role.
+    // Before such a user can reach any role-specific page under /app, send them
+    // to /finish-setup to choose coach/referee and complete their account. The
+    // gate runs ONLY for /app/* (the real app) — the public World Cup tool is
+    // deliberately left frictionless.
+    if (user && request.nextUrl.pathname.startsWith('/app')) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('setup_complete')
+            .eq('id', user.id)
+            .maybeSingle()
+
+        if (profile && profile.setup_complete === false) {
+            const url = request.nextUrl.clone()
+            url.pathname = '/finish-setup'
+            url.search = ''
+            return NextResponse.redirect(url)
+        }
+    }
+
     return supabaseResponse
 }
