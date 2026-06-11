@@ -105,7 +105,7 @@ export default function PrivacyPage() {
                             <li><strong>Stripe</strong> &mdash; payment processing, wallet, escrow and referee payouts.</li>
                             <li><strong>Sentry</strong> &mdash; error monitoring and diagnostics (which may include IP address and diagnostic information).</li>
                             <li><strong>Mapbox</strong> &mdash; geocoding postcodes to approximate locations.</li>
-                            <li><strong>Resend</strong> &mdash; sending transactional and verification emails.</li>
+                            <li><strong>Make.com &amp; Zoho Mail</strong> &mdash; orchestrating and sending transactional and verification emails.</li>
                             <li><strong>Vercel</strong> &mdash; application hosting and delivery.</li>
                             <li><strong>web-push / Firebase</strong> &mdash; delivering push notifications to your device.</li>
                             <li><strong>The Football Association (FA)</strong> &mdash; safeguarding, registration and match oversight, as described above.</li>

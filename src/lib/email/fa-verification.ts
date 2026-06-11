@@ -1,25 +1,17 @@
-import { Resend } from 'resend'
 import * as Sentry from '@sentry/nextjs'
 import { createAdminClient } from '@/lib/supabase/server'
 import { sendViaMake } from './send'
 import { faVerificationHtml, faVerificationActionHtml } from './templates'
 
 /**
- * FA-number verification email to the County FA. The app renders the branded
- * HTML (src/lib/email/templates.ts, compiled from emails/fa-verification*.mjml)
- * and sends it via the Make hub as data.html; Resend is the transition fallback.
- * With a one-click token (admin createFAVerificationRequest flow) the buttoned
- * variant is used; without one (signup / manual send) the reply-to-confirm
- * variant is used.
+ * FA-number verification email to the County FA. Rendered in-app and sent via
+ * the Make → Zoho hub (data.html). Make is the SOLE transport — no fallback;
+ * a misconfigured hub is logged to Sentry. With a one-click token (admin
+ * createFAVerificationRequest flow) the buttoned variant is used; without one
+ * (signup / manual send) the reply-to-confirm variant is used.
  */
 
 const FALLBACK_RECIPIENT = 'tom@onesignanddigital.com'
-
-function getResend() {
-    const apiKey = process.env.RESEND_API_KEY
-    if (!apiKey) throw new Error('RESEND_API_KEY not configured')
-    return new Resend(apiKey)
-}
 
 function getBaseUrl(): string {
     if (process.env.NEXT_PUBLIC_SITE_URL) return process.env.NEXT_PUBLIC_SITE_URL
@@ -99,30 +91,20 @@ export async function sendFAVerificationEmail({
             html = faVerificationHtml({ refereeName, faId, county: countyLabel })
         }
 
-        // Prefer the Make email hub; Resend is the transition fallback.
-        const viaMake = await sendViaMake({
+        const outcome = await sendViaMake({
             type: 'fa_verification',
             to,
             subject,
             data: { html },
         })
-        if (viaMake === 'sent') return { success: true, recipient: to, isFallback }
+        if (outcome === 'sent') return { success: true, recipient: to, isFallback }
 
-        const resend = getResend()
-        const { error } = await resend.emails.send({
-            from: 'Whistle Connect <onboarding@resend.dev>',
-            to: [to],
-            subject,
-            html,
+        console.error('[fa-verification] email not sent via Make hub:', outcome)
+        Sentry.captureMessage('FA verification email not sent', {
+            level: 'error',
+            tags: { 'fa.email.send': outcome },
         })
-
-        if (error) {
-            console.error('Resend error:', error)
-            Sentry.captureException(error, { tags: { 'fa.email.send': 'failed' } })
-            return { success: false, error: 'Failed to send email' }
-        }
-
-        return { success: true, recipient: to, isFallback }
+        return { success: false, error: 'Failed to send email' }
     } catch (err) {
         console.error('FA verification email error:', err)
         Sentry.captureException(err, { tags: { 'fa.email.send': 'threw' } })
