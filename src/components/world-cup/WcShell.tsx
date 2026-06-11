@@ -9,15 +9,21 @@ import Link from 'next/link'
 export function WcShell({ children }: { children: React.ReactNode }) {
     return (
         <div className="min-h-screen bg-[var(--background)] flex flex-col">
-            <header className="bg-[var(--wc-ink)] text-white">
+            <header className="sticky top-0 z-40 bg-[var(--wc-ink)]/95 text-white backdrop-blur supports-[backdrop-filter]:bg-[var(--wc-ink)]/80">
                 <div className="h-1 bg-[var(--wc-red)]" />
-                <div className="max-w-[var(--content-max-width)] mx-auto w-full px-4 py-3 flex items-center justify-between">
-                    <Link href="/world-cup" className="flex items-center gap-3">
-                        <Image src="/assets/logo-main-white.svg" alt="Whistle Connect" width={128} height={44} priority />
+                <div className="mx-auto w-full max-w-4xl px-4 py-3 flex items-center justify-between gap-3">
+                    <Link href="/world-cup" className="flex items-center gap-2.5">
+                        <Image src="/assets/logo-main-white.svg" alt="Whistle Connect" width={120} height={42} priority />
+                        <span className="hidden sm:inline wc-display text-sm leading-none text-white/55">World Cup</span>
                     </Link>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-white/55">
-                        World Cup 2026
-                    </span>
+                    <nav className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider">
+                        <Link href="/world-cup/tracker" className="rounded-full px-3 py-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white">
+                            Tracker
+                        </Link>
+                        <Link href="/world-cup/sweepstake" className="rounded-full bg-[var(--wc-red)] px-3 py-1.5 text-white transition-transform hover:-translate-y-0.5">
+                            Sweepstake
+                        </Link>
+                    </nav>
                 </div>
             </header>
 

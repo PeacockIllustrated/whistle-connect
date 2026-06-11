@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { addParticipant, removeParticipant, runDraw, deleteSweepstake } from '@/lib/world-cup/actions'
 import { WC_2026_TEAMS } from '@/lib/world-cup/teams-2026'
+import { isoForFifa } from '@/lib/world-cup/flags'
+import { FlagImage } from '@/components/world-cup/TeamBits'
 
 // ── Draft editor (before the draw) ───────────────────────────────────────────
 
@@ -132,14 +134,15 @@ function DrawOverlay() {
                 <Shuffle className="h-8 w-8" />
             </motion.span>
             <p className="mt-6 text-sm font-semibold uppercase tracking-widest text-white/60">Drawing the teams</p>
-            <motion.p
+            <motion.div
                 key={team.code}
                 initial={{ y: 8, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                className="mt-2 text-3xl font-extrabold text-white"
+                className="mt-3 flex items-center gap-3"
             >
-                {team.name}
-            </motion.p>
+                <FlagImage countryCode={isoForFifa(team.code)} code={team.code} height={30} />
+                <span className="wc-display text-4xl sm:text-5xl text-white">{team.name}</span>
+            </motion.div>
         </motion.div>
     )
 }

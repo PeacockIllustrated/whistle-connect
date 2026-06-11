@@ -24,7 +24,7 @@ export default async function ManageSweepstakePage({ params }: { params: Promise
                     <ArrowLeft className="h-4 w-4" /> Your sweepstakes
                 </Link>
 
-                <h1 className="mt-3 text-2xl font-bold text-[var(--foreground)]">{sweepstake.name}</h1>
+                <h1 className="wc-display mt-3 text-3xl sm:text-4xl text-[var(--foreground)]">{sweepstake.name}</h1>
 
                 {drawn ? (
                     <>

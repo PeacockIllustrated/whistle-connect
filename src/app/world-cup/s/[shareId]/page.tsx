@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { Shuffle, Radio } from 'lucide-react'
 import { WcShell } from '@/components/world-cup/WcShell'
 import { Leaderboard } from '@/components/world-cup/Leaderboard'
+import { ChampionBanner } from '@/components/world-cup/ChampionBanner'
 import { createClient } from '@/lib/supabase/server'
 import { getSweepstakeByShareId } from '@/lib/world-cup/data'
 import { ClaimPanel } from './ClaimPanel'
@@ -26,6 +27,7 @@ export default async function PublicSweepstakePage({ params }: { params: Promise
 
     const { sweepstake, leaderboard } = detail
     const aliveCount = leaderboard.flatMap((r) => r.teams).filter((t) => !t.eliminated).length
+    const champion = leaderboard.flatMap((r) => r.teams).find((t) => t.stage === 'champion') ?? null
 
     const { data: { user } } = await (await createClient()).auth.getUser()
 
@@ -35,30 +37,39 @@ export default async function PublicSweepstakePage({ params }: { params: Promise
 
     return (
         <WcShell>
-            <div className="max-w-[var(--content-max-width)] mx-auto px-4 py-8">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                            <Radio className="h-3.5 w-3.5" /> Live
-                        </span>
-                        <h1 className="mt-2 text-2xl sm:text-3xl font-bold text-[var(--foreground)]">{sweepstake.name}</h1>
-                        <p className="mt-1 text-sm text-[var(--foreground-muted)]">
-                            {leaderboard.length} players · {aliveCount} teams still standing
-                        </p>
+            {/* Promo header band */}
+            <section className="relative overflow-hidden bg-[var(--wc-ink)] text-white">
+                <div className="absolute inset-0 wc-pitch-grid opacity-50" aria-hidden />
+                <div className="absolute inset-0 wc-stripes opacity-30" aria-hidden />
+                <div className="relative mx-auto w-full max-w-3xl px-4 py-9">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="min-w-0">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-2.5 py-1 text-xs font-bold text-emerald-300 ring-1 ring-emerald-400/30">
+                                <Radio className="h-3.5 w-3.5" /> Live
+                            </span>
+                            <h1 className="wc-display mt-3 text-4xl sm:text-5xl">{sweepstake.name}</h1>
+                            <p className="mt-2 text-sm text-white/70">
+                                {leaderboard.length} players · {aliveCount} teams still standing
+                            </p>
+                        </div>
+                        <Link
+                            href="/world-cup/sweepstake"
+                            className="inline-flex items-center gap-2 rounded-xl bg-[var(--wc-red)] px-4 py-2.5 text-sm font-extrabold text-white shadow transition-transform hover:-translate-y-0.5"
+                        >
+                            <Shuffle className="h-4 w-4" /> Run your own
+                        </Link>
                     </div>
-                    <Link
-                        href="/world-cup/sweepstake"
-                        className="inline-flex items-center gap-2 rounded-xl bg-[var(--wc-red)] px-4 py-2.5 text-sm font-bold text-white shadow transition-transform hover:-translate-y-0.5"
-                    >
-                        <Shuffle className="h-4 w-4" /> Run your own
-                    </Link>
                 </div>
+            </section>
 
-                {leaderboard.length > 0 && (
-                    <div className="mt-6">
-                        <Leaderboard rows={leaderboard} />
+            <div className="mx-auto w-full max-w-3xl px-4 py-8">
+                {champion && (
+                    <div className="mb-6">
+                        <ChampionBanner team={champion} />
                     </div>
                 )}
+
+                {leaderboard.length > 0 && <Leaderboard rows={leaderboard} />}
 
                 {unclaimed.length > 0 && (
                     <div className="mt-8">

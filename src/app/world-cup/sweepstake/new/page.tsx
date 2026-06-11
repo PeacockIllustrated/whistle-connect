@@ -18,7 +18,7 @@ export default async function NewSweepstakePage() {
     return (
         <WcShell>
             <div className="max-w-lg mx-auto px-4 py-8">
-                <h1 className="text-2xl font-bold text-[var(--foreground)]">New sweepstake</h1>
+                <h1 className="wc-display text-3xl text-[var(--foreground)]">New sweepstake</h1>
                 <p className="mt-1 text-[var(--foreground-muted)]">
                     Name it, add everyone playing, then draw the teams. You can tweak players
                     right up until you draw.

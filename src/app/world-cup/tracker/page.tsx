@@ -4,7 +4,9 @@ import { Shuffle } from 'lucide-react'
 import { WcShell } from '@/components/world-cup/WcShell'
 import { GroupTable } from '@/components/world-cup/GroupTable'
 import { Bracket } from '@/components/world-cup/Bracket'
-import { getGroups, getMatches, getTeams } from '@/lib/world-cup/data'
+import { ChampionBanner } from '@/components/world-cup/ChampionBanner'
+import { NationsTicker } from '@/components/world-cup/NationsTicker'
+import { getGroups, getMatches, getTeams, getChampion } from '@/lib/world-cup/data'
 import type { WcTeam } from '@/lib/world-cup/types'
 
 export const metadata: Metadata = {
@@ -12,14 +14,14 @@ export const metadata: Metadata = {
     description: 'Live group standings and the full knockout bracket for the 2026 FIFA World Cup. Free from Whistle Connect.',
 }
 
-// Live tournament data — render per request (the page reads auth cookies).
 export const dynamic = 'force-dynamic'
 
 export default async function TrackerPage() {
-    const [groups, teams, knockout] = await Promise.all([
+    const [groups, teams, knockout, champion] = await Promise.all([
         getGroups(),
         getTeams(),
         getMatches(),
+        getChampion(),
     ])
 
     const teamByCode = new Map<string, WcTeam>(teams.map((t) => [t.code, t]))
@@ -27,28 +29,43 @@ export default async function TrackerPage() {
 
     return (
         <WcShell>
-            <div className="max-w-[var(--content-max-width)] mx-auto px-4 py-8">
-                <div className="flex flex-wrap items-end justify-between gap-3">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-[var(--foreground)]">World Cup 2026 tracker</h1>
-                        <p className="mt-1 text-[var(--foreground-muted)]">12 groups, 104 matches, one champion.</p>
+            {/* Promo header band */}
+            <section className="relative overflow-hidden bg-[var(--wc-ink)] text-white">
+                <div className="absolute inset-0 wc-pitch-grid opacity-50" aria-hidden />
+                <div className="absolute inset-0 wc-stripes opacity-30" aria-hidden />
+                <div className="relative mx-auto w-full max-w-4xl px-4 py-9">
+                    <div className="flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-white/55">World Cup 2026</p>
+                            <h1 className="wc-display mt-1 text-4xl sm:text-5xl">The Tracker</h1>
+                            <p className="mt-2 text-sm text-white/70">12 groups · 104 matches · one trophy.</p>
+                        </div>
+                        <Link
+                            href="/world-cup/sweepstake"
+                            className="inline-flex items-center gap-2 rounded-xl bg-[var(--wc-red)] px-4 py-2.5 text-sm font-extrabold text-white shadow transition-transform hover:-translate-y-0.5"
+                        >
+                            <Shuffle className="h-4 w-4" /> Run a sweepstake
+                        </Link>
                     </div>
-                    <Link
-                        href="/world-cup/sweepstake"
-                        className="inline-flex items-center gap-2 rounded-xl bg-[var(--wc-red)] px-4 py-2.5 text-sm font-bold text-white shadow transition-transform hover:-translate-y-0.5"
-                    >
-                        <Shuffle className="h-4 w-4" /> Run a sweepstake
-                    </Link>
                 </div>
+                <NationsTicker tone="dark" />
+            </section>
+
+            <div className="mx-auto w-full max-w-4xl px-4 py-8">
+                {champion && (
+                    <div className="mb-8">
+                        <ChampionBanner team={champion} />
+                    </div>
+                )}
 
                 {groups.length === 0 ? (
-                    <div className="mt-10 rounded-[var(--radius-lg)] border border-dashed border-[var(--border-color)] p-10 text-center text-[var(--foreground-muted)]">
+                    <div className="rounded-[var(--radius-lg)] border border-dashed border-[var(--border-color)] p-10 text-center text-[var(--foreground-muted)]">
                         Tournament data is loading. Check back shortly.
                     </div>
                 ) : (
                     <>
-                        <section className="mt-8">
-                            <h2 className="mb-3 text-lg font-bold text-[var(--foreground)]">Group stage</h2>
+                        <section>
+                            <h2 className="wc-display mb-4 text-2xl text-[var(--foreground)]">Group stage</h2>
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 {groups.map((g) => (
                                     <GroupTable key={g.letter} letter={g.letter} teams={g.teams} />
@@ -60,7 +77,7 @@ export default async function TrackerPage() {
                         </section>
 
                         <section className="mt-10">
-                            <h2 className="mb-3 text-lg font-bold text-[var(--foreground)]">Knockout bracket</h2>
+                            <h2 className="wc-display mb-4 text-2xl text-[var(--foreground)]">Knockout bracket</h2>
                             <Bracket matches={knockoutMatches} teamByCode={teamByCode} />
                         </section>
                     </>

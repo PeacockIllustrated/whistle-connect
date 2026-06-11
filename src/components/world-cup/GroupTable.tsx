@@ -5,8 +5,9 @@ import { cn } from '@/lib/utils'
 export function GroupTable({ letter, teams }: { letter: string; teams: WcTeam[] }) {
     return (
         <div className="rounded-[var(--radius-lg)] border border-[var(--border-color)] bg-white overflow-hidden">
-            <div className="flex items-center gap-2 bg-[var(--wc-ink)] px-3 py-2 text-white">
-                <span className="text-sm font-bold">Group {letter}</span>
+            <div className="flex items-center justify-between gap-2 bg-[var(--wc-ink)] px-3 py-2 text-white">
+                <span className="wc-display text-lg leading-none">Group {letter}</span>
+                <span className="h-1.5 w-8 rounded-full bg-[var(--wc-red)]" aria-hidden />
             </div>
             <table className="w-full text-sm">
                 <thead>
@@ -26,6 +27,7 @@ export function GroupTable({ letter, teams }: { letter: string; teams: WcTeam[] 
                                 key={t.code}
                                 className={cn(
                                     'border-t border-[var(--border-color)]',
+                                    qualifying && !t.eliminated && 'bg-emerald-50/60',
                                     t.eliminated && 'opacity-50',
                                 )}
                             >

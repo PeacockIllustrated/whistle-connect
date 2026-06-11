@@ -20,7 +20,7 @@ export default async function SweepstakeHubPage() {
                     <span className="mx-auto inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--wc-red)]/10 text-[var(--wc-red)]">
                         <Shuffle className="h-7 w-7" />
                     </span>
-                    <h1 className="mt-4 text-2xl font-bold text-[var(--foreground)]">Run a World Cup sweepstake</h1>
+                    <h1 className="wc-display mt-4 text-3xl text-[var(--foreground)]">Run a World Cup sweepstake</h1>
                     <p className="mt-2 text-[var(--foreground-muted)]">
                         Create a free account to set one up. It takes a minute — no need to be a coach
                         or referee. You can sort that out later.
@@ -50,7 +50,7 @@ export default async function SweepstakeHubPage() {
         <WcShell>
             <div className="max-w-[var(--content-max-width)] mx-auto px-4 py-8">
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <h1 className="text-2xl font-bold text-[var(--foreground)]">Your sweepstakes</h1>
+                    <h1 className="wc-display text-3xl text-[var(--foreground)]">Your sweepstakes</h1>
                     <Link
                         href="/world-cup/sweepstake/new"
                         className="inline-flex items-center gap-2 rounded-xl bg-[var(--wc-red)] px-4 py-2.5 text-sm font-bold text-white shadow transition-transform hover:-translate-y-0.5"
