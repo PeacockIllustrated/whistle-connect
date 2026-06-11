@@ -119,13 +119,17 @@ export default function BookingMatchPage({ params }: Props) {
                         <span>Distance unavailable</span>
                     </div>
                 )}
+                <div className="flex justify-between pt-1 border-t border-[var(--border-color)] text-green-700 font-semibold">
+                    <span>Referee receives</span>
+                    <span>{fmtPrice(feePence + travelPence)}</span>
+                </div>
                 <div className="flex justify-between">
-                    <span className="text-[var(--foreground-muted)]">Booking fee</span>
+                    <span className="text-[var(--foreground-muted)]">Booking fee → Whistle Connect</span>
                     <span className="font-medium">{fmtPrice(BOOKING_FEE_PENCE)}</span>
                 </div>
                 <div className="flex justify-between pt-1 border-t border-[var(--border-color)] font-semibold">
                     <span>Total to coach</span>
-                    <span className="text-green-700">{fmtPrice(totalPence)}</span>
+                    <span>{fmtPrice(totalPence)}</span>
                 </div>
             </div>
         )

@@ -10,7 +10,7 @@ import { acceptOffer, declineOffer, cancelBooking, completeBooking } from '../ac
 import { expressInterest } from '@/app/app/feed/actions'
 import { Siren } from 'lucide-react'
 import { BookingOffer, BookingWithDetails } from '@/lib/types'
-import { BOOKING_FEE_PENCE } from '@/lib/constants'
+import { BOOKING_FEE_PENCE, SOS_FEE_PENCE } from '@/lib/constants'
 // Input no longer needed — referee doesn't set price
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { RatingModal } from '@/components/app/RatingModal'
@@ -319,6 +319,10 @@ export function BookingActions({
                             )}
                         </div>
                     )}
+
+                    <p className="mt-3 text-[11px] text-green-700/80 text-center">
+                        This is your full payout. The &pound;{(BOOKING_FEE_PENCE / 100).toFixed(2)} booking fee is paid by the coach to Whistle Connect and isn&apos;t taken from your fee.
+                    </p>
                 </div>
 
                 <Button
@@ -403,8 +407,20 @@ export function BookingActions({
                         ? (booking.assignment?.referee?.full_name || 'The referee')
                         : (booking.coach?.full_name || 'The coach')
                     const youAction = isCoach ? 'release' : 'receive'
-                    const escrowDisplay = booking.escrow_amount_pence != null
-                        ? `£${(booking.escrow_amount_pence / 100).toFixed(2)}`
+                    // The figure in these prompts is what the REFEREE receives:
+                    // match fee + travel (their offer purse). The £1 booking fee
+                    // (and any SOS premium) is held in escrow on top and goes to
+                    // Whistle Connect — it is NOT part of the referee's payout, so
+                    // never surface the gross escrow_amount here.
+                    const assignedRefId = booking.assignment?.referee_id
+                    const refereePayoutPence =
+                        (isReferee ? userOffer?.price_pence : null)
+                        ?? booking.offers?.find((o) => o.referee_id === assignedRefId)?.price_pence
+                        ?? (booking.escrow_amount_pence != null
+                            ? Math.max(0, booking.escrow_amount_pence - BOOKING_FEE_PENCE - (booking.is_sos ? SOS_FEE_PENCE : 0))
+                            : null)
+                    const payoutDisplay = refereePayoutPence != null
+                        ? `£${(refereePayoutPence / 100).toFixed(2)}`
                         : 'the match fee'
 
                     // Both confirmed — escrow is releasing on the next cron tick. Hide button.
@@ -416,7 +432,7 @@ export function BookingActions({
                                     <div className="flex-1">
                                         <p className="text-sm font-semibold text-emerald-900">Both parties confirmed</p>
                                         <p className="text-xs text-emerald-800 mt-0.5">
-                                            {escrowDisplay} is releasing to {isCoach ? 'the referee' : 'your wallet'} now. Raise a dispute immediately if there&apos;s a problem.
+                                            {payoutDisplay} is releasing to {isCoach ? 'the referee' : 'your wallet'} now. Raise a dispute immediately if there&apos;s a problem.
                                         </p>
                                     </div>
                                 </div>
@@ -433,7 +449,7 @@ export function BookingActions({
                                     <div className="flex-1">
                                         <p className="text-sm font-semibold text-amber-900">You confirmed — waiting on {otherLabel}</p>
                                         <p className="text-xs text-amber-800 mt-0.5">
-                                            {escrowDisplay} auto-releases 48 hours after kickoff if {otherLabel.toLowerCase()} doesn&apos;t confirm.
+                                            {payoutDisplay} auto-releases 48 hours after kickoff if {otherLabel.toLowerCase()} doesn&apos;t confirm.
                                         </p>
                                     </div>
                                 </div>
@@ -443,11 +459,11 @@ export function BookingActions({
 
                     // Other marked, you haven't yet — show "confirm now" prompt
                     const buttonLabel = otherMarked
-                        ? `${otherLabel} confirmed — confirm to ${youAction} ${escrowDisplay} now`
-                        : `Confirm match — ${youAction} ${escrowDisplay}`
+                        ? `${otherLabel} confirmed — confirm to ${youAction} ${payoutDisplay} now`
+                        : `Confirm match — ${youAction} ${payoutDisplay}`
                     const dialogMessage = otherMarked
-                        ? `${otherLabel} has confirmed completion. Confirming releases ${escrowDisplay} ${isCoach ? `to ${otherLabel}` : 'to your wallet'} immediately.`
-                        : `Confirming locks in ${escrowDisplay} ${
+                        ? `${otherLabel} has confirmed completion. Confirming releases ${payoutDisplay} ${isCoach ? `to ${otherLabel}` : 'to your wallet'} immediately.`
+                        : `Confirming locks in ${payoutDisplay} ${
                             isCoach ? `to release to ${otherLabel}` : 'to come to your wallet'
                           }. ${otherLabel} must also confirm to release the funds — or escrow auto-releases 48 hours after kickoff.`
 
