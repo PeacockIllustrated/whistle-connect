@@ -144,6 +144,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
         return
     }
 
+    // Only credit once the payment has actually settled. Card checkout settles
+    // synchronously (payment_status='paid' by the time this fires), but an async
+    // method (e.g. bank debit) can complete the *session* while the payment is
+    // still 'unpaid' — crediting then would hand out wallet funds before the
+    // money clears. Stripe re-fires checkout.session.completed /
+    // async_payment_succeeded once paid, and the webhook_events retry path
+    // re-runs us, so skipping here is safe.
+    if (session.payment_status !== 'paid') {
+        console.log(`[Webhook] Skipping top-up credit for session ${session.id} — payment_status=${session.payment_status}`)
+        return
+    }
+
     const userId = session.metadata.supabase_user_id
     const desiredAmountPence = parseInt(session.metadata.desired_amount_pence, 10)
 
@@ -186,7 +198,13 @@ async function handleAccountUpdated(account: Stripe.Account) {
     const userId = account.metadata?.supabase_user_id
     if (!userId) return
 
-    const isOnboarded = account.charges_enabled && account.payouts_enabled
+    // Referee Express accounts are created transfers-only (capabilities:
+    // { transfers }, no card_payments), so charges_enabled stays false for a
+    // perfectly payout-ready account. The correct readiness signal for a
+    // separate-charges-and-transfers payout model is payouts_enabled — gating
+    // on charges_enabled would permanently block refs whose accounts can
+    // receive transfers and pay out but cannot accept direct charges.
+    const isOnboarded = !!account.payouts_enabled
 
     const supabase = createAdminClient()
     if (!supabase) {
