@@ -35,7 +35,7 @@ export function GenericSignupForm({ claimToken, returnTo }: { claimToken?: strin
             return
         }
         if (result?.message) {
-            // Email confirmation required — they'll claim their spot after confirming.
+            // Email confirmation required - they'll claim their spot after confirming.
             setMessage(result.message)
             setLoading(false)
             return

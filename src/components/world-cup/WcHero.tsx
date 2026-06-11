@@ -56,7 +56,7 @@ export function WcHero({ champion }: { champion?: string | null }) {
 
                 <motion.p variants={item} className="mt-6 max-w-xl text-base sm:text-lg leading-relaxed text-white/75">
                     Draw all 48 nations out to your mates, watch a live points leaderboard
-                    climb to the final, and share it with one link. Free, no catch — from
+                    climb to the final, and share it with one link. Free, no catch, from
                     Whistle Connect.
                 </motion.p>
 

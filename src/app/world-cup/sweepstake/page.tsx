@@ -22,8 +22,8 @@ export default async function SweepstakeHubPage() {
                     </span>
                     <h1 className="wc-display mt-4 text-3xl text-[var(--foreground)]">Run a World Cup sweepstake</h1>
                     <p className="mt-2 text-[var(--foreground-muted)]">
-                        Create a free account to set one up. It takes a minute — no need to be a coach
-                        or referee. You can sort that out later.
+                        Create a free account to set one up. It takes a minute, and there&apos;s no need
+                        to be a coach or referee. You can sort that out later.
                     </p>
                     <div className="mt-6 space-y-3">
                         <Link

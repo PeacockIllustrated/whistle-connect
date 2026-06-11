@@ -3,13 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, X, Shuffle, Share2, Check, Trash2, ExternalLink, Trophy } from 'lucide-react'
+import { Plus, X, Shuffle, Share2, Check, Trash2, ExternalLink, Trophy, ListChecks } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { addParticipant, removeParticipant, runDraw, deleteSweepstake } from '@/lib/world-cup/actions'
 import { WC_2026_TEAMS } from '@/lib/world-cup/teams-2026'
 import { isoForFifa } from '@/lib/world-cup/flags'
 import { FlagImage } from '@/components/world-cup/TeamBits'
+import { ManualAssignPanel } from './ManualAssignPanel'
 
 // ── Draft editor (before the draw) ───────────────────────────────────────────
 
@@ -25,6 +26,7 @@ export function DraftEditor({
     const [busy, setBusy] = useState(false)
     const [error, setError] = useState('')
     const [drawing, setDrawing] = useState(false)
+    const [manual, setManual] = useState(false)
 
     async function add() {
         const name = newName.trim()
@@ -54,6 +56,10 @@ export function DraftEditor({
         }
         // Let the reveal animation play, then load the leaderboard.
         setTimeout(() => router.refresh(), 1600)
+    }
+
+    if (manual) {
+        return <ManualAssignPanel sweepstakeId={sweepstakeId} entries={entries} onCancel={() => setManual(false)} />
     }
 
     return (
@@ -95,12 +101,15 @@ export function DraftEditor({
                 </div>
             </div>
 
-            <div className="mt-5">
+            <div className="mt-5 space-y-2">
                 <Button type="button" onClick={draw} fullWidth size="lg" variant="accent" icon={<Shuffle className="h-5 w-5" />}>
-                    Run the draw
+                    Run the random draw
                 </Button>
-                <p className="mt-2 text-center text-xs text-[var(--foreground-muted)]">
-                    Teams are dealt out at random, as evenly as possible.
+                <Button type="button" onClick={() => setManual(true)} fullWidth size="lg" variant="outline" icon={<ListChecks className="h-5 w-5" />}>
+                    Assign teams manually
+                </Button>
+                <p className="mt-1 text-center text-xs text-[var(--foreground-muted)]">
+                    Deal all 48 teams out at random, or set each player&apos;s teams yourself if you&apos;ve already picked.
                 </p>
             </div>
 
@@ -172,7 +181,7 @@ export function ShareBar({ shareId }: { shareId: string }) {
             <div className="flex items-center gap-2 text-sm font-semibold text-[var(--foreground)]">
                 <Share2 className="h-4 w-4 text-[var(--wc-red)]" /> Share the live leaderboard
             </div>
-            <p className="mt-1 text-xs text-[var(--foreground-muted)]">Anyone with this link can follow along — no account needed.</p>
+            <p className="mt-1 text-xs text-[var(--foreground-muted)]">Anyone with this link can follow along. No account needed.</p>
             <div className="mt-3 flex items-center gap-2">
                 <input
                     readOnly
@@ -217,6 +226,9 @@ export function ManageActions({ sweepstakeId }: { sweepstakeId: string }) {
 
     return (
         <div className="flex flex-wrap items-center gap-3 border-t border-[var(--border-color)] pt-4">
+            <button onClick={() => router.push(`/world-cup/sweepstake/${sweepstakeId}?edit=manual`)} disabled={busy} className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-50">
+                <ListChecks className="h-4 w-4" /> Edit teams
+            </button>
             <button onClick={redraw} disabled={busy} className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--foreground)] disabled:opacity-50">
                 <Trophy className="h-4 w-4" /> Re-draw teams
             </button>

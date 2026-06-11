@@ -1,5 +1,5 @@
 // ============================================================================
-// 2026 FIFA World Cup — the 48 qualified teams and their group draw.
+// 2026 FIFA World Cup - the 48 qualified teams and their group draw.
 //
 // Canonical, baked-in list so the tracker + sweepstake draw work immediately
 // with zero external dependency. Group composition confirmed 2026-06-11 (Al

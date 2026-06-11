@@ -5,7 +5,7 @@ import { WcShell } from '@/components/world-cup/WcShell'
 import { createClient } from '@/lib/supabase/server'
 import { GenericSignupForm } from './GenericSignupForm'
 
-export const metadata: Metadata = { title: 'Join — World Cup sweepstake | Whistle Connect' }
+export const metadata: Metadata = { title: 'Join the World Cup sweepstake | Whistle Connect' }
 
 export default async function WorldCupSignupPage({
     searchParams,
@@ -17,7 +17,7 @@ export default async function WorldCupSignupPage({
         ? returnTo
         : '/world-cup/sweepstake/new'
 
-    // Already signed in — no need to create another account.
+    // Already signed in - no need to create another account.
     const { data: { user } } = await (await createClient()).auth.getUser()
     if (user) redirect(safeReturn)
 
@@ -27,7 +27,7 @@ export default async function WorldCupSignupPage({
                 <h1 className="text-2xl font-bold text-[var(--foreground)]">Create your free account</h1>
                 <p className="mt-1 text-[var(--foreground-muted)]">
                     Just the basics to get you into the sweepstake. No need to pick coach or
-                    referee now — you can finish that later if you ever want the full app.
+                    referee now. You can finish that later if you ever want the full app.
                 </p>
                 <div className="mt-6">
                     <GenericSignupForm claimToken={claim} returnTo={safeReturn} />

@@ -1,10 +1,11 @@
-import { Anton } from 'next/font/google'
+import { Barlow_Semi_Condensed } from 'next/font/google'
 
-// Heavy condensed poster face — the promo/display voice for the World Cup
-// section only. Exposed as --font-wc-display and consumed by the .wc-display
-// utility (globals.css). Body copy stays Inter.
-const wcDisplay = Anton({
-    weight: '400',
+// Display voice for the World Cup section: a bold, rounded, semi-condensed face
+// that keeps poster impact but sits closer to the Whistle Connect logo wordmark
+// than a harsh condensed face would. Exposed as --font-wc-display and consumed
+// by the .wc-display utility (globals.css). Body copy stays Inter.
+const wcDisplay = Barlow_Semi_Condensed({
+    weight: ['700', '800'],
     subsets: ['latin'],
     variable: '--font-wc-display',
     display: 'swap',

@@ -1,5 +1,5 @@
 // ============================================================================
-// Tournament sync — seed the 48 teams and pull live results.
+// Tournament sync - seed the 48 teams and pull live results.
 //
 // Source of truth for STRUCTURE (teams + groups) is the baked-in WC_2026_TEAMS.
 // Source for RESULTS is the public-domain openfootball feed (no API key). The
@@ -7,7 +7,7 @@
 // from finished matches, which in turn drives the sweepstake leaderboard.
 //
 // football-data.org can be layered in later for fresher scores (optional, key
-// required) — wc_matches.stats is reserved for the richer fields it provides.
+// required) - wc_matches.stats is reserved for the richer fields it provides.
 // ============================================================================
 
 import type { SupabaseClient } from '@supabase/supabase-js'

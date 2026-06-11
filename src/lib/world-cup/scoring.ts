@@ -58,10 +58,13 @@ export function buildLeaderboard(
 
     const rows: LeaderboardRow[] = entries.map((entry) => {
         const teams = teamsByEntry.get(entry.id) ?? []
-        const points = teams.reduce((sum, t) => sum + teamPoints(t, scoring), 0)
+        const contributions = teams
+            .map((team) => ({ team, points: teamPoints(team, scoring) }))
+            .sort((a, b) => b.points - a.points)
+        const points = contributions.reduce((sum, c) => sum + c.points, 0)
         const knockedOut = teams.length > 0 && teams.every((t) => t.eliminated)
         const hasChampion = teams.some((t) => t.stage === 'champion')
-        return { entry, teams, points, knockedOut, hasChampion }
+        return { entry, teams, points, contributions, knockedOut, hasChampion }
     })
 
     rows.sort((a, b) => {
@@ -79,7 +82,7 @@ export function buildLeaderboard(
 /**
  * Deal already-shuffled team codes across N entries as evenly as possible
  * (snake order so any remainder is spread, not dumped on the first players).
- * Pure + deterministic for a given input — the caller shuffles the team list.
+ * Pure + deterministic for a given input - the caller shuffles the team list.
  */
 export function dealTeams(shuffledTeamCodes: string[], entryCount: number): string[][] {
     const buckets: string[][] = Array.from({ length: entryCount }, () => [])

@@ -6,7 +6,7 @@ import { UserCheck } from 'lucide-react'
 import { claimEntry } from '@/lib/world-cup/actions'
 
 /**
- * "This is me" — lets a viewer attach their account to an unclaimed spot. Logged
+ * "This is me" - lets a viewer attach their account to an unclaimed spot. Logged
  * out, it routes through the generic signup (the growth funnel). Logged in, it
  * claims directly.
  */
@@ -43,7 +43,7 @@ export function ClaimPanel({
                 <UserCheck className="h-4 w-4 text-[var(--wc-blue)]" /> One of these you?
             </h2>
             <p className="mt-1 text-xs text-[var(--foreground-muted)]">
-                Claim your spot to follow your teams — and unlock the full Whistle Connect app.
+                Claim your spot to follow your teams, and unlock the full Whistle Connect app.
             </p>
             {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             <div className="mt-3 flex flex-wrap gap-2">

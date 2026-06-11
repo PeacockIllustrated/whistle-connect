@@ -1,5 +1,5 @@
 // ============================================================================
-// Flag rendering. We use flag IMAGES (flagcdn.com), never emoji — emoji flags
+// Flag rendering. We use flag IMAGES (flagcdn.com), never emoji - emoji flags
 // don't render on Windows and the project bans emoji in the UI.
 //
 // country_code is stored on wc_teams (ISO 3166-1 alpha-2, lower-case; the UK

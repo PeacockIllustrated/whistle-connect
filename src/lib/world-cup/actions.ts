@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { dealTeams, shuffle } from './scoring'
+import { WC_2026_TEAMS } from './teams-2026'
 import type { WcSweepstakeEntry } from './types'
 
 const ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -108,6 +109,66 @@ export async function runDraw(sweepstakeId: string) {
     }
 
     await supabase.from('wc_sweepstakes').update({ status: 'drawn', updated_at: new Date().toISOString() }).eq('id', sweepstakeId)
+
+    revalidatePath(`/world-cup/sweepstake/${sweepstakeId}`)
+    return { success: true }
+}
+
+/**
+ * Manually set who holds which teams - for groups who've already drawn out of a
+ * hat and just want to record it. Replaces any existing assignment. Teams may be
+ * left unassigned (spares); a team can't be assigned to two players. Organiser-only.
+ */
+export async function setManualAssignments(
+    sweepstakeId: string,
+    assignments: { entryId: string; teamCodes: string[] }[],
+) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { error: 'Unauthorized' }
+
+    const { data: sweepstake } = await supabase
+        .from('wc_sweepstakes')
+        .select('id, organiser_id')
+        .eq('id', sweepstakeId)
+        .maybeSingle()
+    if (!sweepstake || sweepstake.organiser_id !== user.id) return { error: 'Sweepstake not found' }
+
+    // Only assign to entries that actually belong to this sweepstake.
+    const { data: entries } = await supabase
+        .from('wc_sweepstake_entries')
+        .select('id')
+        .eq('sweepstake_id', sweepstakeId)
+    const validEntryIds = new Set(((entries as { id: string }[] | null) ?? []).map((e) => e.id))
+
+    const validCodes = new Set(WC_2026_TEAMS.map((t) => t.code))
+    const seen = new Set<string>()
+    const rows: { sweepstake_id: string; entry_id: string; team_code: string }[] = []
+
+    for (const a of assignments) {
+        if (!validEntryIds.has(a.entryId)) continue
+        for (const code of a.teamCodes) {
+            if (!validCodes.has(code)) return { error: `Unknown team: ${code}` }
+            if (seen.has(code)) return { error: `${code} is assigned to more than one player` }
+            seen.add(code)
+            rows.push({ sweepstake_id: sweepstakeId, entry_id: a.entryId, team_code: code })
+        }
+    }
+
+    // Replace the whole assignment atomically-ish: clear then insert.
+    await supabase.from('wc_sweepstake_entry_teams').delete().eq('sweepstake_id', sweepstakeId)
+    if (rows.length > 0) {
+        const { error } = await supabase.from('wc_sweepstake_entry_teams').insert(rows)
+        if (error) {
+            console.error('setManualAssignments insert error:', error)
+            return { error: 'Could not save the assignments. Please try again.' }
+        }
+    }
+
+    await supabase
+        .from('wc_sweepstakes')
+        .update({ status: 'drawn', updated_at: new Date().toISOString() })
+        .eq('id', sweepstakeId)
 
     revalidatePath(`/world-cup/sweepstake/${sweepstakeId}`)
     return { success: true }

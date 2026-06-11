@@ -1,6 +1,6 @@
 import { Crown, Trophy } from 'lucide-react'
 import type { LeaderboardRow } from '@/lib/world-cup/types'
-import { TeamPill } from './TeamBits'
+import { TeamPill, FlagImage } from './TeamBits'
 import { cn } from '@/lib/utils'
 
 function initials(name: string): string {
@@ -16,7 +16,16 @@ function initials(name: string): string {
 const MEDAL = ['from-amber-300 to-amber-500', 'from-slate-200 to-slate-400', 'from-orange-300 to-orange-500']
 const STEP_H = ['h-24 sm:h-28', 'h-16 sm:h-20', 'h-12 sm:h-16']
 
-/** Top-3 podium. Order on screen: 2 · 1 · 3 so the leader sits centre + tallest. */
+/** Flag height scaled by a team's share of the player's points. When nobody has
+ *  scored yet (max 0), every flag shows at a uniform small size. */
+function flagHeight(points: number, max: number): number {
+    if (max <= 0) return 14
+    return Math.round(13 + (points / max) * 17) // 13..30px
+}
+
+/** Top-3 podium. Order on screen: 2 · 1 · 3 so the leader sits centre + tallest.
+ *  Each player's flags sit behind their name, growing with how much that team
+ *  contributes to their total. */
 function Podium({ rows }: { rows: LeaderboardRow[] }) {
     const order = [rows[1], rows[0], rows[2]]
     const place = [2, 1, 3]
@@ -26,29 +35,41 @@ function Podium({ rows }: { rows: LeaderboardRow[] }) {
                 if (!row) return <div key={i} />
                 const p = place[i]
                 const leader = p === 1
+                const max = row.contributions[0]?.points ?? 0
+                const backdrop = row.contributions.slice(0, 5)
                 return (
                     <div key={row.entry.id} className="flex flex-col items-center wc-rise" style={{ animationDelay: `${i * 80}ms` }}>
                         {leader && <Crown className="mb-1 h-6 w-6 text-amber-400" />}
                         <div
                             className={cn(
-                                'flex flex-col items-center rounded-2xl bg-white px-2 py-3 text-center w-full',
+                                'relative w-full overflow-hidden rounded-2xl bg-white px-2 py-3 text-center',
                                 leader ? 'border-2 border-[var(--wc-red)] shadow-lg' : 'border border-[var(--border-color)] shadow-sm',
                             )}
                         >
-                            <span
-                                className={cn(
-                                    'flex items-center justify-center rounded-full bg-gradient-to-br text-white font-bold',
-                                    MEDAL[p - 1],
-                                    leader ? 'h-12 w-12 text-base' : 'h-10 w-10 text-sm',
-                                )}
-                            >
-                                {initials(row.entry.participant_name)}
-                            </span>
-                            <span className="mt-2 line-clamp-1 max-w-full text-xs font-bold text-[var(--foreground)]">
-                                {row.entry.participant_name}
-                            </span>
-                            <span className="mt-0.5 text-lg font-extrabold leading-none text-[var(--foreground)]">{row.points}</span>
-                            <span className="text-[10px] uppercase tracking-wide text-[var(--foreground-muted)]">pts</span>
+                            {backdrop.length > 0 && (
+                                <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-2 flex items-end justify-center gap-[3px] opacity-30">
+                                    {backdrop.map((c) => (
+                                        <FlagImage key={c.team.code} countryCode={c.team.country_code} code={c.team.code} height={flagHeight(c.points, max)} />
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="relative z-10 flex flex-col items-center">
+                                <span
+                                    className={cn(
+                                        'flex items-center justify-center rounded-full bg-gradient-to-br text-white font-bold',
+                                        MEDAL[p - 1],
+                                        leader ? 'h-12 w-12 text-base' : 'h-10 w-10 text-sm',
+                                    )}
+                                >
+                                    {initials(row.entry.participant_name)}
+                                </span>
+                                <span className="mt-2 line-clamp-1 max-w-full rounded bg-white/75 px-1 text-xs font-bold text-[var(--foreground)]">
+                                    {row.entry.participant_name}
+                                </span>
+                                <span className="mt-0.5 rounded bg-white/75 px-1 text-lg font-extrabold leading-none text-[var(--foreground)]">{row.points}</span>
+                                <span className="text-[10px] uppercase tracking-wide text-[var(--foreground-muted)]">pts</span>
+                            </div>
                         </div>
                         <div
                             className={cn(

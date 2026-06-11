@@ -10,7 +10,7 @@ import { getGroups, getMatches, getTeams, getChampion } from '@/lib/world-cup/da
 import type { WcTeam } from '@/lib/world-cup/types'
 
 export const metadata: Metadata = {
-    title: 'World Cup 2026 Tracker — groups, results & bracket | Whistle Connect',
+    title: 'World Cup 2026 Tracker: groups, results & bracket | Whistle Connect',
     description: 'Live group standings and the full knockout bracket for the 2026 FIFA World Cup. Free from Whistle Connect.',
 }
 

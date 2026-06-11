@@ -1,8 +1,8 @@
 // ============================================================================
-// World Cup tracker + sweepstake — shared types (mirrors migration 0169).
+// World Cup tracker + sweepstake - shared types (mirrors migration 0169).
 // ============================================================================
 
-/** Furthest stage a team has reached — drives sweepstake points. */
+/** Furthest stage a team has reached - drives sweepstake points. */
 export type TeamStage = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'final' | 'champion'
 
 /** A fixture's stage in the bracket. */
@@ -95,6 +95,9 @@ export interface LeaderboardRow {
     entry: WcSweepstakeEntry
     teams: WcTeam[]
     points: number
+    /** Per-team point contribution, sorted highest first. Drives the podium
+     *  flags-behind-the-name sizing (bigger contributor, bigger flag). */
+    contributions: { team: WcTeam; points: number }[]
     /** True once every one of the entry's teams is eliminated. */
     knockedOut: boolean
     /** True if the entry holds the champion. */

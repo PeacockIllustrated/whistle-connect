@@ -1,5 +1,5 @@
 // ============================================================================
-// World Cup read helpers — called directly from server components.
+// World Cup read helpers - called directly from server components.
 // Tournament data is world-readable; sweepstake reads are organiser-scoped via
 // RLS, except the public share view which uses the service-role admin client
 // (same pattern as the parent-consent / fa-verify token pages).
@@ -54,6 +54,55 @@ export async function getMatches(stage?: string): Promise<WcMatch[]> {
     return (data as WcMatch[] | null) ?? []
 }
 
+export interface RecentResult {
+    id: string
+    stage: string
+    group_letter: string | null
+    kickoff_at: string | null
+    home: { code: string; name: string; country_code: string | null } | null
+    away: { code: string; name: string; country_code: string | null } | null
+    homeScore: number | null
+    awayScore: number | null
+    homePens: number | null
+    awayPens: number | null
+    winnerCode: string | null
+}
+
+/** Most recently finished matches (newest first) for the landing results strip. */
+export async function getRecentResults(limit = 6): Promise<RecentResult[]> {
+    const supabase = await createClient()
+    const { data } = await supabase
+        .from('wc_matches')
+        .select('*')
+        .eq('status', 'finished')
+        .order('kickoff_at', { ascending: false })
+        .limit(limit)
+
+    const matches = (data as WcMatch[] | null) ?? []
+    if (matches.length === 0) return []
+
+    const teams = await getTeams()
+    const byCode = new Map(teams.map((t) => [t.code, t]))
+    const pick = (code: string | null) => {
+        const t = code ? byCode.get(code) : undefined
+        return t ? { code: t.code, name: t.name, country_code: t.country_code } : null
+    }
+
+    return matches.map((m) => ({
+        id: m.id,
+        stage: m.stage,
+        group_letter: m.group_letter,
+        kickoff_at: m.kickoff_at,
+        home: pick(m.home_team_code),
+        away: pick(m.away_team_code),
+        homeScore: m.home_score,
+        awayScore: m.away_score,
+        homePens: m.home_pens,
+        awayPens: m.away_pens,
+        winnerCode: m.winner_team_code,
+    }))
+}
+
 /** The reigning champion, if decided. */
 export async function getChampion(): Promise<WcTeam | null> {
     const teams = await getTeams()
@@ -97,7 +146,7 @@ export async function getSweepstakeForOrganiser(id: string): Promise<SweepstakeD
     return buildDetail(sweepstake as WcSweepstake, user.id)
 }
 
-/** Load a sweepstake by its public share slug (admin client — no account needed). */
+/** Load a sweepstake by its public share slug (admin client - no account needed). */
 export async function getSweepstakeByShareId(shareId: string): Promise<SweepstakeDetail | null> {
     const admin = createAdminClient()
     if (!admin) return null

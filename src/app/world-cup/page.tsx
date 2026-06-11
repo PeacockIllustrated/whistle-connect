@@ -3,20 +3,23 @@ import type { Metadata } from 'next'
 import { ChevronRight, Shuffle, BarChart3, Users, Share2, ArrowRight } from 'lucide-react'
 import { WcShell } from '@/components/world-cup/WcShell'
 import { WcHero } from '@/components/world-cup/WcHero'
-import { getChampion } from '@/lib/world-cup/data'
+import { RecentResults } from '@/components/world-cup/RecentResults'
+import { getChampion, getRecentResults } from '@/lib/world-cup/data'
 
 export const metadata: Metadata = {
     title: 'World Cup 2026 Sweepstake & Tracker | Whistle Connect',
     description:
-        'Run a free World Cup 2026 sweepstake or follow every group and knockout match. Draw teams to your friends, track a live leaderboard, share with the group — from Whistle Connect.',
+        'Run a free World Cup 2026 sweepstake or follow every group and knockout match. Draw teams to your friends, track a live leaderboard, share with the group. From Whistle Connect.',
 }
 
 export default async function WorldCupLandingPage() {
-    const champion = await getChampion()
+    const [champion, recent] = await Promise.all([getChampion(), getRecentResults(6)])
 
     return (
         <WcShell>
             <WcHero champion={champion?.name ?? null} />
+
+            <RecentResults results={recent} />
 
             {/* Two ways to play */}
             <section className="mx-auto w-full max-w-4xl px-4 py-12">
@@ -53,7 +56,7 @@ export default async function WorldCupLandingPage() {
                             <ChevronRight className="h-6 w-6 text-[var(--wc-ink)] transition-transform group-hover:translate-x-1" />
                         </h3>
                         <p className="mt-2 text-[var(--foreground-muted)]">
-                            All 12 groups, every result and the full knockout bracket — no account
+                            All 12 groups, every result and the full knockout bracket. No account
                             needed. Just follow the tournament as it unfolds.
                         </p>
                     </Link>
@@ -66,7 +69,7 @@ export default async function WorldCupLandingPage() {
                     <h2 className="wc-display text-center text-3xl sm:text-4xl text-[var(--foreground)]">How it works</h2>
                     <div className="mt-9 grid gap-8 sm:grid-cols-3">
                         {[
-                            { n: '01', icon: Users, title: 'Add your players', body: 'Name everyone — the office, the family, the team WhatsApp.' },
+                            { n: '01', icon: Users, title: 'Add your players', body: 'Name everyone: the office, the family, the team WhatsApp.' },
                             { n: '02', icon: Shuffle, title: 'Draw the teams', body: 'All 48 nations are dealt out evenly and at random.' },
                             { n: '03', icon: Share2, title: 'Share the link', body: 'Everyone follows the live leaderboard. No sign-up to watch.' },
                         ].map((s) => (

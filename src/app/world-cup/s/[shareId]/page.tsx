@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ shareId: 
     const { shareId } = await params
     const detail = await getSweepstakeByShareId(shareId)
     return {
-        title: detail ? `${detail.sweepstake.name} — World Cup sweepstake` : 'Sweepstake',
+        title: detail ? `${detail.sweepstake.name} · World Cup sweepstake` : 'Sweepstake',
         description: 'Follow this World Cup 2026 sweepstake live leaderboard on Whistle Connect.',
     }
 }

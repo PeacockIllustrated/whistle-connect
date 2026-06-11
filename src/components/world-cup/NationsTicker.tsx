@@ -3,7 +3,7 @@ import { isoForFifa } from '@/lib/world-cup/flags'
 import { FlagImage } from './TeamBits'
 
 /**
- * Edge-faded, auto-scrolling strip of all 48 nations. Pure-CSS marquee (no JS) —
+ * Edge-faded, auto-scrolling strip of all 48 nations. Pure-CSS marquee (no JS) -
  * the list is duplicated so the -50% translate loops seamlessly. Pauses on hover,
  * stops entirely under prefers-reduced-motion (handled globally).
  */
