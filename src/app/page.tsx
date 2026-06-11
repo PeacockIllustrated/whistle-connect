@@ -13,6 +13,49 @@ export default async function LandingPage() {
     supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'referee'),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
   ])
+
+  const challengeStats = [
+    { value: '73%', label: 'of coaches say finding referees is their #1 headache' },
+    { value: '5+ hrs', label: 'a week lost to calls, texts and WhatsApp chasing officials' },
+    { value: '30%', label: 'of grassroots matches hit by late referee cancellations' },
+  ]
+
+  // Question-led FAQ, mirrored into FAQPage JSON-LD below for answer-engine
+  // optimisation (AEO) — concise, direct answers to the questions coaches and
+  // referees actually ask.
+  const faqs = [
+    {
+      q: 'How do I book a referee on Whistle Connect?',
+      a: 'Post your match details, see FA-verified referees near you with ratings and distance, then send an offer — most matches are confirmed in the app within minutes.',
+    },
+    {
+      q: 'Are the referees FA-verified?',
+      a: 'Yes. Every referee is FA-verified, with DBS and safeguarding checks tracked, so you can book with complete confidence.',
+    },
+    {
+      q: 'How does payment work?',
+      a: 'Your payment is held securely when you confirm a booking and only released to the referee after the match is played — no cash on the touchline, no chasing invoices.',
+    },
+    {
+      q: 'What if my referee cancels last-minute?',
+      a: 'Switch on SOS mode to instantly alert every available official near your venue. Most last-minute gaps are covered in minutes, not hours.',
+    },
+    {
+      q: 'Is it free to join, and how do referees get paid?',
+      a: 'Creating an account is free. Coaches pay the referee’s match fee plus a small booking fee at confirmation; referees set their availability, accept nearby offers, and get paid securely after every game.',
+    },
+  ]
+
+  const faqLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((f) => ({
+      '@type': 'Question',
+      name: f.q,
+      acceptedAnswer: { '@type': 'Answer', text: f.a },
+    })),
+  }
+
   return (
     <div className="min-h-screen bg-[var(--background)]">
       <SplashScreen always />
@@ -113,8 +156,8 @@ export default async function LandingPage() {
                   key={title}
                   className="flex flex-col items-center text-center px-3 lg:border-l lg:border-[var(--border-color)] lg:first:border-l-0"
                 >
-                  <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center mb-3">
-                    <Icon className="w-7 h-7 text-blue-600" strokeWidth={2} />
+                  <div className="w-14 h-14 rounded-2xl bg-[#fdecec] flex items-center justify-center mb-3">
+                    <Icon className="w-7 h-7 text-[var(--wc-red)]" strokeWidth={2} />
                   </div>
                   <h3 className="text-sm sm:text-base font-bold text-[var(--wc-blue)]">{title}</h3>
                   <p className="text-xs sm:text-sm text-[var(--foreground-muted)] mt-1 max-w-[18ch]">{body}</p>
@@ -123,6 +166,64 @@ export default async function LandingPage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* The Challenge — pains (grabs attention, sets up the solution) */}
+      <section className="py-12 bg-[var(--surface)]">
+        <div className="max-w-[var(--content-max-width)] mx-auto px-4 text-center">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[var(--wc-blue)] leading-tight">
+            Finding a referee shouldn&apos;t be the hard part
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-[var(--foreground-muted)] max-w-md mx-auto">
+            Grassroots coaches lose hours every week chasing officials. Whistle Connect replaces the calls, texts and no-shows with one simple app.
+          </p>
+          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {challengeStats.map((s) => (
+              <div
+                key={s.value}
+                className="rounded-2xl bg-white border border-[var(--border-color)] shadow-sm px-5 py-6"
+              >
+                <div className="text-3xl font-extrabold text-[var(--wc-red)]">{s.value}</div>
+                <p className="mt-2 text-xs sm:text-sm text-[var(--foreground-muted)] leading-snug">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ — question-led content + FAQPage schema for answer-engine optimisation */}
+      <section className="py-12 bg-[var(--background)]" aria-labelledby="faq-heading">
+        <div className="max-w-[var(--content-max-width)] mx-auto px-4">
+          <h2
+            id="faq-heading"
+            className="text-2xl sm:text-3xl font-extrabold text-[var(--wc-blue)] text-center mb-6"
+          >
+            Common questions
+          </h2>
+          <div className="space-y-3">
+            {faqs.map((f) => (
+              <div
+                key={f.q}
+                className="rounded-2xl bg-white border border-[var(--border-color)] shadow-sm px-5 py-5"
+              >
+                <h3 className="text-sm sm:text-base font-bold text-[var(--wc-blue)]">{f.q}</h3>
+                <p className="mt-2 text-sm text-[var(--foreground-muted)] leading-relaxed">{f.a}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 text-center">
+            <Link
+              href="/book"
+              className="inline-block px-8 py-3.5 bg-[var(--wc-red)] hover:opacity-90 text-white font-bold rounded-xl transition-all shadow-md"
+            >
+              Book a Referee
+            </Link>
+          </div>
+        </div>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        />
       </section>
 
       {/* Stats */}
