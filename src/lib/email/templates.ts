@@ -89,14 +89,69 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
     a {
       color: #1b2537;
     }
+
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+
+    @media (prefers-color-scheme: dark) {
+
+      body,
+      .wc-body-bg {
+        background-color: #0f1320 !important;
+      }
+
+      .wc-bg,
+      .wc-bg table,
+      .wc-bg td {
+        background-color: #0f1320 !important;
+      }
+
+      .wc-card,
+      .wc-card table,
+      .wc-card td {
+        background-color: #1a2130 !important;
+      }
+
+      .wc-card div {
+        color: #cbd5e1 !important;
+      }
+
+      .wc-card strong {
+        color: #eef2f8 !important;
+      }
+
+      .wc-h div {
+        color: #f8fafc !important;
+      }
+
+      .wc-accent div {
+        color: #ff6163 !important;
+      }
+
+      .wc-footer,
+      .wc-footer table,
+      .wc-footer td {
+        background-color: #11151f !important;
+      }
+
+      .wc-footer div {
+        color: #94a3b8 !important;
+      }
+
+      .wc-footer strong {
+        color: #e2e8f0 !important;
+      }
+    }
   </style>
 </head>
 
 <body style="word-spacing:normal;background-color:#eef1f6;">
   <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">A parent or guardian needs to approve this Whistle Connect referee account.</div>
   <div aria-label="Parental consent needed — Whistle Connect" aria-roledescription="email" role="article" lang="und" dir="auto" style="word-spacing:normal;background-color:#eef1f6;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-bg-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-bg" style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eef1f6;background-color:#eef1f6;width:100%;">
         <tbody>
           <tr>
@@ -120,7 +175,7 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
       </table>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
-    <!-- Header -->
+    <!-- Header (navy in both light and dark) -->
     <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#1b2537" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
     <div style="background:#1b2537;background-color:#1b2537;margin:0px auto;max-width:600px;border-radius:16px 16px 0 0;overflow:hidden;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#1b2537;background-color:#1b2537;width:100%;border-collapse:separate;">
@@ -155,8 +210,8 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Body -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -166,12 +221,12 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tbody>
                     <tr>
-                      <td align="left" style="font-size:0px;padding:0 0 10px;word-break:break-word;">
+                      <td align="left" class="wc-accent" style="font-size:0px;padding:0 0 10px;word-break:break-word;">
                         <div style="font-family:Helvetica Neue, Helvetica, Arial, sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;line-height:1.65;text-align:left;text-transform:uppercase;color:#cd1719;">Safeguarding</div>
                       </td>
                     </tr>
                     <tr>
-                      <td align="left" style="font-size:0px;padding:0 0 18px;word-break:break-word;">
+                      <td align="left" class="wc-h" style="font-size:0px;padding:0 0 18px;word-break:break-word;">
                         <div style="font-family:Helvetica Neue, Helvetica, Arial, sans-serif;font-size:24px;font-weight:700;line-height:1.3;text-align:left;color:#1b2537;">A parent or guardian needs to approve this account</div>
                       </td>
                     </tr>
@@ -196,8 +251,8 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Buttons -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -241,8 +296,8 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
         </tbody>
       </table>
     </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -267,8 +322,8 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Footer -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#f7f9fc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#f7f9fc;background-color:#f7f9fc;margin:0px auto;max-width:600px;border-radius:0 0 16px 16px;overflow:hidden;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-footer-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#f7f9fc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-footer" style="background:#f7f9fc;background-color:#f7f9fc;margin:0px auto;max-width:600px;border-radius:0 0 16px 16px;overflow:hidden;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#f7f9fc;background-color:#f7f9fc;width:100%;border-collapse:separate;">
         <tbody>
           <tr>
@@ -296,8 +351,8 @@ const PARENTAL_CONSENT_HTML = `<!doctype html>
         </tbody>
       </table>
     </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-bg-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-bg" style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eef1f6;background-color:#eef1f6;width:100%;">
         <tbody>
           <tr>
@@ -413,14 +468,81 @@ const FA_VERIFICATION_HTML = `<!doctype html>
     a {
       color: #1b2537;
     }
+
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #0f1320 !important;
+      }
+
+      .wc-bg,
+      .wc-bg table,
+      .wc-bg td {
+        background-color: #0f1320 !important;
+      }
+
+      .wc-card,
+      .wc-card table,
+      .wc-card td {
+        background-color: #1a2130 !important;
+      }
+
+      .wc-card div {
+        color: #cbd5e1 !important;
+      }
+
+      .wc-card strong {
+        color: #eef2f8 !important;
+      }
+
+      .wc-h div {
+        color: #f8fafc !important;
+      }
+
+      .wc-accent div {
+        color: #ff6163 !important;
+      }
+
+      .wc-panel,
+      .wc-panel table,
+      .wc-panel td {
+        background-color: #243144 !important;
+      }
+
+      .wc-panel div {
+        color: #cbd5e1 !important;
+      }
+
+      .wc-panel strong {
+        color: #eef2f8 !important;
+      }
+
+      .wc-footer,
+      .wc-footer table,
+      .wc-footer td {
+        background-color: #11151f !important;
+      }
+
+      .wc-footer div {
+        color: #94a3b8 !important;
+      }
+
+      .wc-footer strong {
+        color: #e2e8f0 !important;
+      }
+    }
   </style>
 </head>
 
 <body style="word-spacing:normal;background-color:#eef1f6;">
   <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Please confirm whether this referee's FA registration number is valid.</div>
   <div aria-label="FA number verification — Whistle Connect" aria-roledescription="email" role="article" lang="und" dir="auto" style="word-spacing:normal;background-color:#eef1f6;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-bg-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-bg" style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eef1f6;background-color:#eef1f6;width:100%;">
         <tbody>
           <tr>
@@ -444,7 +566,7 @@ const FA_VERIFICATION_HTML = `<!doctype html>
       </table>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
-    <!-- Header -->
+    <!-- Header (navy in both modes) -->
     <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#1b2537" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
     <div style="background:#1b2537;background-color:#1b2537;margin:0px auto;max-width:600px;border-radius:16px 16px 0 0;overflow:hidden;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#1b2537;background-color:#1b2537;width:100%;border-collapse:separate;">
@@ -479,8 +601,8 @@ const FA_VERIFICATION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Body -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -490,12 +612,12 @@ const FA_VERIFICATION_HTML = `<!doctype html>
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tbody>
                     <tr>
-                      <td align="left" style="font-size:0px;padding:0 0 10px;word-break:break-word;">
+                      <td align="left" class="wc-accent" style="font-size:0px;padding:0 0 10px;word-break:break-word;">
                         <div style="font-family:Helvetica Neue, Helvetica, Arial, sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;line-height:1.65;text-align:left;text-transform:uppercase;color:#cd1719;">Referee Verification</div>
                       </td>
                     </tr>
                     <tr>
-                      <td align="left" style="font-size:0px;padding:0 0 18px;word-break:break-word;">
+                      <td align="left" class="wc-h" style="font-size:0px;padding:0 0 18px;word-break:break-word;">
                         <div style="font-family:Helvetica Neue, Helvetica, Arial, sans-serif;font-size:24px;font-weight:700;line-height:1.3;text-align:left;color:#1b2537;">Please confirm this referee&apos;s FA registration</div>
                       </td>
                     </tr>
@@ -515,14 +637,14 @@ const FA_VERIFICATION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Detail panel -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
             <td style="direction:ltr;font-size:0px;padding:18px 30px 6px;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:540px;" ><![endif]-->
-              <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
+              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="wc-panel-outlook" style="vertical-align:top;width:540px;" ><![endif]-->
+              <div class="mj-column-per-100 mj-outlook-group-fix wc-panel" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="border-collapse:separate;">
                   <tbody>
                     <tr>
@@ -552,8 +674,8 @@ const FA_VERIFICATION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Reply-to-confirm note (no one-click token available) -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -578,8 +700,8 @@ const FA_VERIFICATION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Footer -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#f7f9fc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#f7f9fc;background-color:#f7f9fc;margin:0px auto;max-width:600px;border-radius:0 0 16px 16px;overflow:hidden;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-footer-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#f7f9fc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-footer" style="background:#f7f9fc;background-color:#f7f9fc;margin:0px auto;max-width:600px;border-radius:0 0 16px 16px;overflow:hidden;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#f7f9fc;background-color:#f7f9fc;width:100%;border-collapse:separate;">
         <tbody>
           <tr>
@@ -607,8 +729,8 @@ const FA_VERIFICATION_HTML = `<!doctype html>
         </tbody>
       </table>
     </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-bg-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-bg" style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eef1f6;background-color:#eef1f6;width:100%;">
         <tbody>
           <tr>
@@ -724,14 +846,81 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
     a {
       color: #1b2537;
     }
+
+    :root {
+      color-scheme: light dark;
+      supported-color-schemes: light dark;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #0f1320 !important;
+      }
+
+      .wc-bg,
+      .wc-bg table,
+      .wc-bg td {
+        background-color: #0f1320 !important;
+      }
+
+      .wc-card,
+      .wc-card table,
+      .wc-card td {
+        background-color: #1a2130 !important;
+      }
+
+      .wc-card div {
+        color: #cbd5e1 !important;
+      }
+
+      .wc-card strong {
+        color: #eef2f8 !important;
+      }
+
+      .wc-h div {
+        color: #f8fafc !important;
+      }
+
+      .wc-accent div {
+        color: #ff6163 !important;
+      }
+
+      .wc-panel,
+      .wc-panel table,
+      .wc-panel td {
+        background-color: #243144 !important;
+      }
+
+      .wc-panel div {
+        color: #cbd5e1 !important;
+      }
+
+      .wc-panel strong {
+        color: #eef2f8 !important;
+      }
+
+      .wc-footer,
+      .wc-footer table,
+      .wc-footer td {
+        background-color: #11151f !important;
+      }
+
+      .wc-footer div {
+        color: #94a3b8 !important;
+      }
+
+      .wc-footer strong {
+        color: #e2e8f0 !important;
+      }
+    }
   </style>
 </head>
 
 <body style="word-spacing:normal;background-color:#eef1f6;">
   <div style="display:none;font-size:1px;color:#ffffff;line-height:1px;max-height:0px;max-width:0px;opacity:0;overflow:hidden;">Please confirm whether this referee's FA registration number is valid.</div>
   <div aria-label="FA number verification — Whistle Connect" aria-roledescription="email" role="article" lang="und" dir="auto" style="word-spacing:normal;background-color:#eef1f6;">
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-bg-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-bg" style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eef1f6;background-color:#eef1f6;width:100%;">
         <tbody>
           <tr>
@@ -755,7 +944,7 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
       </table>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
-    <!-- Header -->
+    <!-- Header (navy in both modes) -->
     <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#1b2537" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
     <div style="background:#1b2537;background-color:#1b2537;margin:0px auto;max-width:600px;border-radius:16px 16px 0 0;overflow:hidden;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#1b2537;background-color:#1b2537;width:100%;border-collapse:separate;">
@@ -790,8 +979,8 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Body -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -801,12 +990,12 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" style="vertical-align:top;" width="100%">
                   <tbody>
                     <tr>
-                      <td align="left" style="font-size:0px;padding:0 0 10px;word-break:break-word;">
+                      <td align="left" class="wc-accent" style="font-size:0px;padding:0 0 10px;word-break:break-word;">
                         <div style="font-family:Helvetica Neue, Helvetica, Arial, sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;line-height:1.65;text-align:left;text-transform:uppercase;color:#cd1719;">Referee Verification</div>
                       </td>
                     </tr>
                     <tr>
-                      <td align="left" style="font-size:0px;padding:0 0 18px;word-break:break-word;">
+                      <td align="left" class="wc-h" style="font-size:0px;padding:0 0 18px;word-break:break-word;">
                         <div style="font-family:Helvetica Neue, Helvetica, Arial, sans-serif;font-size:24px;font-weight:700;line-height:1.3;text-align:left;color:#1b2537;">Please confirm this referee&apos;s FA registration</div>
                       </td>
                     </tr>
@@ -826,14 +1015,14 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Detail panel -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
             <td style="direction:ltr;font-size:0px;padding:18px 30px 6px;text-align:center;">
-              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="" style="vertical-align:top;width:540px;" ><![endif]-->
-              <div class="mj-column-per-100 mj-outlook-group-fix" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
+              <!--[if mso | IE]><table role="presentation" border="0" cellpadding="0" cellspacing="0"><tr><td class="wc-panel-outlook" style="vertical-align:top;width:540px;" ><![endif]-->
+              <div class="mj-column-per-100 mj-outlook-group-fix wc-panel" style="font-size:0px;text-align:left;direction:ltr;display:inline-block;vertical-align:top;width:100%;">
                 <table border="0" cellpadding="0" cellspacing="0" role="presentation" width="100%" style="border-collapse:separate;">
                   <tbody>
                     <tr>
@@ -863,8 +1052,8 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Buttons -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -908,8 +1097,8 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
         </tbody>
       </table>
     </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-card-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#ffffff" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-card" style="background:#ffffff;background-color:#ffffff;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;background-color:#ffffff;width:100%;">
         <tbody>
           <tr>
@@ -934,8 +1123,8 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
     </div>
     <!--[if mso | IE]></td></tr></table><![endif]-->
     <!-- Footer -->
-    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#f7f9fc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#f7f9fc;background-color:#f7f9fc;margin:0px auto;max-width:600px;border-radius:0 0 16px 16px;overflow:hidden;">
+    <!--[if mso | IE]><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-footer-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#f7f9fc" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-footer" style="background:#f7f9fc;background-color:#f7f9fc;margin:0px auto;max-width:600px;border-radius:0 0 16px 16px;overflow:hidden;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#f7f9fc;background-color:#f7f9fc;width:100%;border-collapse:separate;">
         <tbody>
           <tr>
@@ -963,8 +1152,8 @@ const FA_VERIFICATION_ACTION_HTML = `<!doctype html>
         </tbody>
       </table>
     </div>
-    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
-    <div style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
+    <!--[if mso | IE]></td></tr></table><table align="center" border="0" cellpadding="0" cellspacing="0" class="wc-bg-outlook" role="presentation" style="width:600px;" width="600" bgcolor="#eef1f6" ><tr><td style="line-height:0px;font-size:0px;mso-line-height-rule:exactly;"><![endif]-->
+    <div class="wc-bg" style="background:#eef1f6;background-color:#eef1f6;margin:0px auto;max-width:600px;">
       <table align="center" border="0" cellpadding="0" cellspacing="0" role="presentation" style="background:#eef1f6;background-color:#eef1f6;width:100%;">
         <tbody>
           <tr>

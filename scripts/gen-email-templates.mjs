@@ -8,9 +8,27 @@ import { readFileSync, writeFileSync } from 'node:fs'
 const lit = (html) =>
     '`' + html.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${') + '`'
 
-const pc = readFileSync('emails/parental-consent.html', 'utf8')
-const fa = readFileSync('emails/fa-verification.html', 'utf8')
-const faAction = readFileSync('emails/fa-verification-action.html', 'utf8')
+// Email clients read these meta tags to honour our dark-mode CSS instead of
+// force-inverting. MJML can't emit head meta, so inject them post-compile
+// (idempotent) and write back so previews match what's sent.
+const COLOR_SCHEME_META =
+    '<meta name="color-scheme" content="light dark"><meta name="supported-color-schemes" content="light dark">'
+function withColorScheme(html) {
+    if (html.includes('supported-color-schemes')) return html
+    return html.replace(
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">' + COLOR_SCHEME_META,
+    )
+}
+function loadTemplate(path) {
+    const html = withColorScheme(readFileSync(path, 'utf8'))
+    writeFileSync(path, html)
+    return html
+}
+
+const pc = loadTemplate('emails/parental-consent.html')
+const fa = loadTemplate('emails/fa-verification.html')
+const faAction = loadTemplate('emails/fa-verification-action.html')
 
 const out = `// AUTO-GENERATED — do not edit by hand.
 // Source: emails/*.mjml (compiled to emails/*.html, then run scripts/gen-email-templates.mjs).
