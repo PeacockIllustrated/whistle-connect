@@ -43,9 +43,9 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
         detail: 'Coaches and referees can archive items independently with recoverable trays. Swipe-to-archive in lists; partial indexes back the active and archived hot paths.',
     },
     {
-        title: 'SOS premium fee gate',
+        title: 'SOS premium fee',
         status: 'done',
-        detail: 'Each SOS broadcast costs £1.99, debited atomically from the coach wallet via FOR-UPDATE locking. Non-refundable: keeps the SOS signal meaningful for refs.',
+        detail: 'The £1.99 SOS premium is pooled into the booking platform fee (alongside the £1 booking fee) when a referee is confirmed, held in escrow, and realised to the platform only on completion. Refunded in full if the referee pulls out; retained on a coach cancellation. Not charged at broadcast — an unanswered SOS costs the coach nothing.',
     },
     {
         title: 'Booking cancellation + deletion authorisation',
