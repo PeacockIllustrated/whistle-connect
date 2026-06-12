@@ -7,7 +7,16 @@
  * NOTE: This is per-instance — in a multi-instance deployment each server
  * node tracks its own counts. For a single Vercel deployment this is fine
  * because server actions run in the same serverless function pool.
+ *
+ * For abuse vectors where per-instance windows are NOT sufficient — notably
+ * outbound transactional email, where an attacker rotating the target address
+ * could mail-bomb arbitrary addresses past any per-lambda counter — use
+ * `checkSharedEmailRateLimit` below, which is backed by a Postgres counter
+ * (migration 0172) shared across every serverless instance.
  */
+
+import { createAdminClient } from '@/lib/supabase/server'
+import * as Sentry from '@sentry/nextjs'
 
 interface RateLimitConfig {
     /** Time window in milliseconds */
@@ -118,4 +127,56 @@ export function checkWithdrawRateLimit(userId: string): string | null {
         windowMs: 60 * 1000,
         maxRequests: 3,
     })
+}
+
+// ── Shared-store backstop for outbound email (cross-instance) ─────────────
+
+/** Outbound transactional email: max 5 sends per recipient per hour. */
+const SHARED_EMAIL_WINDOW_SECONDS = 60 * 60
+const SHARED_EMAIL_MAX = 5
+
+/**
+ * Cross-instance rate-limit check backed by the `rate_limit_hit` RPC
+ * (migration 0172). Unlike the in-memory limiter above, this is shared across
+ * every Vercel lambda, so it bounds the ABSOLUTE rate of outbound email even
+ * when an attacker rotates the target address to dodge per-instance windows.
+ *
+ * Returns `{ ok: false }` when the recipient is over the limit (caller should
+ * NOT send). FAILS OPEN: if the service-role client is unavailable (e.g. local
+ * dev without SUPABASE_SERVICE_ROLE_KEY) or the RPC errors, it returns
+ * `{ ok: true }` and Sentry-warns — we don't want to block legitimate email on
+ * an infra hiccup. The in-memory limiter remains as defence in depth.
+ *
+ * @param identifierKey A stable key for the recipient, e.g. the email address.
+ */
+export async function checkSharedEmailRateLimit(
+    identifierKey: string
+): Promise<{ ok: boolean }> {
+    const admin = createAdminClient()
+    if (!admin) {
+        // Fail open in local dev / missing key — but make it visible.
+        Sentry.captureMessage('checkSharedEmailRateLimit: admin client unavailable — failing open', {
+            level: 'warning',
+            tags: { 'rate-limit.shared': 'admin-client-missing' },
+        })
+        return { ok: true }
+    }
+
+    const { data, error } = await admin.rpc('rate_limit_hit', {
+        p_key: `email:${identifierKey.toLowerCase()}`,
+        p_window_seconds: SHARED_EMAIL_WINDOW_SECONDS,
+        p_max: SHARED_EMAIL_MAX,
+    })
+
+    if (error) {
+        // Fail open on RPC error so a DB hiccup can't block all email.
+        Sentry.captureMessage(`checkSharedEmailRateLimit: rate_limit_hit RPC failed — failing open: ${error.message}`, {
+            level: 'warning',
+            tags: { 'rate-limit.shared': 'rpc-error' },
+        })
+        return { ok: true }
+    }
+
+    // RPC returns TRUE when the caller is OVER the limit (should be blocked).
+    return { ok: data !== true }
 }

@@ -8,6 +8,7 @@ import { ensureBookingThread } from '@/lib/messaging/ensure-thread'
 import { geocodePostcode } from '@/lib/mapbox/geocode'
 import { validate, bookingSchema } from '@/lib/validation'
 import { toLocalDateString } from '@/lib/utils'
+import { requiresDBS, refereeBlockedFromAgeGroup } from '@/lib/constants'
 
 interface SOSBookingData {
     location_postcode: string
@@ -86,9 +87,36 @@ export async function createSOSBooking(data: SOSBookingData) {
         })
 
         if (nearbyReferees && nearbyReferees.length > 0) {
-            // Filter to available referees only, limit to 15
-            const availableRefs = nearbyReferees
+            // Filter to available referees only
+            const candidateRefs = nearbyReferees
                 .filter((r: { is_available: boolean }) => r.is_available)
+
+            // Safeguarding gate on the broadcast list — never invite a
+            // consent-locked, age-ineligible, or (where required) non-DBS ref.
+            // Mirrors the hard gate in claimSOSBooking; this just keeps
+            // ineligible refs off the invite/notify list. Fails closed: a
+            // referee with no gate row, or a NULL/unparseable DOB, is excluded.
+            const candidateIds = candidateRefs.map((r: { profile_id: string }) => r.profile_id)
+            const eligibleIds = new Set<string>()
+            if (candidateIds.length > 0) {
+                const { data: gateRows } = await supabase
+                    .from('referee_profiles')
+                    .select('profile_id, parental_consent_status, dbs_status, profile:profiles!inner(date_of_birth)')
+                    .in('profile_id', candidateIds)
+
+                const dbsRequired = requiresDBS(data.age_group)
+                for (const g of (gateRows || [])) {
+                    if (g.parental_consent_status === 'awaiting' || g.parental_consent_status === 'rejected') continue
+                    if (dbsRequired && g.dbs_status !== 'verified') continue
+                    const gProfile = Array.isArray(g.profile) ? g.profile[0] : g.profile
+                    if (refereeBlockedFromAgeGroup(gProfile?.date_of_birth, data.age_group, today)) continue
+                    eligibleIds.add(g.profile_id)
+                }
+            }
+
+            // Limit to 15 eligible referees
+            const availableRefs = candidateRefs
+                .filter((r: { profile_id: string }) => eligibleIds.has(r.profile_id))
                 .slice(0, 15)
 
             // Create offers for all matched referees
@@ -133,6 +161,43 @@ export async function claimSOSBooking(bookingId: string) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) return { error: 'Unauthorized' }
+
+    // Safeguarding gate for the claiming referee — mirrors acceptOffer /
+    // sendBookingRequest. claim_sos_booking confirms + assigns atomically with
+    // no eligibility check, so a consent-locked or age-ineligible minor (or a
+    // non-DBS ref) must be blocked HERE, before the claim. Fails closed: a
+    // NULL/unparseable DOB is treated as blocked by refereeBlockedFromAgeGroup.
+    const { data: claimBooking } = await supabase
+        .from('bookings')
+        .select('age_group, match_date')
+        .eq('id', bookingId)
+        .single()
+
+    {
+        const { data: refGate } = await supabase
+            .from('referee_profiles')
+            .select('parental_consent_status, dbs_status, profile:profiles!inner(date_of_birth)')
+            .eq('profile_id', user.id)
+            .single()
+
+        if (
+            refGate?.parental_consent_status === 'awaiting' ||
+            refGate?.parental_consent_status === 'rejected'
+        ) {
+            return { error: 'Your account is awaiting parental consent and cannot be used yet.' }
+        }
+
+        // DBS enforcement: U16 and under require a verified DBS check.
+        if (requiresDBS(claimBooking?.age_group) && refGate?.dbs_status !== 'verified') {
+            return { error: 'A verified DBS check is required for this age group.' }
+        }
+
+        // Age eligibility at the MATCH DATE.
+        const refProfile = refGate && (Array.isArray(refGate.profile) ? refGate.profile[0] : refGate.profile)
+        if (refereeBlockedFromAgeGroup(refProfile?.date_of_birth, claimBooking?.age_group, claimBooking?.match_date)) {
+            return { error: 'You are not eligible for this age group.' }
+        }
+    }
 
     // claim_sos_booking is service-role-only (migration 0162): it trusts its
     // p_referee_id argument and had no internal auth.uid() check, so it must

@@ -11,6 +11,7 @@
 // ============================================================================
 
 import type { SupabaseClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/nextjs'
 import { WC_2026_TEAMS, codeForName } from './teams-2026'
 import { isoForFifa } from './flags'
 import type { MatchStage, TeamStage } from './types'
@@ -44,6 +45,16 @@ export async function seedTeams(admin: SupabaseClient): Promise<number> {
     return rows.length
 }
 
+/**
+ * Normalise the openfootball group field to a bare letter. The feed sends
+ * `"group":"Group A"` (and occasionally just `"A"`); strip a leading "Group "
+ * prefix (case-insensitive) so the `^[A-L]$` test and the group_letter CHECK
+ * constraint both see a bare letter. Returns undefined when nothing usable.
+ */
+function normaliseGroup(group: string | undefined): string | undefined {
+    return (group ?? '').replace(/^Group\s+/i, '').trim() || undefined
+}
+
 function roundToStage(round: string | undefined, group: string | undefined): MatchStage {
     if (group && /^[A-L]$/.test(group)) return 'group'
     const r = (round ?? '').toLowerCase()
@@ -66,16 +77,35 @@ export async function syncMatches(admin: SupabaseClient): Promise<number> {
     let payload: { matches?: OpenfootballMatch[] }
     try {
         const res = await fetch(OPENFOOTBALL_URL, { cache: 'no-store' })
-        if (!res.ok) return 0
+        if (!res.ok) {
+            Sentry.captureMessage(
+                `syncMatches: openfootball fetch failed (HTTP ${res.status})`,
+                { level: 'warning', tags: { 'wc.flow': 'sync' } },
+            )
+            return 0
+        }
         payload = await res.json()
-    } catch {
+    } catch (err) {
+        Sentry.captureMessage('syncMatches: openfootball fetch threw', {
+            level: 'warning',
+            tags: { 'wc.flow': 'sync' },
+            extra: { error: err instanceof Error ? err.message : String(err) },
+        })
         return 0
     }
     const matches = payload.matches ?? []
-    if (matches.length === 0) return 0
+    if (matches.length === 0) {
+        Sentry.captureMessage('syncMatches: openfootball feed returned 0 matches', {
+            level: 'warning',
+            tags: { 'wc.flow': 'sync' },
+        })
+        return 0
+    }
 
     const rows = matches.map((m) => {
-        const stage = roundToStage(m.round, m.group)
+        const groupLetter = normaliseGroup(m.group)
+        const validGroup = groupLetter && /^[A-L]$/.test(groupLetter) ? groupLetter : null
+        const stage = roundToStage(m.round, groupLetter)
         const homeCode = m.team1 ? codeForName(m.team1) : null
         const awayCode = m.team2 ? codeForName(m.team2) : null
         const ft = m.score?.ft
@@ -93,7 +123,7 @@ export async function syncMatches(admin: SupabaseClient): Promise<number> {
         return {
             external_id: externalId(m),
             stage,
-            group_letter: stage === 'group' && m.group ? m.group : null,
+            group_letter: stage === 'group' ? validGroup : null,
             home_team_code: homeCode,
             away_team_code: awayCode,
             home_label: homeCode ? null : m.team1 ?? null,
@@ -112,6 +142,25 @@ export async function syncMatches(admin: SupabaseClient): Promise<number> {
 
     const { error } = await admin.from('wc_matches').upsert(rows, { onConflict: 'external_id' })
     if (error) throw new Error(`syncMatches: ${error.message}`)
+
+    // Full-feed replace: knockout placeholder fixtures ('1A', 'W73', …) become
+    // real team names later, which produces a NEW external_id (it's built from
+    // team names). Delete any wc_matches row whose external_id isn't in the set
+    // we just synced so stale 'scheduled' placeholders don't linger forever.
+    // A failed delete must NOT discard the successful upsert above — capture and
+    // continue rather than throwing.
+    const syncedIds = rows.map((r) => r.external_id)
+    const { error: deleteError } = await admin
+        .from('wc_matches')
+        .delete()
+        .not('external_id', 'in', `(${syncedIds.map((id) => `"${id}"`).join(',')})`)
+    if (deleteError) {
+        Sentry.captureMessage(`syncMatches: stale-row cleanup failed: ${deleteError.message}`, {
+            level: 'warning',
+            tags: { 'wc.flow': 'sync' },
+        })
+    }
+
     return rows.length
 }
 

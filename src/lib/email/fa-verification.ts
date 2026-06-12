@@ -80,12 +80,18 @@ export async function sendFAVerificationEmail({
         let html: string
         if (responseToken) {
             const baseUrl = getBaseUrl()
+            // Both buttons link to the read-only confirmation page (not a
+            // mutating endpoint). The page renders the request details plus
+            // Confirm / Not found buttons that POST the actual decision — so an
+            // email security scanner that prefetches the link only ever READS,
+            // never resolves the request.
+            const confirmPageUrl = `${baseUrl}/fa-verify/confirm?token=${responseToken}`
             html = faVerificationActionHtml({
                 refereeName,
                 faId,
                 county: countyLabel,
-                confirmUrl: `${baseUrl}/api/fa-verify?token=${responseToken}&action=confirmed`,
-                rejectUrl: `${baseUrl}/api/fa-verify?token=${responseToken}&action=rejected`,
+                confirmUrl: confirmPageUrl,
+                rejectUrl: confirmPageUrl,
             })
         } else {
             html = faVerificationHtml({ refereeName, faId, county: countyLabel })

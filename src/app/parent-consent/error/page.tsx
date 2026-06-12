@@ -17,6 +17,10 @@ export default async function ParentConsentErrorPage({
             title: 'Request Not Found',
             body: 'We could not find a consent request matching this link. It may have expired or already been processed.',
         },
+        expired: {
+            title: 'Link Expired',
+            body: 'This consent link has expired. Please ask the referee to request a new consent email, or contact us for assistance.',
+        },
         server: {
             title: 'Server Error',
             body: 'Something went wrong on our end. Please try again later or contact us for assistance.',

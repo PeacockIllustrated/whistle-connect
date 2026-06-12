@@ -4,6 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { logAdminAction } from '@/lib/admin/audit'
 import { sendParentConsentEmail } from '@/lib/email/parent-consent'
+import { checkSharedEmailRateLimit } from '@/lib/rate-limit'
 
 /** A locked under-18 referee awaiting (or declined for) parental consent. */
 export type MinorConsentRow = {
@@ -158,6 +159,14 @@ export async function resendParentConsent(refereeId: string): Promise<{ success?
     }
     if (consent.status !== 'awaiting') {
         return { error: 'This consent has already been resolved.' }
+    }
+
+    // Cross-instance backstop keyed by the recipient parent email — stops the
+    // resend button being used to mail-bomb a parent/guardian address via the
+    // Make->Zoho hub (migration 0172).
+    const sharedLimit = await checkSharedEmailRateLimit(consent.parent_email)
+    if (!sharedLimit.ok) {
+        return { error: 'Too many requests, please try again later.' }
     }
 
     try {

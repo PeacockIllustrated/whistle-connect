@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import * as Sentry from '@sentry/nextjs'
 import { createAdminClient } from '@/lib/supabase/server'
 import { createNotification } from '@/lib/notifications'
-import { BOOKING_FEE_PENCE } from '@/lib/constants'
+import { BOOKING_FEE_PENCE, SOS_FEE_PENCE } from '@/lib/constants'
 
 /**
  * Escrow release cron. Two paths:
@@ -121,7 +121,7 @@ export async function GET(req: NextRequest) {
         .from('bookings')
         .select(`
             id, coach_id, ground_name, location_postcode,
-            escrow_amount_pence,
+            escrow_amount_pence, is_sos,
             booking_assignments!inner(referee_id)
         `)
         .eq('status', 'completed')
@@ -148,7 +148,7 @@ export async function GET(req: NextRequest) {
         .from('bookings')
         .select(`
             id, coach_id, ground_name, location_postcode,
-            escrow_amount_pence, coach_marked_complete_at, referee_marked_complete_at,
+            escrow_amount_pence, is_sos, coach_marked_complete_at, referee_marked_complete_at,
             match_date, kickoff_time,
             booking_assignments!inner(referee_id)
         `)
@@ -188,6 +188,7 @@ type ReleaseBooking = {
     ground_name: string | null
     location_postcode: string
     escrow_amount_pence: number | null
+    is_sos?: boolean | null
     coach_marked_complete_at?: string | null
     referee_marked_complete_at?: string | null
     match_date?: string
@@ -219,9 +220,15 @@ async function releaseEscrowFor(
         .maybeSingle()
     if (dispute) return false
 
+    // SOS bookings pooled the £1.99 premium into the platform fee at confirm
+    // time (see confirm_booking call in bookings/actions.ts). Mirror that here
+    // so the platform retains the premium on release — otherwise it leaks to
+    // the referee and the platform under-collects.
+    const effectiveFeePence = platformFeePence + (booking.is_sos ? SOS_FEE_PENCE : 0)
+
     const { data: result, error: rpcError } = await supabase.rpc('escrow_release', {
         p_booking_id: booking.id,
-        p_platform_fee_pence: platformFeePence,
+        p_platform_fee_pence: effectiveFeePence,
     })
 
     if (rpcError || result?.error) {
@@ -240,7 +247,7 @@ async function releaseEscrowFor(
         ? booking.booking_assignments
         : [booking.booking_assignments]
     const refereeId = assignments[0]?.referee_id
-    const refereeAmountPence = (booking.escrow_amount_pence ?? 0) - platformFeePence
+    const refereeAmountPence = (booking.escrow_amount_pence ?? 0) - effectiveFeePence
     const totalDisplay = `£${((booking.escrow_amount_pence ?? 0) / 100).toFixed(2)}`
     const refereeDisplay = `£${(refereeAmountPence / 100).toFixed(2)}`
     const venue = booking.ground_name || booking.location_postcode

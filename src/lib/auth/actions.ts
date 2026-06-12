@@ -4,7 +4,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { RegisterFormData } from '@/lib/types'
 import { isValidFANumber } from '@/lib/utils'
-import { checkAuthRateLimit } from '@/lib/rate-limit'
+import { checkAuthRateLimit, checkSharedEmailRateLimit } from '@/lib/rate-limit'
 import {
     validate,
     signInSchema,
@@ -100,6 +100,14 @@ export async function signUp(data: RegisterFormData, redirectTo: string = '/app'
     const rateLimitError = checkAuthRateLimit(data.email.toLowerCase())
     if (rateLimitError) {
         return { error: rateLimitError }
+    }
+
+    // Cross-instance backstop: the confirmation email Supabase sends below is a
+    // mail-bomb vector — an attacker rotating the target address dodges the
+    // per-lambda in-memory limiter. Bound the absolute rate per recipient.
+    const sharedLimit = await checkSharedEmailRateLimit(data.email)
+    if (!sharedLimit.ok) {
+        return { error: 'Too many requests, please try again later.' }
     }
 
     const supabase = await createClient()
@@ -551,6 +559,14 @@ export async function requestPasswordReset(email: string) {
     const rateLimitError = checkAuthRateLimit(email.toLowerCase())
     if (rateLimitError) {
         return { error: rateLimitError }
+    }
+
+    // Cross-instance backstop: the per-lambda limiter above doesn't bound the
+    // absolute send rate when the target address is rotated. Cap reset emails
+    // per recipient via the shared Postgres counter (migration 0172).
+    const sharedLimit = await checkSharedEmailRateLimit(email)
+    if (!sharedLimit.ok) {
+        return { error: 'Too many requests, please try again later.' }
     }
 
     const supabase = await createClient()

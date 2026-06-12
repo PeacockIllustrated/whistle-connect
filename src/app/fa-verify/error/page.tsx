@@ -17,6 +17,10 @@ export default async function FAVerifyErrorPage({
             title: 'Request Not Found',
             body: 'We could not find a verification request matching this link. It may have expired or already been processed.',
         },
+        expired: {
+            title: 'Link Expired',
+            body: 'This verification link has expired. Please ask Whistle Connect to send a fresh request, or contact us for assistance.',
+        },
         server: {
             title: 'Server Error',
             body: 'Something went wrong on our end. Please try again later or contact us for assistance.',

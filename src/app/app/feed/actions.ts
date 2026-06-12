@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { createNotification } from '@/lib/notifications'
+import { requiresDBS, refereeBlockedFromAgeGroup } from '@/lib/constants'
 
 export interface FeedBooking {
     id: string
@@ -231,7 +232,7 @@ export async function expressInterest(bookingId: string): Promise<{ success?: bo
     // Check booking exists and is still available
     const { data: booking } = await supabase
         .from('bookings')
-        .select('id, coach_id, status, ground_name, location_postcode, match_date, is_sos')
+        .select('id, coach_id, status, ground_name, location_postcode, match_date, age_group, is_sos')
         .eq('id', bookingId)
         .is('deleted_at', null)
         .single()
@@ -239,6 +240,38 @@ export async function expressInterest(bookingId: string): Promise<{ success?: bo
     if (!booking) return { error: 'Booking not found' }
     if (!['pending', 'offered'].includes(booking.status)) {
         return { error: 'This match is no longer available' }
+    }
+
+    // Safeguarding gate for the expressing referee — mirrors acceptOffer /
+    // sendBookingRequest. A consent-locked or age-ineligible minor (or a
+    // non-DBS ref on a DBS-required age group) must not be able to self-confirm
+    // onto a booking. Fails closed: a NULL/unparseable DOB is treated as
+    // blocked by refereeBlockedFromAgeGroup.
+    {
+        const { data: refGate } = await supabase
+            .from('referee_profiles')
+            .select('parental_consent_status, dbs_status, profile:profiles!inner(date_of_birth)')
+            .eq('profile_id', user.id)
+            .single()
+
+        if (
+            refGate?.parental_consent_status === 'awaiting' ||
+            refGate?.parental_consent_status === 'rejected'
+        ) {
+            return { error: 'Your account is awaiting parental consent and cannot be used yet.' }
+        }
+
+        // DBS enforcement: U16 and under require a verified DBS check.
+        if (requiresDBS(booking.age_group) && refGate?.dbs_status !== 'verified') {
+            return { error: 'A verified DBS check is required for this age group.' }
+        }
+
+        // Age eligibility at the MATCH DATE. Fails closed: a referee with no
+        // DOB on file cannot express interest.
+        const refProfile = refGate && (Array.isArray(refGate.profile) ? refGate.profile[0] : refGate.profile)
+        if (refereeBlockedFromAgeGroup(refProfile?.date_of_birth, booking.age_group, booking.match_date)) {
+            return { error: 'You are not eligible for this age group.' }
+        }
     }
 
     // Look up any existing offer for this ref + booking. SOS bookings
