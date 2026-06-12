@@ -2,20 +2,61 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
 
 /**
- * Public endpoint for County FAs to respond to verification requests.
- * Accessed via one-click links in the verification email.
- * Uses a unique token (not request ID) for security.
+ * County FA response to a referee FA-number verification request, accessed via
+ * the verification email. Uses a unique token (not the request ID) for security.
  *
- * GET /api/fa-verify?token=xxx&action=confirmed|rejected
+ * IMPORTANT — this endpoint MUST NOT mutate on GET. Email security scanners
+ * (Outlook SafeLinks, Proofpoint, antivirus prefetchers) issue automated GETs
+ * against inbound links, so a state-mutating GET would let a scanner confirm or
+ * reject a referee's FA registration with no human acting. The email now links
+ * to /fa-verify/confirm (a read-only confirmation page); the County FA clicks
+ * Confirm / Not found there, which POSTs here. The GET handler is kept only as a
+ * back-compat bounce for any already-sent links and never mutates.
  */
+
+const TOKEN_TTL_DAYS = 14
+
+/** Back-compat: bounce any legacy GET link to the read-only confirmation page. */
 export async function GET(request: NextRequest) {
     const token = request.nextUrl.searchParams.get('token')
-    const action = request.nextUrl.searchParams.get('action')
+
+    if (!token) {
+        return NextResponse.redirect(
+            new URL('/fa-verify/error?reason=invalid', request.url)
+        )
+    }
+
+    return NextResponse.redirect(
+        new URL(`/fa-verify/confirm?token=${encodeURIComponent(token)}`, request.url)
+    )
+}
+
+/**
+ * POST /api/fa-verify
+ * Body: { token: string, action: 'confirmed' | 'rejected' }
+ * Performs the actual mutation — only reached from an explicit human click on
+ * the confirmation page.
+ */
+export async function POST(request: NextRequest) {
+    let token: string | undefined
+    let action: string | undefined
+
+    const contentType = request.headers.get('content-type') || ''
+    if (contentType.includes('application/json')) {
+        const body = await request.json().catch(() => null)
+        token = body?.token
+        action = body?.action
+    } else {
+        const form = await request.formData().catch(() => null)
+        token = form?.get('token')?.toString()
+        action = form?.get('action')?.toString()
+    }
 
     // Validate params
     if (!token || !action || !['confirmed', 'rejected'].includes(action)) {
         return NextResponse.redirect(
-            new URL('/fa-verify/error?reason=invalid', request.url)
+            new URL('/fa-verify/error?reason=invalid', request.url),
+            { status: 303 }
         )
     }
 
@@ -23,27 +64,40 @@ export async function GET(request: NextRequest) {
     if (!adminClient) {
         console.error('FA verify: admin client unavailable (missing service role key)')
         return NextResponse.redirect(
-            new URL('/fa-verify/error?reason=server', request.url)
+            new URL('/fa-verify/error?reason=server', request.url),
+            { status: 303 }
         )
     }
 
     // Look up the verification request by token
     const { data: verificationRequest, error: lookupError } = await adminClient
         .from('fa_verification_requests')
-        .select('id, referee_id, fa_id, county, status')
+        .select('id, referee_id, fa_id, county, status, created_at, expires_at')
         .eq('response_token', token)
         .single()
 
     if (lookupError || !verificationRequest) {
         return NextResponse.redirect(
-            new URL('/fa-verify/error?reason=not_found', request.url)
+            new URL('/fa-verify/error?reason=not_found', request.url),
+            { status: 303 }
         )
     }
 
     // Check if already resolved
     if (verificationRequest.status !== 'awaiting_fa_response') {
         return NextResponse.redirect(
-            new URL(`/fa-verify/complete?status=already_resolved&action=${verificationRequest.status}`, request.url)
+            new URL(`/fa-verify/complete?status=already_resolved&action=${verificationRequest.status}`, request.url),
+            { status: 303 }
+        )
+    }
+
+    // Token TTL — reject links older than the allowed window. Prefer the
+    // explicit expires_at column (migration 0171); fall back to created_at + TTL
+    // so the handler is safe even before the migration is applied.
+    if (isTokenExpired(verificationRequest.expires_at, verificationRequest.created_at)) {
+        return NextResponse.redirect(
+            new URL('/fa-verify/error?reason=expired', request.url),
+            { status: 303 }
         )
     }
 
@@ -58,11 +112,15 @@ export async function GET(request: NextRequest) {
             notes: `Responded via email link by County FA`,
         })
         .eq('id', verificationRequest.id)
+        // Single-use guard re-asserted at write time: only flip a row still
+        // 'awaiting_fa_response', so two concurrent POSTs can't both resolve it.
+        .eq('status', 'awaiting_fa_response')
 
     if (updateError) {
         console.error('FA verify: failed to update request:', updateError)
         return NextResponse.redirect(
-            new URL('/fa-verify/error?reason=server', request.url)
+            new URL('/fa-verify/error?reason=server', request.url),
+            { status: 303 }
         )
     }
 
@@ -114,6 +172,21 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.redirect(
-        new URL(`/fa-verify/complete?status=${resolution}`, request.url)
+        new URL(`/fa-verify/complete?status=${resolution}`, request.url),
+        { status: 303 }
     )
+}
+
+/** True if the token is past its TTL. Prefers expires_at; falls back to created_at + 14d. */
+function isTokenExpired(expiresAt: string | null, createdAt: string | null): boolean {
+    if (expiresAt) {
+        return new Date(expiresAt).getTime() < Date.now()
+    }
+    if (createdAt) {
+        const expiry = new Date(createdAt).getTime() + TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000
+        return expiry < Date.now()
+    }
+    // No timing info at all — fail open on TTL (the single-use guard still
+    // applies); don't block a legitimate County FA on missing metadata.
+    return false
 }

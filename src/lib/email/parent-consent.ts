@@ -26,8 +26,13 @@ export async function sendParentConsentEmail({
     responseToken: string
 }): Promise<{ success: boolean; error?: string }> {
     const baseUrl = getBaseUrl()
-    const approveUrl = `${baseUrl}/api/parent-consent?token=${responseToken}&action=approved`
-    const declineUrl = `${baseUrl}/api/parent-consent?token=${responseToken}&action=rejected`
+    // Both buttons link to the read-only confirmation page (not a mutating
+    // endpoint). The page renders the child's name plus Approve / Decline
+    // buttons that POST the actual decision — so an email security scanner that
+    // prefetches the link only ever READS, never resolves the account.
+    const confirmUrl = `${baseUrl}/parent-consent/confirm?token=${responseToken}`
+    const approveUrl = confirmUrl
+    const declineUrl = confirmUrl
     const subject = `Parental consent needed for ${childName} on Whistle Connect`
     const html = parentalConsentHtml({ childName, approveUrl, declineUrl })
 

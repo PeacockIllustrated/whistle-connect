@@ -39,7 +39,11 @@ export const signUpSchema = z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(8, 'Password must be at least 8 characters'),
     full_name: z.string().min(2, 'Full name must be at least 2 characters').max(100, 'Full name is too long'),
-    role: z.enum(['coach', 'referee', 'admin'], { message: 'Invalid role' }),
+    // 'admin' is deliberately NOT a self-signup option — admins are provisioned
+    // out-of-band. Allowing it here (and in the handle_new_user allowlist) let
+    // anyone self-register with escrow/ban/consent-override powers (B1 blocker,
+    // see migration 0170).
+    role: z.enum(['coach', 'referee'], { message: 'Invalid role' }),
     phone: z.string().max(20, 'Phone number is too long').optional().or(z.literal('')),
     postcode: z.string().regex(UK_POSTCODE, 'Invalid UK postcode').optional().or(z.literal('')),
     fa_number: z.string()

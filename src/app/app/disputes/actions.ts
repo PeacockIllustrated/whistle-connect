@@ -5,7 +5,7 @@ import { createNotification } from '@/lib/notifications'
 import { revalidatePath } from 'next/cache'
 import { validate } from '@/lib/validation'
 import { disputeSchema } from '@/lib/validation'
-import { BOOKING_FEE_PENCE } from '@/lib/constants'
+import { BOOKING_FEE_PENCE, SOS_FEE_PENCE } from '@/lib/constants'
 import type { Dispute } from '@/lib/types'
 
 /** Read the current platform booking fee from settings, falling back to the constant. */
@@ -195,7 +195,7 @@ export async function resolveDispute(
 
     const { data: dispute } = await supabase
         .from('disputes')
-        .select('*, booking:bookings(id, coach_id, escrow_amount_pence, escrow_released_at)')
+        .select('*, booking:bookings(id, coach_id, escrow_amount_pence, escrow_released_at, is_sos)')
         .eq('id', disputeId)
         .eq('status', 'open')
         .single()
@@ -205,7 +205,7 @@ export async function resolveDispute(
     }
 
     const booking = dispute.booking as unknown as {
-        id: string; coach_id: string; escrow_amount_pence: number; escrow_released_at: string | null
+        id: string; coach_id: string; escrow_amount_pence: number; escrow_released_at: string | null; is_sos: boolean | null
     }
 
     const adminSupabase = createAdminClient()
@@ -213,41 +213,58 @@ export async function resolveDispute(
         return { error: 'Admin client unavailable' }
     }
 
-    const platformFeePence = await readPlatformFeePence()
+    // SOS bookings pooled the £1.99 premium into the platform fee at confirm
+    // time (see confirm_booking call in bookings/actions.ts). Mirror that here
+    // so the platform retains the premium on release, exactly as the
+    // escrow-release cron does — otherwise it leaks to the referee.
+    const releaseFeePence = (await readPlatformFeePence()) + (booking.is_sos ? SOS_FEE_PENCE : 0)
 
     if (resolution === 'resolved_coach') {
         // Full refund to coach — they get the booking fee back too since no service was rendered.
-        const { error: rpcError } = await adminSupabase.rpc('escrow_refund', {
+        // escrow_refund returns logical failures ('No escrow to refund' etc.) as a
+        // SUCCESSFUL call with a JSON error body — check data?.error too, else a
+        // failed money move gets silently marked resolved.
+        const { data, error: rpcError } = await adminSupabase.rpc('escrow_refund', {
             p_booking_id: booking.id,
         })
-        if (rpcError) {
-            return { error: 'Failed to refund escrow: ' + rpcError.message }
+        if (rpcError || data?.error) {
+            return { error: 'Failed to refund escrow: ' + (rpcError?.message || data?.error) }
         }
     } else if (resolution === 'resolved_referee') {
-        // Ref takes the gross; platform retains its booking fee.
-        const { error: rpcError } = await adminSupabase.rpc('escrow_release', {
+        // Ref takes the gross; platform retains its booking fee (+ SOS premium).
+        const { data, error: rpcError } = await adminSupabase.rpc('escrow_release', {
             p_booking_id: booking.id,
-            p_platform_fee_pence: platformFeePence,
+            p_platform_fee_pence: releaseFeePence,
         })
-        if (rpcError) {
-            return { error: 'Failed to release escrow: ' + rpcError.message }
+        if (rpcError || data?.error) {
+            return { error: 'Failed to release escrow: ' + (rpcError?.message || data?.error) }
         }
     } else if (resolution === 'resolved_split' && splitCoachPence !== undefined) {
-        const { error: refundErr } = await adminSupabase.rpc('escrow_refund', {
+        // Bound the split: the coach refund must be strictly within the escrow,
+        // otherwise escrow_refund would over-refund (or no-op on 0).
+        if (
+            !Number.isInteger(splitCoachPence) ||
+            splitCoachPence <= 0 ||
+            splitCoachPence >= booking.escrow_amount_pence
+        ) {
+            return { error: 'Split amount must be between £0.01 and the full escrow amount' }
+        }
+
+        const { data: refundData, error: refundErr } = await adminSupabase.rpc('escrow_refund', {
             p_booking_id: booking.id,
             p_refund_pence: splitCoachPence,
         })
-        if (refundErr) {
-            return { error: 'Failed to process split refund: ' + refundErr.message }
+        if (refundErr || refundData?.error) {
+            return { error: 'Failed to process split refund: ' + (refundErr?.message || refundData?.error) }
         }
 
-        // The remaining escrow still includes the booking fee — retain it on release.
-        const { error: releaseErr } = await adminSupabase.rpc('escrow_release', {
+        // The remaining escrow still includes the booking fee (+ SOS premium) — retain it on release.
+        const { data: releaseData, error: releaseErr } = await adminSupabase.rpc('escrow_release', {
             p_booking_id: booking.id,
-            p_platform_fee_pence: platformFeePence,
+            p_platform_fee_pence: releaseFeePence,
         })
-        if (releaseErr) {
-            return { error: 'Failed to process split release: ' + releaseErr.message }
+        if (releaseErr || releaseData?.error) {
+            return { error: 'Failed to process split release: ' + (releaseErr?.message || releaseData?.error) }
         }
     }
 

@@ -1040,7 +1040,7 @@ export async function coachConfirmInterest(
 
     const { data: offer, error: offerError } = await supabase
         .from('booking_offers')
-        .select('id, booking_id, referee_id, status, price_pence, booking:bookings(id, coach_id, ground_name, location_postcode, match_date, kickoff_time, is_sos, budget_pounds)')
+        .select('id, booking_id, referee_id, status, price_pence, booking:bookings(id, coach_id, ground_name, location_postcode, match_date, kickoff_time, age_group, is_sos, budget_pounds)')
         .eq('id', offerId)
         .single()
 
@@ -1055,6 +1055,36 @@ export async function coachConfirmInterest(
 
     if (offer.status !== 'sent') {
         return { error: 'This offer is no longer pending' }
+    }
+
+    // Re-validate the referee being confirmed against the safeguarding gates —
+    // mirrors acceptOffer / sendBookingRequest. The ref expressed interest, but
+    // an interest offer can predate a consent lock or be confirmed against an
+    // age group / DBS requirement they don't satisfy. Fails closed on NULL DOB.
+    {
+        const { data: refGate } = await supabase
+            .from('referee_profiles')
+            .select('parental_consent_status, dbs_status, profile:profiles!inner(date_of_birth)')
+            .eq('profile_id', offer.referee_id)
+            .single()
+
+        if (
+            refGate?.parental_consent_status === 'awaiting' ||
+            refGate?.parental_consent_status === 'rejected'
+        ) {
+            return { error: "This referee's account is awaiting parental approval and cannot be booked yet." }
+        }
+
+        // DBS enforcement: U16 and under require a verified DBS check.
+        if (requiresDBS(booking.age_group) && refGate?.dbs_status !== 'verified') {
+            return { error: 'This referee does not have a verified DBS check, which is required for this age group.' }
+        }
+
+        // Age eligibility at the MATCH DATE.
+        const refProfile = refGate && (Array.isArray(refGate.profile) ? refGate.profile[0] : refGate.profile)
+        if (refereeBlockedFromAgeGroup(refProfile?.date_of_birth, booking.age_group, booking.match_date)) {
+            return { error: 'This referee is not eligible to officiate this age group.' }
+        }
     }
 
     // Price integrity: the referee tapped "I'm Available" against the fee the
