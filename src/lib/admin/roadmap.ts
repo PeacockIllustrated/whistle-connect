@@ -83,6 +83,11 @@ export const ROADMAP_ITEMS: RoadmapItem[] = [
         detail: 'firebase-admin already wired server-side. FCM client SDK integration ahead of the iOS / Android wrapper builds.',
     },
     {
+        title: 'Custom SOS alert sound',
+        status: 'planned',
+        detail: 'A distinct audible chime for incoming SOS broadcasts so referees notice them over an ordinary notification. In the installed PWA this is limited to when the app is foregrounded — the service worker signals the open client to play the sound; backgrounded web push falls back to the OS default tone plus the existing SOS vibration pattern. A true custom background sound arrives with the Capacitor wrapper via a dedicated high-priority notification channel.',
+    },
+    {
         title: 'Vercel Pro upgrade',
         status: 'planned',
         detail: 'Required ahead of pilot scale to unlock real cron cadence (Hobby tier throttles to once-per-day).',
