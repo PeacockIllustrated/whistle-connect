@@ -508,6 +508,13 @@ WEB_PUSH_ENABLED=true
 # Mapbox
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=
 
+# World Cup live scores — football-data.org is the authoritative SCORES source,
+# overlaid on top of the openfootball fixture sync by /api/cron/wc-sync. openfootball
+# remains the STRUCTURE source (fixtures/teams/groups). If unset, the overlay is a
+# no-op and the tracker falls back to openfootball-only (which lagged badly at launch).
+FOOTBALL_DATA_API_KEY=                    # free key from football-data.org (WC is free-tier)
+FOOTBALL_DATA_COMPETITION=WC              # optional; defaults to 'WC' if unset
+
 # Make.com email hub — the app renders branded HTML and POSTs every transactional
 # email to one Make webhook, which sends via Zoho Mail. This is the SOLE email
 # transport (Resend has been removed). Account-agnostic. See docs/make-email-hub.md.
