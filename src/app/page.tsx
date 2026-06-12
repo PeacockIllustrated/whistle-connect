@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { ShieldCheck, Clock, Bell, Users, CalendarX, Wallet, MapPin, CalendarCheck } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import SplashScreen from '@/components/ui/SplashScreen'
+import { CookieSettingsLink } from '@/components/consent/CookieSettingsLink'
 import { createClient } from '@/lib/supabase/server'
 
 export default async function LandingPage() {
@@ -343,6 +344,7 @@ export default async function LandingPage() {
             <Link href="/terms" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
               Terms
             </Link>
+            <CookieSettingsLink className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]" />
             <a href="mailto:support@whistleconnect.co.uk" className="text-xs text-[var(--foreground-subtle)] hover:text-[var(--foreground)]">
               support@whistleconnect.co.uk
             </a>
