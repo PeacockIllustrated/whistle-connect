@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Suspense } from "react";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
+import { ConsentProvider } from "@/components/consent/ConsentProvider";
+import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
+import { GoogleAnalytics } from "@/components/consent/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,9 +60,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Suspense fallback={null}>
-          <ThemeProvider>
-            {children}
-          </ThemeProvider>
+          <ConsentProvider>
+            <ThemeProvider>
+              {children}
+            </ThemeProvider>
+            <CookieConsentBanner />
+            <GoogleAnalytics />
+          </ConsentProvider>
         </Suspense>
       </body>
     </html>

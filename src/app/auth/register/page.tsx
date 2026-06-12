@@ -12,6 +12,7 @@ import { UserRole } from '@/lib/types'
 import { CelebrationOverlay } from '@/components/ui/CelebrationOverlay'
 import { cn } from '@/lib/utils'
 import { ageOnDate, MINIMUM_REFEREE_AGE, PARENTAL_CONSENT_AGE } from '@/lib/constants'
+import { useConsent } from '@/components/consent/ConsentProvider'
 
 const roleOptions = [
     { value: 'coach', label: 'Coach / Club Manager' },
@@ -34,6 +35,8 @@ export default function RegisterPage() {
     const [parentEmail, setParentEmail] = useState('')
     const [termsAccepted, setTermsAccepted] = useState(false)
     const [privacyAccepted, setPrivacyAccepted] = useState(false)
+    const [analyticsConsent, setAnalyticsConsent] = useState(false)
+    const { setConsent } = useConsent()
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const [celebration, setCelebration] = useState<{ redirectTo: string } | null>(null)
@@ -98,6 +101,13 @@ export default function RegisterPage() {
             setError('Please accept the Privacy Policy and FA safeguarding consent to continue')
             setLoading(false)
             return
+        }
+
+        // Optional analytics consent. Only opting IN records a decision here
+        // (and suppresses the site-wide banner); leaving it unticked keeps the
+        // user "undecided" so the banner still offers an explicit accept/reject.
+        if (analyticsConsent) {
+            setConsent('granted')
         }
 
         try {
@@ -331,6 +341,28 @@ export default function RegisterPage() {
                                     , and consent to Whistle Connect sharing my
                                     registration and match data with The Football
                                     Association for safeguarding purposes.
+                                </span>
+                            </label>
+
+                            {/* Optional, unticked by default — non-essential analytics
+                                cookies. Mirrors the site-wide cookie banner; ticking
+                                here opts in so the banner won't appear afterwards. */}
+                            <label className="flex items-start gap-3 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={analyticsConsent}
+                                    onChange={(e) => setAnalyticsConsent(e.target.checked)}
+                                    className="mt-1 w-4 h-4 rounded border-[var(--border-color)] text-[var(--color-primary)] focus:ring-2 focus:ring-[var(--border-focus)] flex-shrink-0 cursor-pointer"
+                                    aria-describedby="analytics-description"
+                                />
+                                <span
+                                    id="analytics-description"
+                                    className="text-sm text-[var(--foreground-muted)] leading-relaxed"
+                                >
+                                    <span className="font-medium text-[var(--foreground)]">Optional:</span>{' '}
+                                    Allow Google Analytics cookies to help us understand how the app
+                                    is used and improve it. You can change this any time via{' '}
+                                    <span className="font-medium">Cookie settings</span> in the footer.
                                 </span>
                             </label>
                         </div>

@@ -1,8 +1,9 @@
-const CACHE_NAME = 'whistle-connect-v2';
+const CACHE_NAME = 'whistle-connect-v3';
 const STATIC_ASSETS = [
     '/offline',
     '/icon-192x192.png',
     '/icon-512x512.png',
+    '/badge-96x96.png',
 ];
 
 // ── Install: pre-cache static assets ─────────────────────────────────────
@@ -124,7 +125,10 @@ self.addEventListener('push', (event) => {
     const options = {
         body: payload.body,
         icon: self.location.origin + '/icon-192x192.png',
-        badge: self.location.origin + '/icon-192x192.png',
+        // Badge = the small monochrome status-bar glyph. Android/Nothing OS use
+        // ONLY its alpha channel, so it must be a transparent white silhouette —
+        // a full-bleed icon renders as a solid square. This is the whistle mark.
+        badge: self.location.origin + '/badge-96x96.png',
         tag: tag,
         renotify: true,
         timestamp: Date.now(),
