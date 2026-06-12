@@ -613,10 +613,14 @@ export async function cancelBooking(bookingId: string) {
                 return { error: 'Refunds are temporarily unavailable. Please contact support.' }
             }
             // Coach-initiated cancellation of a confirmed booking: the platform
-            // retains the booking fee; match fee + travel are refunded. (Referee
-            // pull-outs refund in full — see the branch above. A non-confirmed
-            // booking has no escrow, so this block is skipped for those.)
-            const feePence = await getBookingFeePence()
+            // retains the booking fee — plus the £1.99 SOS premium on an SOS
+            // booking, mirroring the confirm path (acceptOffer /
+            // coachConfirmInterest) so a coach can't summon a referee via SOS,
+            // get them confirmed, then cancel and claw the premium back. Match
+            // fee + travel are refunded. (Referee pull-outs refund in full — see
+            // the branch above. A non-confirmed booking has no escrow, so this
+            // block is skipped for those.)
+            const feePence = (await getBookingFeePence()) + (booking.is_sos ? SOS_FEE_PENCE : 0)
             const { data: refundResult, error: refundError } = await admin.rpc('escrow_refund_keep_fee', {
                 p_booking_id: bookingId,
                 p_fee_pence: feePence,
