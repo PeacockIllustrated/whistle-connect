@@ -14,6 +14,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
 import { WC_2026_TEAMS, codeForName } from './teams-2026'
 import { isoForFifa } from './flags'
+import { applyFootballDataScores } from './football-data'
 import type { MatchStage, TeamStage } from './types'
 
 const OPENFOOTBALL_URL = 'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json'
@@ -267,6 +268,10 @@ export async function recomputeStandings(admin: SupabaseClient): Promise<number>
 export async function runFullSync(admin: SupabaseClient) {
     const teams = await seedTeams(admin)
     const matches = await syncMatches(admin)
+    // Overlay authoritative scores AFTER the openfootball fixture sync (which
+    // nulls scores the feed lacks), so real results survive every cron cycle.
+    // Inert without FOOTBALL_DATA_API_KEY. Must run before recompute.
+    const scored = await applyFootballDataScores(admin)
     const recomputed = await recomputeStandings(admin)
-    return { teams, matches, recomputed }
+    return { teams, matches, scored, recomputed }
 }
