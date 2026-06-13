@@ -13,14 +13,16 @@ a frequency cap. This doc is the design + operations reference.
 - **Opt-out:** `profiles.reengagement_opt_out` (toggle on `/app/profile`). Transactional notifications are never affected.
 - **Idempotency / cap:** `engagement_nudges` table (migration `0173`).
 
-## ⚠️ Dependency: web push (Known Issue #1)
+## Dependency: web push (resolved 2026-06-13)
 
 Re-engagement targets people who have *stopped opening the app*, so it depends on
-**OS-level push actually working**. Production web push is currently broken (VAPID
-keypair mismatch in Vercel env — see CLAUDE.md "Known Issues #1" / "VAPID Keys").
-Until that is fixed, nudges still write the in-app bell row but **phones won't
-buzz**, so dormant users won't see them. Fix VAPID first for this feature to do
-its job. FCM (native) is unaffected by the VAPID issue.
+**OS-level push actually working**. The production VAPID keypair mismatch that
+previously stopped every web push from leaving the server is **fixed** (see
+CLAUDE.md → Known Issues → Resolved, and the "VAPID Keys" runbook), so nudges now
+reach phones as well as the in-app bell. If web push regresses, nudges still
+write the in-app row (so they're not lost) but won't buzz — watch Sentry
+`push.transport=web` / `push.failure=vapid-*` and `GET /api/admin/push-debug`.
+FCM (native) is a separate transport and was never affected by the VAPID issue.
 
 ## Segments
 

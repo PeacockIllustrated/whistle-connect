@@ -28,8 +28,8 @@ import { isEnabled } from '@/lib/feature-flags'
  *
  * Opt-out: candidate queries exclude reengagement_opt_out / suspended users, and
  * createNotification(category:'engagement') re-checks as a backstop. In-app rows
- * still write even if web push is misconfigured (Known Issue #1), so the nudge
- * lands in the bell either way.
+ * are always written first (independent of push transport health), so a nudge
+ * lands in the bell even if a push send fails.
  */
 
 const COOLDOWN_DAYS = 3            // no user gets more than one nudge per this window

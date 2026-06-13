@@ -197,7 +197,7 @@ Schedules in `vercel.json`:
 | `/api/cron/escrow-release` | `*/15 * * * *` | Path A: mutual-confirm releases (status=completed + both_confirmed_at). Path B: kickoff+48h fallback. Skips on open dispute. Fires nudge notifications 24h after first mark. |
 | `/api/cron/reconcile` | `0 6 * * 1` (weekly) | Detects wallet balance mismatches + bookings with escrow stuck >7 days. **Sweeps `withdrawal_requests` stuck `pending` >1h: asks Stripe for ground truth — matching transfer → `wallet_withdraw_finalise`, provably none → `wallet_withdraw_cancel` (refund the hold). Never double-pays or strands.** Notifies admins. |
 | `/api/cron/wc-sync` | `*/30 * * * *` | World Cup fixture/score sync (openfootball structure + football-data.org scores overlay). |
-| `/api/cron/engagement` | `0 17 * * *` (daily) | **Re-engagement nudges.** Four segments, highest-value first: `ref_open_matches` (available ref, open matches in radius via `find_bookings_near_referee`, not already booked), `coach_unfilled` (coach's match within 48h, still no ref), `ref_payout_setup` (available ref, Stripe Connect not onboarded), `winback` (dormant ≥21d). Sent via `createNotification(category:'engagement')`. **One nudge/user/run, ≤1 per 3 days** (cooldown). Idempotent: CLAIMS a `(user_id, nudge_type, period_key)` row in `engagement_nudges` before sending — PK conflict = already nudged this period → skip. Excludes opted-out (`profiles.reengagement_opt_out`) + suspended + incomplete-setup. Kill switch: `ENGAGEMENT_NUDGES_ENABLED`. **Reaches phones only once Known Issue #1 (VAPID) is fixed — until then nudges land in-app only.** See `docs/engagement-notifications.md`. |
+| `/api/cron/engagement` | `0 17 * * *` (daily) | **Re-engagement nudges.** Four segments, highest-value first: `ref_open_matches` (available ref, open matches in radius via `find_bookings_near_referee`, not already booked), `coach_unfilled` (coach's match within 48h, still no ref), `ref_payout_setup` (available ref, Stripe Connect not onboarded), `winback` (dormant ≥21d). Sent via `createNotification(category:'engagement')`. **One nudge/user/run, ≤1 per 3 days** (cooldown). Idempotent: CLAIMS a `(user_id, nudge_type, period_key)` row in `engagement_nudges` before sending — PK conflict = already nudged this period → skip. Excludes opted-out (`profiles.reengagement_opt_out`) + suspended + incomplete-setup. Kill switch: `ENGAGEMENT_NUDGES_ENABLED`. Now that web push delivers (VAPID resolved 2026-06-13), nudges reach phones as well as the in-app bell. See `docs/engagement-notifications.md`. |
 
 **Auth**: Bearer `CRON_SECRET`. Vercel auto-injects this header for cron-triggered requests. If `CRON_SECRET` env var isn't set in Production, all cron requests 401 silently — and Vercel Hobby plan throttles crons to once-per-day regardless of schedule string. For real sub-daily schedules at scale, Pro plan is needed (or move to Supabase pg_cron).
 
@@ -330,24 +330,21 @@ const { data, error } = await supabase.from('table').select('*')
 ## Known Issues (Priority Order)
 
 > Reconciled 2026-05-15 (pre-FA-trial cleanup pass); updated 2026-05-17
-> (push/VAPID finding added; Vercel-cron concern cleared — see Resolved).
+> (push/VAPID finding added; Vercel-cron concern cleared — see Resolved);
+> updated 2026-06-13 (VAPID env keypair mismatch RESOLVED in production —
+> web push now delivers; moved to Resolved, remaining open issues renumbered).
 > Don't re-"fix" already-correct code.
 
 ### Still Open
 
-1. **🔴 Web push BROKEN in production — VAPID keypair mismatch (Vercel env). FA-trial blocker.**
-   - **Symptom:** Sentry shows `[WebPush] VAPID validation failed: VAPID public key does not match private key — they were not generated as a pair` (~110 occ / 90d) + a few `Invalid JWK EC key`. In-app `notifications` rows write fine and `push_subscriptions` exist, so it *looks* like notifications work — but **zero pushes ever leave the server**; phones never buzz. (Confirmed via prod Sentry + DB, 2026-05-17.)
-   - **Root cause: configuration, not code.** `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` in Vercel Production are not a generated pair. `src/lib/push/validate.ts` is **correct** (proper ECDH-on-P256 derivation) and is correctly refusing to send. **Do NOT "fix" validate.ts** — that's the WHISTLE-CONNECT-1 anti-pattern.
-   - **Fix:** `npx web-push generate-vapid-keys` → set BOTH vars in Vercel Production from the *same* output (no quotes/whitespace — Vercel stores literally) → **redeploy** (env not hot-reloaded; validate.ts caches per server instance) → `DELETE FROM push_subscriptions WHERE platform='web'` (stale subs are bound to the old key and 403/410 — migration `0147`) → users re-grant → verify `GET /api/admin/push-debug` (Bearer `CRON_SECRET`). Full runbook: "VAPID Keys" section above.
-
-2. **`authenticated` can execute SECURITY DEFINER RPCs directly** (advisor lint 0029)
+1. **`authenticated` can execute SECURITY DEFINER RPCs directly** (advisor lint 0029)
    - Money/booking RPCs (`confirm_booking`, `mark_booking_complete`, `wallet_withdraw_*`, `charge_sos_fee`, `escrow_refund`, `claim_sos_booking`, `archive_offer_*`) are callable by any signed-in user via `/rest/v1/rpc/...`, not just through the app's server actions.
    - Migration `0140` documents this as an accepted tradeoff (the RLS-helper subset *must* keep the `authenticated` grant). Proper fix is per-function `auth.uid()` guards or moving non-helper RPCs to a private schema — its own PR, not a trial blocker. **`anon`/`PUBLIC` exposure was the real hole and is closed by `0155`.**
 
-3. **PostGIS in `public` schema** (advisor lints 0013/0014)
+2. **PostGIS in `public` schema** (advisor lints 0013/0014)
    - `postgis` extension + `spatial_ref_sys` live in `public`. `spatial_ref_sys` is a static SRID lookup (no sensitive data); the migration role can't `ALTER` extension-owned objects. Moving PostGIS to its own schema is an invasive, separately-tested migration. Accepted, same stance as `0138`.
 
-4. **Auth: leaked-password protection disabled** (advisor)
+3. **Auth: leaked-password protection disabled** (advisor)
    - HaveIBeenPwned check is off. Supabase **dashboard** setting (Auth → Policies), not a DDL change. NOTE: this feature requires **Supabase Pro** (separate from Vercel Pro) — if on Supabase Free, raise minimum password length instead.
 
 ### Stale branches & PRs — do NOT merge (post-trial triage)
@@ -360,6 +357,8 @@ merge them to get a trial over the line — they will destabilise master.
 - **`claude/ecstatic-nobel-0c3ae7`** — 1 stale README/docs commit. Ignore/delete.
 
 ### Resolved (kept for context, do not regress)
+
+- ✅ **Web push BROKEN in production — VAPID env keypair mismatch** (was Still Open #1; **RESOLVED in production 2026-06-13**). This was the *configuration* hole, distinct from the earlier `validate.ts` *code* bug (WHISTLE-CONNECT-1, also resolved below): `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` in Vercel Production were not a generated pair, so `validate.ts` (correctly) refused every send and **zero pushes left the server**. Fixed per the "VAPID Keys" runbook — regenerated keypair, set BOTH vars in Vercel Production from the same output, redeployed, cleared stale `platform='web'` subscriptions (migration `0147`); users re-grant on next visit. **Web push now delivers — phones buzz.** Verify anytime via `GET /api/admin/push-debug` (Bearer `CRON_SECRET`) for the matching public-key fingerprint, and watch Sentry `push.transport=web` / `push.failure=vapid-*` for regressions. `validate.ts` remains correct — **do NOT "simplify" it** (WHISTLE-CONNECT-1 anti-pattern).
 
 - ✅ **Vercel cron cadence concern** — confirmed **Vercel Pro + active (2026-05-17)**. Crons run at the configured cadence (`escrow-release` every 15 min, `reconcile` weekly, the stuck-withdrawal sweep weekly). The old "Hobby throttles to daily" worry does **not** apply. `CRON_SECRET` is set in Production (verified) so the cron endpoints authenticate.
 
@@ -423,9 +422,13 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0165 | `parental_consent_under_18` — `handle_new_user` consent/lock threshold 16 → 18 (Terms/Privacy alignment). New signups only. |
 | 0162 | `money_rpc_stop_bleed` — revoke `escrow_refund` / `claim_sos_booking` from `authenticated`; drop legacy `wallet_withdraw`; `confirm_booking` already-held (double-charge) guard (WS-B). |
 | 0163 | `lockdown_notification_rpcs` — revoke `create_notification` (spoofing) + `handle_new_user` from `authenticated` (WS-C). |
+| 0166 | `admin_audit_log` — accountable record of consequential admin actions (verify/suspend/approve-a-minor/refund/setting-change) now the FA is involved. Read+write ONLY via the service-role client from `requireAdmin()`-guarded server actions; RLS enabled with NO policies + grants revoked (deny-all for anon/authenticated). |
 | 0167 | `escrow_refund_keep_fee` — coach-cancel refund that retains the platform fee: the £1 booking fee plus the £1.99 SOS premium on SOS bookings (refunds match+travel, writes the fee as a `platform_fee` debit). Referee pull-out still uses `escrow_refund` (full). `SECURITY DEFINER`, `search_path` pinned, `service_role`-only. |
 | 0168 | `profile_setup_complete` — `profiles.setup_complete boolean DEFAULT true` (existing accounts + normal signups unaffected). Recreates `handle_new_user` to persist `setup_complete` from metadata; **all 0165 safeguarding invariants preserved verbatim** (under-18 fail-closed lock, fa_id, pinned search_path, anon/PUBLIC revoke). Powers the generic (deferred-role) World Cup signup → `/finish-setup` funnel. |
 | 0169 | `world_cup_sweepstake` — `wc_teams`, `wc_matches`, `wc_sweepstakes`, `wc_sweepstake_entries`, `wc_sweepstake_entry_teams`. Public-read tournament data (anon SELECT; writes only via service-role cron). Organiser-scoped sweepstakes; public share + claim go through the admin client (parent-consent pattern). Fully isolated from booking/escrow/money. |
+| 0170 | `block_admin_self_signup` — `handle_new_user`'s role allowlist drops `'admin'` (mirrored in zod `signUpSchema`), closing self-registration as admin via the server action OR a direct POST to the public Supabase auth endpoint with `raw_user_meta_data.role='admin'` (which granted escrow-moving / user-ban / consent-override powers). Launch-blocker. |
+| 0171 | `consent_token_ttl` — adds nullable `expires_at` to the parental-consent + FA-verify token tables so a stale/forwarded link can't later resolve a minor's account. Pairs with the GET→human-POST move (`/api/parent-consent`, `/api/fa-verify`). Safeguarding (launch-blocker H1). |
+| 0172 | `rate_limit_counters` — Postgres fixed-window counter (per recipient) as a shared-store backstop to the per-lambda in-memory email limiter (`src/lib/rate-limit.ts`); consulted before every outbound transactional email (Make→Zoho hub) so address-rotation can't mail-bomb. `rate_limit_hit` RPC is SECDEF, `search_path` pinned, `anon`/`PUBLIC` revoked, `service_role`-only. |
 | 0173 | `engagement_notifications` — `profiles.last_active_at` (activity heartbeat for win-back; NOT NULL DEFAULT now() so existing rows aren't day-one "dormant"), `profiles.reengagement_opt_out` (per-user opt-out for marketing/re-engagement nudges; transactional unaffected), `engagement_nudges` dedupe/frequency-cap log (composite PK = `(user_id, nudge_type, period_key)`, RLS-on/no-policy service-role only). No new SECDEF RPCs — the `/api/cron/engagement` cron does candidate selection with the service-role client + existing `find_bookings_near_referee`. |
 
 > Note: the repo uses `0xxx_*` filenames but the **remote** migration tracking
