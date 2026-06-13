@@ -9,6 +9,7 @@ import { BookingCardCompact } from '@/components/app/BookingCard'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminTriagePanel } from '@/components/app/AdminTriagePanel'
+import { AdminBroadcastCard } from '@/components/app/AdminBroadcastCard'
 import type { StatItem } from '@/components/app/DashboardStats'
 import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
 import type { AdminTriage } from '@/app/app/admin/actions'
@@ -95,6 +96,8 @@ export function AdminDashboard({
                     <div className="mb-6">
                         <DashboardStats stats={adminStats} />
                     </div>
+
+                    <AdminBroadcastCard />
 
                     <div className="space-y-3">
                         <ActionCard

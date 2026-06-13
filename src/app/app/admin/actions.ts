@@ -22,6 +22,61 @@ async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>) 
     return user
 }
 
+/**
+ * Broadcast an in-app + push notification to EVERY user. Admin-only via the
+ * cookie session (mirrors POST /api/admin/broadcast-push but without exposing
+ * CRON_SECRET to the browser). `dryRun` returns the recipient count without
+ * sending anything. Recorded in admin_audit_log.
+ *
+ * Fan-out uses the service-role client (via createNotification) so it can write
+ * to every recipient regardless of RLS. Promise.allSettled means one failed
+ * recipient never tanks the whole broadcast.
+ */
+export async function broadcastNotification(input: {
+    title: string
+    message: string
+    link?: string
+    dryRun?: boolean
+}): Promise<{ success?: boolean; recipients?: number; dispatched?: number; error?: string }> {
+    const supabase = await createClient()
+    const user = await requireAdmin(supabase)
+    if (!user) return { error: 'Admin access required' }
+
+    const title = (input.title || '').trim()
+    const message = (input.message || '').trim()
+    if (!title || title.length > 60) return { error: 'Title is required (max 60 characters).' }
+    if (!message || message.length > 300) return { error: 'Message is required (max 300 characters).' }
+    const link = (input.link || '').trim() || '/app'
+
+    const admin = createAdminClient()
+    if (!admin) return { error: 'Notification service is unavailable.' }
+
+    const { data: profiles, error } = await admin.from('profiles').select('id')
+    if (error) return { error: error.message }
+    const recipients = profiles?.length ?? 0
+
+    // Dry run: just report how many people this would reach.
+    if (input.dryRun) return { success: true, recipients }
+
+    const results = await Promise.allSettled(
+        (profiles || []).map(p =>
+            createNotification({ userId: p.id, title, message, type: 'info', link })
+        )
+    )
+    const dispatched = results.filter(
+        r => r.status === 'fulfilled' && r.value.success !== false
+    ).length
+
+    await logAdminAction({
+        actorId: user.id,
+        action: 'notification.broadcast',
+        summary: `Broadcast "${title}" to ${dispatched}/${recipients} user(s)`,
+        detail: { title, message, link, recipients, dispatched },
+    })
+
+    return { success: true, recipients, dispatched }
+}
+
 export async function verifyReferee(refereeId: string, verified: boolean) {
     const supabase = await createClient()
     const user = await requireAdmin(supabase)
