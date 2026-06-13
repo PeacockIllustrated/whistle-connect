@@ -124,6 +124,34 @@ export async function saveMyGeolocation(lat: number, lng: number): Promise<{ suc
     return { success: true }
 }
 
+/**
+ * Update the signed-in user's re-engagement notification preference.
+ * `optOut = true` silences re-engagement / marketing nudges (the scheduled
+ * /api/cron/engagement nudges); transactional notifications (booking, payment,
+ * dispute) are unaffected. Own-row update via the cookie client + RLS.
+ */
+export async function updateNotificationPreferences(optOut: boolean): Promise<{ success?: boolean; error?: string }> {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { error: 'Not authenticated' }
+    }
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ reengagement_opt_out: optOut })
+        .eq('id', user.id)
+
+    if (error) {
+        console.error('Error updating notification preferences:', error)
+        return { error: error.message }
+    }
+
+    revalidatePath('/app/profile')
+    return { success: true }
+}
+
 export async function updateFANumber(faNumber: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

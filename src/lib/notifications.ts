@@ -17,10 +17,19 @@ interface CreateNotificationParams {
     link?: string
     /** Set to 'sos' for high-priority delivery on native devices */
     urgency?: 'normal' | 'sos'
+    /**
+     * 'transactional' (default) always sends — booking/payment/dispute events
+     * the user has a direct stake in. 'engagement' is re-engagement / marketing
+     * (the scheduled nudge cron): it is suppressed for users who have opted out
+     * (`profiles.reengagement_opt_out`) or are suspended. This is a backstop —
+     * the nudge cron also filters these out at candidate selection — so any
+     * future engagement caller gets the opt-out honoured for free.
+     */
+    category?: 'transactional' | 'engagement'
 }
 
 export async function createNotification({
-    userId, title, message, type, link, urgency = 'normal',
+    userId, title, message, type, link, urgency = 'normal', category = 'transactional',
 }: CreateNotificationParams): Promise<{ success: boolean; error?: string }> {
     // The `create_notification` RPC is granted to `service_role` ONLY
     // (migration 0163 — it has no internal auth.uid() check, so leaving it
@@ -38,6 +47,21 @@ export async function createNotification({
             tags: { 'notification.failure': 'admin-client-missing' },
         })
         return { success: false, error: 'Notification service unavailable' }
+    }
+
+    // 0. Engagement / marketing suppression. Re-engagement nudges must honour
+    //    the recipient's opt-out and never reach suspended accounts. We treat a
+    //    suppressed nudge as a (no-op) success so callers don't log it as a
+    //    failure. Transactional notifications skip this check entirely.
+    if (category === 'engagement') {
+        const { data: recipient } = await supabase
+            .from('profiles')
+            .select('reengagement_opt_out, suspended_at')
+            .eq('id', userId)
+            .maybeSingle()
+        if (!recipient || recipient.reengagement_opt_out || recipient.suspended_at) {
+            return { success: true }
+        }
     }
 
     // 1. Create in-app notification via SECURITY DEFINER RPC function

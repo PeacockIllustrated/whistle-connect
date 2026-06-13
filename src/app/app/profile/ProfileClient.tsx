@@ -8,6 +8,7 @@ import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
+import { NotificationPreferencesCard } from '@/components/profile/NotificationPreferencesCard'
 import { Modal } from '@/components/ui/Modal'
 import { updateFANumber, deleteMyAccount, exportMyData } from './actions'
 import { requestPasswordReset } from '@/lib/auth/actions'
@@ -108,6 +109,10 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
                     </div>
                 </div>
             </Card>
+
+            {/* Notification preferences — re-engagement opt-out (transactional
+                notifications are always delivered, regardless of this toggle). */}
+            <NotificationPreferencesCard initialOptOut={profile?.reengagement_opt_out ?? false} />
 
             {/* Referee Details (if referee) */}
             {profile?.role === 'referee' && refereeProfile && (

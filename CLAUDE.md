@@ -163,7 +163,7 @@ Idempotency keys on **every** Stripe write. Money-loss bug from the pre-launch p
 2. **Web Push (VAPID)** — `web-push` lib in `src/lib/notifications.ts:sendWebPush`. VAPID validation in `src/lib/push/validate.ts` uses **ECDH on P-256** (NOT JWK slicing — that was the SOS bug from Sentry WHISTLE-CONNECT-1).
 3. **FCM (firebase-admin)** — for native app wrappers (PWA + future Capacitor). `src/lib/firebase-admin.ts`.
 
-**Single entry point**: `createNotification({ userId, title, message, type, link?, urgency? })` in `src/lib/notifications.ts`. Internally prefers `createAdminClient()` (service-role) so cron + system contexts can fire — falls back to cookie client in local dev. Don't write notifications by inserting directly into the table; always go through this function.
+**Single entry point**: `createNotification({ userId, title, message, type, link?, urgency?, category? })` in `src/lib/notifications.ts`. Internally prefers `createAdminClient()` (service-role) so cron + system contexts can fire — falls back to cookie client in local dev. Don't write notifications by inserting directly into the table; always go through this function. **`category` defaults to `'transactional'` (always sends); pass `'engagement'` for re-engagement/marketing nudges — those are suppressed for opted-out (`profiles.reengagement_opt_out`) and suspended recipients.** The scheduled nudge cron (`/api/cron/engagement`, migration 0173) is the only `'engagement'` caller today.
 
 **23 call sites audited**, all wired correctly. Key triggers:
 
@@ -196,6 +196,8 @@ Schedules in `vercel.json`:
 |---|---|---|
 | `/api/cron/escrow-release` | `*/15 * * * *` | Path A: mutual-confirm releases (status=completed + both_confirmed_at). Path B: kickoff+48h fallback. Skips on open dispute. Fires nudge notifications 24h after first mark. |
 | `/api/cron/reconcile` | `0 6 * * 1` (weekly) | Detects wallet balance mismatches + bookings with escrow stuck >7 days. **Sweeps `withdrawal_requests` stuck `pending` >1h: asks Stripe for ground truth — matching transfer → `wallet_withdraw_finalise`, provably none → `wallet_withdraw_cancel` (refund the hold). Never double-pays or strands.** Notifies admins. |
+| `/api/cron/wc-sync` | `*/30 * * * *` | World Cup fixture/score sync (openfootball structure + football-data.org scores overlay). |
+| `/api/cron/engagement` | `0 17 * * *` (daily) | **Re-engagement nudges.** Four segments, highest-value first: `ref_open_matches` (available ref, open matches in radius via `find_bookings_near_referee`, not already booked), `coach_unfilled` (coach's match within 48h, still no ref), `ref_payout_setup` (available ref, Stripe Connect not onboarded), `winback` (dormant ≥21d). Sent via `createNotification(category:'engagement')`. **One nudge/user/run, ≤1 per 3 days** (cooldown). Idempotent: CLAIMS a `(user_id, nudge_type, period_key)` row in `engagement_nudges` before sending — PK conflict = already nudged this period → skip. Excludes opted-out (`profiles.reengagement_opt_out`) + suspended + incomplete-setup. Kill switch: `ENGAGEMENT_NUDGES_ENABLED`. **Reaches phones only once Known Issue #1 (VAPID) is fixed — until then nudges land in-app only.** See `docs/engagement-notifications.md`. |
 
 **Auth**: Bearer `CRON_SECRET`. Vercel auto-injects this header for cron-triggered requests. If `CRON_SECRET` env var isn't set in Production, all cron requests 401 silently — and Vercel Hobby plan throttles crons to once-per-day regardless of schedule string. For real sub-daily schedules at scale, Pro plan is needed (or move to Supabase pg_cron).
 
@@ -424,6 +426,7 @@ The numbering jumped from `0109` to timestamped (`20260429*`) names when Supabas
 | 0167 | `escrow_refund_keep_fee` — coach-cancel refund that retains the platform fee: the £1 booking fee plus the £1.99 SOS premium on SOS bookings (refunds match+travel, writes the fee as a `platform_fee` debit). Referee pull-out still uses `escrow_refund` (full). `SECURITY DEFINER`, `search_path` pinned, `service_role`-only. |
 | 0168 | `profile_setup_complete` — `profiles.setup_complete boolean DEFAULT true` (existing accounts + normal signups unaffected). Recreates `handle_new_user` to persist `setup_complete` from metadata; **all 0165 safeguarding invariants preserved verbatim** (under-18 fail-closed lock, fa_id, pinned search_path, anon/PUBLIC revoke). Powers the generic (deferred-role) World Cup signup → `/finish-setup` funnel. |
 | 0169 | `world_cup_sweepstake` — `wc_teams`, `wc_matches`, `wc_sweepstakes`, `wc_sweepstake_entries`, `wc_sweepstake_entry_teams`. Public-read tournament data (anon SELECT; writes only via service-role cron). Organiser-scoped sweepstakes; public share + claim go through the admin client (parent-consent pattern). Fully isolated from booking/escrow/money. |
+| 0173 | `engagement_notifications` — `profiles.last_active_at` (activity heartbeat for win-back; NOT NULL DEFAULT now() so existing rows aren't day-one "dormant"), `profiles.reengagement_opt_out` (per-user opt-out for marketing/re-engagement nudges; transactional unaffected), `engagement_nudges` dedupe/frequency-cap log (composite PK = `(user_id, nudge_type, period_key)`, RLS-on/no-policy service-role only). No new SECDEF RPCs — the `/api/cron/engagement` cron does candidate selection with the service-role client + existing `find_bookings_near_referee`. |
 
 > Note: the repo uses `0xxx_*` filenames but the **remote** migration tracking
 > table uses a mix of legacy `0xxx` and post-reset timestamped (`20260429…`)
@@ -504,6 +507,7 @@ SENTRY_TEST_ROUTES_ENABLED=              # unset/false in prod; set to 'true' to
 WALLET_TOPUPS_ENABLED=true
 WITHDRAWALS_ENABLED=true
 WEB_PUSH_ENABLED=true
+ENGAGEMENT_NUDGES_ENABLED=true           # daily /api/cron/engagement re-engagement nudges
 
 # Mapbox
 NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=
