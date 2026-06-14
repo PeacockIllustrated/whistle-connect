@@ -12,6 +12,10 @@ export const FEATURE_FLAGS = {
     WALLET_TOPUPS_ENABLED: 'WALLET_TOPUPS_ENABLED',
     WITHDRAWALS_ENABLED: 'WITHDRAWALS_ENABLED',
     WEB_PUSH_ENABLED: 'WEB_PUSH_ENABLED',
+    // Kill switch for the scheduled re-engagement cron (/api/cron/engagement).
+    // Default ON; set 'false' in Vercel to silence all re-engagement nudges
+    // without a redeploy (e.g. while web push is being reconfigured).
+    ENGAGEMENT_NUDGES_ENABLED: 'ENGAGEMENT_NUDGES_ENABLED',
 } as const
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS
@@ -55,5 +59,9 @@ function gatedMessage(flag: FeatureFlag): string {
             return 'Withdrawals are temporarily disabled. Please try again later.'
         case 'WEB_PUSH_ENABLED':
             return 'Web push is temporarily disabled.'
+        case 'ENGAGEMENT_NUDGES_ENABLED':
+            // Server-only kill switch (cron) — never surfaced to a user, but the
+            // exhaustive switch needs a branch for it.
+            return 'Re-engagement nudges are temporarily disabled.'
     }
 }
