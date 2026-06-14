@@ -45,6 +45,11 @@ self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (request.method !== 'GET') return;
 
+    // Only handle http(s). Browser-extension requests (chrome-extension://,
+    // moz-extension://, etc.) can't be written to the Cache API and would throw
+    // "Failed to execute 'put' on 'Cache': Request scheme '...' is unsupported".
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
     // Skip Supabase/API requests — network only
     if (url.hostname.includes('supabase') || url.pathname.startsWith('/api/')) {
         return;
