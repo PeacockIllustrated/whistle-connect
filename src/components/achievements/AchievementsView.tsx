@@ -1,6 +1,7 @@
 import { Check, Lock, Trophy } from 'lucide-react'
 import type { Achievements, AchTrack, AchTier } from '@/lib/achievements'
 import { badgeIcon, TIER_NAME, TIER_GRAD, TIER_GLOW, TIER_PILL, railFill } from './tiers'
+import { MilestonesShowcase } from './MilestonesShowcase'
 
 function Ring({ frac, color, size = 46, sw = 4 }: { frac: number; color: string; size?: number; sw?: number }) {
     const r = (size - sw) / 2
@@ -39,7 +40,7 @@ function Collection({ tracks }: { tracks: AchTrack[] }) {
     cells.slice(0, 9).forEach((c, i) => rows[Math.floor(i / 3)].push(c))
 
     return (
-        <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--background-elevated)] p-4 shadow-sm flex flex-col items-center gap-1">
+        <div className="wc-rise flex flex-col items-center gap-1 rounded-2xl border border-[var(--border-color)] bg-[var(--background-elevated)] p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md">
             {rows.filter((r) => r.length).map((row, ri) => (
                 <div key={ri} className="flex gap-1.5" style={ri % 2 ? { marginLeft: 42 } : undefined}>
                     {row.map((c, i) => {
@@ -74,7 +75,7 @@ function Collection({ tracks }: { tracks: AchTrack[] }) {
 }
 
 // ── Progression rail card ────────────────────────────────────────────────────
-function TrackCard({ track }: { track: AchTrack }) {
+function TrackCard({ track, index }: { track: AchTrack; index: number }) {
     const n = track.nodes.length
     const li = highestEarned(track)
     const fill = railFill(track.nodes)
@@ -84,7 +85,10 @@ function TrackCard({ track }: { track: AchTrack }) {
         : <><b className="text-[var(--foreground)]">{current.req - track.value}</b> to go for <b className="text-[var(--foreground)]">{current.name}</b> ({TIER_NAME[current.tier]})</>
 
     return (
-        <div className="mb-3 rounded-2xl border border-[var(--border-color)] bg-[var(--background-elevated)] p-4 shadow-sm">
+        <div
+            className="wc-rise mb-3 rounded-2xl border border-[var(--border-color)] bg-[var(--background-elevated)] p-4 shadow-sm transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-md"
+            style={{ animationDelay: `${index * 70}ms` }}
+        >
             <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px]" style={{ background: 'linear-gradient(160deg,#eef2f8,#e1e7f0)' }}>
                     {badgeIcon(track.icon, { className: 'h-5 w-5 text-[var(--brand-primary)]' })}
@@ -153,11 +157,23 @@ export function AchievementsView({ data }: { data: Achievements }) {
     return (
         <div className="space-y-1">
             {/* Summary */}
-            <div className="relative overflow-hidden rounded-2xl p-[18px] text-white shadow-lg" style={{ background: 'linear-gradient(135deg,var(--wc-blue),var(--brand-primary-dark) 75%,#10162a)' }}>
+            <div className="wc-sheen relative overflow-hidden rounded-2xl p-[18px] text-white shadow-lg" style={{ background: 'linear-gradient(135deg,var(--wc-blue),var(--brand-primary-dark) 75%,#10162a)' }}>
                 <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-[var(--wc-red)]/25 blur-3xl" />
                 <div className="relative text-[10.5px] font-bold uppercase tracking-[0.18em] text-white/55">Your achievements</div>
-                <div className="relative mt-1.5 text-[30px] font-extrabold leading-none">
-                    {data.totalTiersEarned}<span className="text-sm font-semibold text-white/70"> tiers earned</span>
+                <div className="relative mt-1.5 flex items-end justify-between gap-3">
+                    <div className="text-[30px] font-extrabold leading-none">
+                        {data.totalTiersEarned}<span className="text-sm font-semibold text-white/70"> tiers earned</span>
+                    </div>
+                    <div className="rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-bold">Level {data.level}</div>
+                </div>
+                <div className="relative mt-3">
+                    <div className="mb-1 flex items-center justify-between text-[10px] text-white/70">
+                        <span className="font-semibold text-white/90">{data.totalXp.toLocaleString('en-GB')} XP</span>
+                        <span>{data.xpIntoLevel} / {data.xpPerLevel} to Level {data.level + 1}</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/15">
+                        <div className="h-full rounded-full bg-[var(--wc-green)]" style={{ width: `${(data.xpIntoLevel / data.xpPerLevel) * 100}%` }} />
+                    </div>
                 </div>
                 {next && (
                     <div className="relative mt-3.5 flex items-center gap-2.5 rounded-[13px] border border-white/15 bg-white/10 px-3 py-2.5">
@@ -177,12 +193,15 @@ export function AchievementsView({ data }: { data: Achievements }) {
             </div>
             <Collection tracks={data.tracks} />
 
+            {/* Milestones */}
+            <MilestonesShowcase items={data.milestones} />
+
             {/* Progression */}
             <div className="flex items-center gap-2 pt-6 pb-3">
                 <span className="h-4 w-1 rounded-full bg-[var(--wc-red)]" />
                 <h2 className="text-sm font-bold">Progression</h2>
             </div>
-            {data.tracks.map((t) => <TrackCard key={t.key} track={t} />)}
+            {data.tracks.map((t, i) => <TrackCard key={t.key} track={t} index={i} />)}
         </div>
     )
 }
