@@ -6,7 +6,7 @@ import { StatsAccordion } from '@/components/app/StatsAccordion'
 import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminDashboard } from '@/components/app/AdminDashboard'
-import { getAdminTriage, type AdminTriage } from '@/app/app/admin/actions'
+import { getAdminOverview, getAdminTriage, type AdminOverview, type AdminTriage } from '@/app/app/admin/actions'
 import { toLocalDateString } from '@/lib/utils'
 import { Clock, ClipboardList, Siren, Banknote, CalendarDays, MapPin, Trophy } from 'lucide-react'
 import WalletWidget from '@/components/app/WalletWidget'
@@ -177,114 +177,19 @@ export default async function AppHomePage() {
         ]
     }
 
-    // ── Admin stats ─────────────────────────────────────
-    let adminStats: StatItem[] = []
-    let adminCoachStats: StatItem[] = []
-    let adminRefereeStats: StatItem[] = []
-    let adminRecentBookings: BookingWithDetails[] = []
-    let adminRefereeProfile: { verified: boolean; fa_verification_status: FAVerificationStatus; county: string | null } | null = null
+    // ── Admin overview ──────────────────────────────────
+    // The redesigned admin dashboard is an analytics + control center. Both
+    // aggregators run service-side; we fan them out together.
+    let adminOverview: AdminOverview | null = null
     let adminTriage: AdminTriage | null = null
 
     if (isAdmin) {
-        // Fan out the triage aggregator first — it's a single Promise.all under
-        // the hood and feeds the AdminTriagePanel tile counts. Doesn't block
-        // the stat fetches conceptually, just sequenced for readability.
-        const triageResult = await getAdminTriage()
-        adminTriage = triageResult.data ?? null
-
-        const [
-            { count: totalReferees },
-            { count: totalCoaches },
-            { count: pendingVerifications },
-            { count: unverifiedReferees },
-            { count: bookingsThisMonth },
-            { count: pendingFAQueue },
-            { count: totalUsers },
-            { count: totalBookings },
-            { count: activeBookings },
-            { count: completedBookingsAll },
-            { count: totalMessages },
-            { count: sosBookings },
-            // Coach preview data
-            { data: adminBookings },
-            { count: adminRefereesAvailable },
-            { count: adminVerifiedRefs },
-            { count: adminUpcoming },
-            { count: adminPendingOffers },
-            { count: adminUnassigned },
-            { count: adminCompleted },
-            // Referee preview data
-            { data: adminRefProfile },
-            { count: adminUpcomingAssignments },
-            { count: adminRefPendingOffers },
-            { count: adminRefCompletedMatches },
-            { count: adminActiveCoaches },
-        ] = await Promise.all([
-            // Existing admin stats
-            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'referee'),
-            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'coach'),
-            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }).eq('fa_verification_status', 'pending'),
-            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }).eq('verified', false),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString()),
-            supabase.from('fa_verification_requests').select('*', { count: 'exact', head: true }).eq('status', 'awaiting_fa_response'),
-            // New admin stats
-            supabase.from('profiles').select('*', { count: 'exact', head: true }),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).is('deleted_at', null),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'confirmed').gte('match_date', today),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-            supabase.from('messages').select('*', { count: 'exact', head: true }),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('is_sos', true),
-            // Coach preview: recent bookings
-            supabase.from('bookings').select('*, coach:profiles!bookings_coach_id_fkey(*)').is('deleted_at', null).order('match_date', { ascending: true }).limit(3),
-            // Coach preview stats
-            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }),
-            supabase.from('referee_profiles').select('*', { count: 'exact', head: true }).eq('fa_verification_status', 'verified'),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).gte('match_date', today).in('status', ['pending', 'offered', 'confirmed']),
-            supabase.from('booking_offers').select('*', { count: 'exact', head: true }).eq('status', 'sent'),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).in('status', ['pending', 'offered']).gte('match_date', today),
-            supabase.from('bookings').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-            // Referee preview data
-            supabase.from('referee_profiles').select('verified, fa_verification_status, county').limit(1).maybeSingle(),
-            supabase.from('booking_assignments').select('*, booking:bookings!inner(match_date, status)', { count: 'exact', head: true }).gte('booking.match_date', today).in('booking.status', ['confirmed']),
-            supabase.from('booking_offers').select('*', { count: 'exact', head: true }).eq('status', 'sent'),
-            supabase.from('booking_assignments').select('*, booking:bookings!inner(status)', { count: 'exact', head: true }).eq('booking.status', 'completed'),
-            supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'coach'),
+        const [overviewResult, triageResult] = await Promise.all([
+            getAdminOverview(),
+            getAdminTriage(),
         ])
-
-        adminStats = [
-            { label: 'Total Users', value: totalUsers || 0, color: 'blue' },
-            { label: 'Total Referees', value: totalReferees || 0, color: 'blue' },
-            { label: 'Total Coaches', value: totalCoaches || 0, color: 'blue' },
-            { label: 'FA Pending', value: pendingVerifications || 0, color: pendingVerifications ? 'amber' : 'default' },
-            { label: 'Unverified Referees', value: unverifiedReferees || 0, color: unverifiedReferees ? 'red' : 'default' },
-            { label: 'FA Queue', value: pendingFAQueue || 0, color: pendingFAQueue ? 'amber' : 'default' },
-            { label: 'Total Bookings', value: totalBookings || 0 },
-            { label: 'Active Bookings', value: activeBookings || 0, color: 'green' },
-            { label: 'Completed', value: completedBookingsAll || 0, color: 'green' },
-            { label: 'Bookings This Month', value: bookingsThisMonth || 0, color: 'green' },
-            { label: 'Total Messages', value: totalMessages || 0 },
-            { label: 'SOS Bookings', value: sosBookings || 0, color: sosBookings ? 'red' : 'default' },
-        ]
-
-        adminRecentBookings = adminBookings || []
-
-        adminCoachStats = [
-            { label: 'Referees Available', value: adminRefereesAvailable || 0, color: 'blue' },
-            { label: 'FA Verified Refs', value: adminVerifiedRefs || 0, color: 'green' },
-            { label: 'Upcoming Matches', value: adminUpcoming || 0 },
-            { label: 'Offers Pending', value: adminPendingOffers || 0, color: adminPendingOffers ? 'amber' : 'default' },
-            { label: 'Needing a Referee', value: adminUnassigned || 0, color: adminUnassigned ? 'red' : 'default' },
-            { label: 'Completed Bookings', value: adminCompleted || 0, color: 'green' },
-        ]
-
-        adminRefereeProfile = adminRefProfile
-
-        adminRefereeStats = [
-            { label: 'Upcoming Assignments', value: adminUpcomingAssignments || 0, color: 'blue' },
-            { label: 'Offers to Review', value: adminRefPendingOffers || 0, color: adminRefPendingOffers ? 'amber' : 'default' },
-            { label: 'Matches Completed', value: adminRefCompletedMatches || 0, color: 'green' },
-            { label: 'Active Coaches', value: adminActiveCoaches || 0 },
-        ]
+        adminOverview = overviewResult.data ?? null
+        adminTriage = triageResult.data ?? null
     }
 
     return (
@@ -423,16 +328,14 @@ export default async function AppHomePage() {
                 </>
             )}
 
-            {/* Admin View */}
-            {isAdmin && (
-                <AdminDashboard
-                    adminStats={adminStats}
-                    coachStats={adminCoachStats}
-                    refereeStats={adminRefereeStats}
-                    recentBookings={adminRecentBookings}
-                    refereeProfile={adminRefereeProfile}
-                    triage={adminTriage}
-                />
+            {/* Admin View — analytics + control center */}
+            {isAdmin && adminOverview && (
+                <AdminDashboard overview={adminOverview} triage={adminTriage} />
+            )}
+            {isAdmin && !adminOverview && (
+                <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--background-elevated)] p-6 text-center text-sm text-[var(--foreground-muted)]">
+                    Couldn&apos;t load the admin dashboard. Refresh to try again.
+                </div>
             )}
         </div>
     )

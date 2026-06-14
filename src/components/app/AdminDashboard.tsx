@@ -1,251 +1,154 @@
-'use client'
-
-import { useState } from 'react'
-import Link from 'next/link'
-import { DashboardStats } from '@/components/app/DashboardStats'
-import { StatsAccordion } from '@/components/app/StatsAccordion'
+import { Card } from '@/components/ui/Card'
 import { ActionCard } from '@/components/app/ActionCard'
-import { BookingCardCompact } from '@/components/app/BookingCard'
-import { FAStatusBadge } from '@/components/ui/FAStatusBadge'
-import { EmptyState } from '@/components/ui/EmptyState'
 import { AdminTriagePanel } from '@/components/app/AdminTriagePanel'
 import { AdminBroadcastCard } from '@/components/app/AdminBroadcastCard'
-import type { StatItem } from '@/components/app/DashboardStats'
-import type { BookingWithDetails, FAVerificationStatus } from '@/lib/types'
-import type { AdminTriage } from '@/app/app/admin/actions'
 import {
-    ShieldCheck, FileCheck, CalendarDays, Plus, Clock,
-    ClipboardList, Siren, Banknote, Eye, Monitor, Users,
-    AlertOctagon, Settings, Flag, UserCheck, ScrollText
+    KpiCard,
+    BarSeries,
+    StatusBreakdown,
+    HealthChip,
+    fmtNum,
+    fmtPence,
+    fmtPct,
+} from '@/components/admin/AdminOverviewUI'
+import type { AdminOverview, AdminTriage } from '@/app/app/admin/actions'
+import {
+    Users,
+    ShieldCheck,
+    UserCheck,
+    Target,
+    TrendingUp,
+    CalendarDays,
+    Wallet,
+    Banknote,
+    FileCheck,
+    Flag,
+    AlertOctagon,
+    Settings,
+    ScrollText,
+    MapPin,
+    type LucideIcon,
 } from 'lucide-react'
 
-type ViewMode = 'admin' | 'coach' | 'referee'
-
 interface AdminDashboardProps {
-    adminStats: StatItem[]
-    coachStats: StatItem[]
-    refereeStats: StatItem[]
-    recentBookings: BookingWithDetails[]
-    refereeProfile: {
-        verified: boolean
-        fa_verification_status: FAVerificationStatus
-        county: string | null
-    } | null
+    overview: AdminOverview
     triage: AdminTriage | null
 }
 
-export function AdminDashboard({
-    adminStats,
-    coachStats,
-    refereeStats,
-    recentBookings,
-    refereeProfile,
-    triage,
-}: AdminDashboardProps) {
-    const [activeView, setActiveView] = useState<ViewMode>('admin')
+function SectionHeading({ title, hint }: { title: string; hint?: string }) {
+    return (
+        <div className="mb-3 flex items-baseline justify-between">
+            <h2 className="text-base font-semibold text-[var(--foreground)]">{title}</h2>
+            {hint && <span className="text-xs text-[var(--foreground-muted)]">{hint}</span>}
+        </div>
+    )
+}
 
-    const views: { value: ViewMode; label: string; icon: typeof Monitor }[] = [
-        { value: 'admin', label: 'Admin', icon: Monitor },
-        { value: 'coach', label: 'Coach Preview', icon: Eye },
-        { value: 'referee', label: 'Referee Preview', icon: Eye },
-    ]
+const CONTROLS: { href: string; title: string; subtitle: string; icon: LucideIcon }[] = [
+    { href: '/app/admin/referees', title: 'Referees', subtitle: 'Verify FA registration & credentials', icon: ShieldCheck },
+    { href: '/app/admin/coaches', title: 'Coaches', subtitle: 'Registered coaches & their bookings', icon: Users },
+    { href: '/app/admin/verification', title: 'FA Verification', subtitle: 'County FA confirmation queue', icon: FileCheck },
+    { href: '/app/admin/safeguarding', title: 'Safeguarding', subtitle: 'Under-18 parental consent', icon: UserCheck },
+    { href: '/app/admin/reports', title: 'Reported Content', subtitle: 'Moderate & block abuse', icon: Flag },
+    { href: '/app/disputes', title: 'Disputes', subtitle: 'Resolve complaints & refunds', icon: AlertOctagon },
+    { href: '/app/bookings', title: 'All Bookings', subtitle: 'Every booking across the app', icon: CalendarDays },
+    { href: '/app/admin/map', title: 'Map', subtitle: 'Referee & booking geography', icon: MapPin },
+    { href: '/app/admin/settings', title: 'Platform Settings', subtitle: 'Fees, travel rate & tunables', icon: Settings },
+    { href: '/app/admin/audit', title: 'Audit Log', subtitle: 'Record of every admin action', icon: ScrollText },
+]
+
+export function AdminDashboard({ overview, triage }: AdminDashboardProps) {
+    const t = overview.totals
+    const totalBookings = overview.bookingsByStatus.reduce((s, d) => s + d.count, 0)
 
     return (
-        <>
-            {/* View Toggle */}
-            <div className="mb-6">
-                <div className="flex rounded-xl bg-[var(--neutral-100)] p-1 gap-1">
-                    {views.map((view) => {
-                        const Icon = view.icon
-                        return (
-                            <button
-                                key={view.value}
-                                onClick={() => setActiveView(view.value)}
-                                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                    activeView === view.value
-                                        ? 'bg-white text-[var(--foreground)] shadow-sm'
-                                        : 'text-[var(--foreground-muted)] hover:text-[var(--foreground)]'
-                                }`}
-                            >
-                                <Icon className="w-4 h-4" />
-                                <span className="hidden sm:inline">{view.label}</span>
-                                <span className="sm:hidden">
-                                    {view.value === 'admin' ? 'Admin' : view.value === 'coach' ? 'Coach' : 'Referee'}
-                                </span>
-                            </button>
-                        )
-                    })}
+        <div className="space-y-6">
+            {/* ── KPIs ─────────────────────────────────────────────── */}
+            <section>
+                <SectionHeading title="Overview" hint="Trends over the last 30 days" />
+                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+                    <KpiCard label="Total users" value={fmtNum(t.users)} icon={Users} deltaLabel={`${fmtNum(t.coaches)} coaches · ${fmtNum(t.referees)} refs`} />
+                    <KpiCard
+                        label="Referees"
+                        value={fmtNum(t.referees)}
+                        icon={ShieldCheck}
+                        deltaLabel={`${fmtNum(t.availableReferees)} available · ${fmtNum(t.verifiedReferees)} FA-verified`}
+                    />
+                    <KpiCard label="Fill rate" value={fmtPct(overview.fillRate)} icon={Target} deltaLabel="bookings that got a referee" />
+                    <KpiCard label="Active bookings" value={fmtNum(t.activeBookings)} icon={CalendarDays} deltaLabel={`${fmtNum(t.completedBookings)} completed all-time`} />
+                    <KpiCard
+                        label="New signups · 7d"
+                        value={fmtNum(overview.deltas.signups7d)}
+                        icon={TrendingUp}
+                        delta={overview.deltas.signupsDelta}
+                        series={overview.signups30d.map((p) => p.value)}
+                        accent="var(--wc-green)"
+                    />
+                    <KpiCard
+                        label="Bookings · 7d"
+                        value={fmtNum(overview.deltas.bookings7d)}
+                        icon={CalendarDays}
+                        delta={overview.deltas.bookingsDelta}
+                        series={overview.bookings30d.map((p) => p.value)}
+                    />
+                    <KpiCard label="Escrow released · 30d" value={fmtPence(overview.money.escrowReleased30dPence)} icon={Banknote} deltaLabel={`${fmtPence(overview.money.escrowReleasedAllPence)} all-time`} />
+                    <KpiCard label="Escrow held" value={fmtPence(overview.money.escrowHeldPence)} icon={Wallet} deltaLabel="in flight" />
                 </div>
-            </div>
+            </section>
 
-            {/* Preview Banner */}
-            {activeView !== 'admin' && (
-                <div className="mb-4 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-amber-600 flex-shrink-0" />
-                    <p className="text-sm text-amber-700 font-medium">
-                        Viewing {activeView === 'coach' ? 'Coach' : 'Referee'} dashboard preview
-                    </p>
+            {/* ── Charts ───────────────────────────────────────────── */}
+            <section className="grid gap-3 lg:grid-cols-2">
+                <Card variant="default" padding="md">
+                    <SectionHeading title="Bookings created" hint="Per day · 30d" />
+                    <BarSeries data={overview.bookings30d} />
+                </Card>
+                <Card variant="default" padding="md">
+                    <SectionHeading title="New signups" hint="Per day · 30d" />
+                    <BarSeries data={overview.signups30d} color="var(--wc-green)" />
+                </Card>
+            </section>
+
+            {/* ── Status breakdown ─────────────────────────────────── */}
+            <Card variant="default" padding="md">
+                <SectionHeading title="Bookings by status" hint={`${fmtNum(totalBookings)} total`} />
+                <StatusBreakdown data={overview.bookingsByStatus} />
+            </Card>
+
+            {/* ── System health ────────────────────────────────────── */}
+            <Card variant="default" padding="md">
+                <SectionHeading title="System health" hint="Production configuration" />
+                <div className="flex flex-wrap gap-2">
+                    <HealthChip label="Service role" ok={overview.health.serviceRole} />
+                    <HealthChip label="Stripe" ok={overview.health.stripe} />
+                    <HealthChip label="Stripe webhooks" ok={overview.health.stripeWebhooks} />
+                    <HealthChip label="Web push (VAPID)" ok={overview.health.vapid} />
+                    <HealthChip label="Native push (FCM)" ok={overview.health.firebase} />
+                    <HealthChip label="Email" ok={overview.health.email} />
+                    <HealthChip label="Cron" ok={overview.health.cronSecret} />
                 </div>
-            )}
+            </Card>
 
-            {/* Admin View */}
-            {activeView === 'admin' && (
-                <>
-                    {triage && <AdminTriagePanel triage={triage} />}
+            {/* ── Operational triage ───────────────────────────────── */}
+            {triage && <AdminTriagePanel triage={triage} />}
 
-                    <div className="mb-6">
-                        <DashboardStats stats={adminStats} />
-                    </div>
+            {/* ── Broadcast ────────────────────────────────────────── */}
+            <AdminBroadcastCard />
 
-                    <AdminBroadcastCard />
-
-                    <div className="space-y-3">
+            {/* ── Controls ─────────────────────────────────────────── */}
+            <section>
+                <SectionHeading title="Manage" hint="Control every part of the app" />
+                <div className="grid gap-3 sm:grid-cols-2">
+                    {CONTROLS.map(({ href, title, subtitle, icon: Icon }) => (
                         <ActionCard
-                            href="/app/admin/referees"
-                            icon={<ShieldCheck className="w-6 h-6" />}
-                            title="Manage Referees"
-                            subtitle="Verify FA registration and credentials"
-                            variant="primary"
+                            key={href}
+                            href={href}
+                            icon={<Icon className="h-6 w-6" />}
+                            title={title}
+                            subtitle={subtitle}
                         />
-                        <ActionCard
-                            href="/app/admin/coaches"
-                            icon={<Users className="w-6 h-6" />}
-                            title="Manage Coaches"
-                            subtitle="View registered coaches and their bookings"
-                        />
-                        <ActionCard
-                            href="/app/admin/verification"
-                            icon={<FileCheck className="w-6 h-6" />}
-                            title="FA Verification Queue"
-                            subtitle="Review pending County FA responses"
-                        />
-                        <ActionCard
-                            href="/app/admin/safeguarding"
-                            icon={<UserCheck className="w-6 h-6" />}
-                            title="Safeguarding"
-                            subtitle="Under-18 accounts awaiting parental consent"
-                        />
-                        <ActionCard
-                            href="/app/bookings"
-                            icon={<CalendarDays className="w-6 h-6" />}
-                            title="All Bookings"
-                            subtitle="View and manage all bookings"
-                        />
-                        <ActionCard
-                            href="/app/disputes"
-                            icon={<AlertOctagon className="w-6 h-6" />}
-                            title="Open Disputes"
-                            subtitle="Resolve booking complaints and refunds"
-                        />
-                        <ActionCard
-                            href="/app/admin/reports"
-                            icon={<Flag className="w-6 h-6" />}
-                            title="Reported Content"
-                            subtitle="Review reported messages and block/remove abuse"
-                        />
-                        <ActionCard
-                            href="/app/admin/settings"
-                            icon={<Settings className="w-6 h-6" />}
-                            title="Platform Settings"
-                            subtitle="Travel rate, booking fee and other tunables"
-                        />
-                        <ActionCard
-                            href="/app/admin/audit"
-                            icon={<ScrollText className="w-6 h-6" />}
-                            title="Audit Log"
-                            subtitle="Record of every admin action"
-                        />
-                    </div>
-                </>
-            )}
-
-            {/* Coach Preview */}
-            {activeView === 'coach' && (
-                <>
-                    <div className="space-y-3 mb-4">
-                        <ActionCard
-                            href="/app/bookings/new"
-                            icon={<Plus className="w-6 h-6" />}
-                            title="Book a Referee"
-                            subtitle="Create a new booking request"
-                            variant="primary"
-                        />
-                        <ActionCard
-                            href="/app/bookings/sos"
-                            icon={<Siren className="w-6 h-6" />}
-                            title="Referee SOS"
-                            subtitle="Emergency broadcast to nearby refs"
-                            variant="secondary"
-                            badge="URGENT"
-                        />
-                    </div>
-
-                    <StatsAccordion stats={coachStats} />
-
-                    <div className="mb-6">
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="font-semibold text-[var(--foreground)]">Recent Bookings</h2>
-                            <Link href="/app/bookings" className="text-sm text-[var(--color-primary)] font-medium">
-                                View All
-                            </Link>
-                        </div>
-                        {recentBookings.length > 0 ? (
-                            <div className="space-y-2">
-                                {recentBookings.map((booking) => (
-                                    <BookingCardCompact key={booking.id} booking={booking} />
-                                ))}
-                            </div>
-                        ) : (
-                            <EmptyState
-                                title="No bookings yet"
-                                description="Create your first booking to get started"
-                                action={
-                                    <Link
-                                        href="/app/bookings/new"
-                                        className="text-[var(--color-primary)] font-medium"
-                                    >
-                                        Create Booking
-                                    </Link>
-                                }
-                            />
-                        )}
-                    </div>
-                </>
-            )}
-
-            {/* Referee Preview */}
-            {activeView === 'referee' && (
-                <>
-                    <div className="space-y-3 mb-4">
-                        <ActionCard
-                            href="/app/availability"
-                            icon={<Clock className="w-6 h-6" />}
-                            title="Set Availability"
-                            subtitle="Update when you can referee"
-                            variant="primary"
-                        />
-                        <ActionCard
-                            href="/app/bookings"
-                            icon={<ClipboardList className="w-6 h-6" />}
-                            title="View Offers"
-                            subtitle="View and respond to match requests"
-                        />
-                        <ActionCard
-                            href="/app/earnings"
-                            icon={<Banknote className="w-6 h-6" />}
-                            title="Earnings"
-                            subtitle="Track your season earnings and stats"
-                        />
-                    </div>
-
-                    <StatsAccordion stats={refereeStats}>
-                        <div className="flex items-center justify-between py-2 px-1">
-                            <span className="text-sm text-[var(--foreground-muted)]">FA Status</span>
-                            <FAStatusBadge status={refereeProfile?.fa_verification_status || 'not_provided'} />
-                        </div>
-                    </StatsAccordion>
-                </>
-            )}
-        </>
+                    ))}
+                </div>
+            </section>
+        </div>
     )
 }

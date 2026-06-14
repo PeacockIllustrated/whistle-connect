@@ -603,3 +603,191 @@ export async function getAdminTriage(): Promise<{ data?: AdminTriage; error?: st
         },
     }
 }
+
+// ── Admin overview analytics (surface-level v1, aggregated from Supabase) ─────
+
+export type TrendPoint = { date: string; value: number }
+
+export type AdminOverview = {
+    totals: {
+        users: number
+        coaches: number
+        referees: number
+        availableReferees: number
+        verifiedReferees: number
+        bookingsAll: number
+        activeBookings: number
+        completedBookings: number
+        sosBookings: number
+        messages: number
+    }
+    bookingsByStatus: { status: string; count: number }[]
+    /** Share of marketed bookings (pending→completed) that secured a referee. */
+    fillRate: number | null
+    signups30d: TrendPoint[]
+    bookings30d: TrendPoint[]
+    deltas: {
+        signups7d: number
+        signupsDelta: number
+        bookings7d: number
+        bookingsDelta: number
+    }
+    money: {
+        escrowHeldPence: number
+        escrowReleasedAllPence: number
+        escrowReleased30dPence: number
+    }
+    health: {
+        serviceRole: boolean
+        stripe: boolean
+        stripeWebhooks: boolean
+        vapid: boolean
+        firebase: boolean
+        email: boolean
+        cronSecret: boolean
+    }
+    generatedAt: string
+}
+
+/** Bucket a list of ISO timestamps into the last `days` daily counts (zero-filled). */
+function dailySeries(timestamps: (string | null)[], days: number): TrendPoint[] {
+    const buckets = new Map<string, number>()
+    const start = new Date()
+    start.setUTCHours(0, 0, 0, 0)
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(start.getTime() - i * 86400000)
+        buckets.set(d.toISOString().slice(0, 10), 0)
+    }
+    for (const ts of timestamps) {
+        if (!ts) continue
+        const day = ts.slice(0, 10)
+        if (buckets.has(day)) buckets.set(day, (buckets.get(day) || 0) + 1)
+    }
+    return Array.from(buckets.entries()).map(([date, value]) => ({ date, value }))
+}
+
+/**
+ * Surface-level analytics for the admin overview. Aggregates EXISTING tables
+ * (no events table) via bounded count() queries + JS bucketing of 30-day
+ * timestamp windows. Service-role client so counts cross RLS-restricted tables.
+ * Caller is guarded by requireAdmin.
+ */
+export async function getAdminOverview(): Promise<{ data?: AdminOverview; error?: string }> {
+    const supabase = await createClient()
+    const user = await requireAdmin(supabase)
+    if (!user) return { error: 'Admin access required' }
+
+    const admin = createAdminClient()
+    if (!admin) return { error: 'Service role unavailable' }
+
+    const now = new Date()
+    const todayStr = now.toISOString().slice(0, 10)
+    const thirtyDaysAgoIso = new Date(now.getTime() - 30 * 86400000).toISOString()
+
+    const statusCount = (status: string) =>
+        admin.from('bookings').select('id', { count: 'exact', head: true }).eq('status', status).is('deleted_at', null)
+
+    const [
+        usersC, coachesC, refereesC, availableRefsC, verifiedRefsC,
+        bookingsAllC, activeBookingsC, completedC, sosC, messagesC,
+        draftC, pendingC, offeredC, confirmedC, cancelledC,
+        signupRows, bookingRows, escrowRows,
+    ] = await Promise.all([
+        admin.from('profiles').select('id', { count: 'exact', head: true }),
+        admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'coach'),
+        admin.from('profiles').select('id', { count: 'exact', head: true }).eq('role', 'referee'),
+        admin.from('referee_profiles').select('profile_id', { count: 'exact', head: true }).eq('is_available', true),
+        admin.from('referee_profiles').select('profile_id', { count: 'exact', head: true }).eq('fa_verification_status', 'verified'),
+        admin.from('bookings').select('id', { count: 'exact', head: true }).is('deleted_at', null),
+        admin.from('bookings').select('id', { count: 'exact', head: true }).eq('status', 'confirmed').gte('match_date', todayStr).is('deleted_at', null),
+        statusCount('completed'),
+        admin.from('bookings').select('id', { count: 'exact', head: true }).eq('is_sos', true).is('deleted_at', null),
+        admin.from('messages').select('id', { count: 'exact', head: true }),
+        statusCount('draft'),
+        statusCount('pending'),
+        statusCount('offered'),
+        statusCount('confirmed'),
+        statusCount('cancelled'),
+        admin.from('profiles').select('created_at').gte('created_at', thirtyDaysAgoIso),
+        admin.from('bookings').select('created_at').is('deleted_at', null).gte('created_at', thirtyDaysAgoIso),
+        admin.from('bookings').select('escrow_amount_pence, escrow_released_at').not('escrow_amount_pence', 'is', null).is('deleted_at', null),
+    ])
+
+    const completedCount = completedC.count || 0
+    const confirmedCount = confirmedC.count || 0
+    const pendingCount = pendingC.count || 0
+    const offeredCount = offeredC.count || 0
+
+    const bookingsByStatus = [
+        { status: 'draft', count: draftC.count || 0 },
+        { status: 'pending', count: pendingCount },
+        { status: 'offered', count: offeredCount },
+        { status: 'confirmed', count: confirmedCount },
+        { status: 'completed', count: completedCount },
+        { status: 'cancelled', count: cancelledC.count || 0 },
+    ]
+
+    const reachedMarket = pendingCount + offeredCount + confirmedCount + completedCount
+    const fillRate = reachedMarket > 0 ? (confirmedCount + completedCount) / reachedMarket : null
+
+    const signups30d = dailySeries((signupRows.data || []).map((r) => r.created_at as string), 30)
+    const bookings30d = dailySeries((bookingRows.data || []).map((r) => r.created_at as string), 30)
+
+    const sum7 = (s: TrendPoint[]) => s.slice(-7).reduce((a, p) => a + p.value, 0)
+    const sumPrev7 = (s: TrendPoint[]) => s.slice(-14, -7).reduce((a, p) => a + p.value, 0)
+    const signups7d = sum7(signups30d)
+    const bookings7d = sum7(bookings30d)
+
+    const thirtyDaysAgoMs = now.getTime() - 30 * 86400000
+    let escrowHeldPence = 0
+    let escrowReleasedAllPence = 0
+    let escrowReleased30dPence = 0
+    for (const r of escrowRows.data || []) {
+        const amt = (r.escrow_amount_pence as number) || 0
+        const released = r.escrow_released_at as string | null
+        if (released) {
+            escrowReleasedAllPence += amt
+            if (new Date(released).getTime() >= thirtyDaysAgoMs) escrowReleased30dPence += amt
+        } else {
+            escrowHeldPence += amt
+        }
+    }
+
+    return {
+        data: {
+            totals: {
+                users: usersC.count || 0,
+                coaches: coachesC.count || 0,
+                referees: refereesC.count || 0,
+                availableReferees: availableRefsC.count || 0,
+                verifiedReferees: verifiedRefsC.count || 0,
+                bookingsAll: bookingsAllC.count || 0,
+                activeBookings: activeBookingsC.count || 0,
+                completedBookings: completedCount,
+                sosBookings: sosC.count || 0,
+                messages: messagesC.count || 0,
+            },
+            bookingsByStatus,
+            fillRate,
+            signups30d,
+            bookings30d,
+            deltas: {
+                signups7d,
+                signupsDelta: signups7d - sumPrev7(signups30d),
+                bookings7d,
+                bookingsDelta: bookings7d - sumPrev7(bookings30d),
+            },
+            money: { escrowHeldPence, escrowReleasedAllPence, escrowReleased30dPence },
+            health: {
+                serviceRole: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+                stripe: !!process.env.STRIPE_SECRET_KEY,
+                stripeWebhooks: !!process.env.STRIPE_WEBHOOK_SECRET && !!process.env.STRIPE_CONNECT_WEBHOOK_SECRET,
+                vapid: !!process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && !!process.env.VAPID_PRIVATE_KEY,
+                firebase: !!process.env.FIREBASE_SERVICE_ACCOUNT,
+                email: !!process.env.MAKE_EMAIL_WEBHOOK_URL,
+                cronSecret: !!process.env.CRON_SECRET,
+            },
+            generatedAt: now.toISOString(),
+        },
+    }
+}
