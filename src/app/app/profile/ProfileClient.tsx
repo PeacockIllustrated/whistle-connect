@@ -10,6 +10,7 @@ import { ActionCard } from '@/components/app/ActionCard'
 import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
+import { BadgesSection } from '@/components/profile/BadgesSection'
 import { Modal } from '@/components/ui/Modal'
 import { updateFANumber, deleteMyAccount, exportMyData } from './actions'
 import { requestPasswordReset } from '@/lib/auth/actions'
@@ -20,11 +21,13 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile, DBSStatus } from '@/lib/types'
+import type { UserBadge } from '@/lib/badges'
 
 interface ProfileClientProps {
     user: { id: string; email?: string }
     profile: Profile
     refereeProfile: RefereeProfile | null
+    badges: UserBadge[]
 }
 
 // ── Shared bits ──────────────────────────────────────────────────────────────
@@ -70,7 +73,7 @@ function credFromStatus(status: DBSStatus): { value: string; state: CredState } 
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
-export function ProfileClient({ user, profile: initialProfile, refereeProfile }: ProfileClientProps) {
+export function ProfileClient({ user, profile: initialProfile, refereeProfile, badges }: ProfileClientProps) {
     const router = useRouter()
     const [isEditing, setIsEditing] = useState(false)
     const [profile, setProfile] = useState(initialProfile)
@@ -198,13 +201,8 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile }:
                 />
             </div>
 
-            {/* Achievements placeholder — foundation lands in a follow-up */}
-            <Card variant="default" padding="md" className="mb-4">
-                <SectionTitle icon={Award}>Achievements</SectionTitle>
-                <p className="text-sm text-[var(--foreground-muted)]">
-                    Badges for milestones like your first match, FA verification and reliability are coming soon.
-                </p>
-            </Card>
+            {/* Achievements */}
+            <BadgesSection badges={badges} />
 
             {/* Security */}
             <SecurityCard email={user.email} />
