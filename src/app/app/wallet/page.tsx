@@ -110,15 +110,6 @@ export default async function WalletPage({
                 </div>
             </div>
 
-            {/* Trial banner */}
-            <div className="card p-3 mb-4 border-emerald-200 bg-emerald-50/60 dark:border-emerald-800 dark:bg-emerald-950/30">
-                <p className="text-xs text-emerald-800 dark:text-emerald-300">
-                    <span className="font-semibold">Wallet is in trial.</span>{' '}
-                    Top-ups, escrow holds and withdrawals are processed via Stripe.
-                    Report any issues so we can iron them out before launch.
-                </p>
-            </div>
-
             {/* Status banners */}
             {topupStatus === 'success' && (
                 <div className="card p-4 mb-4 border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/30">
