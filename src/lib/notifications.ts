@@ -112,6 +112,14 @@ export async function createNotification({
 // Web Push sender (extracted from the original implementation, unchanged logic)
 // ---------------------------------------------------------------------------
 
+// Push-service HTTP status codes that mean a subscription is permanently
+// undeliverable and should be deleted (expected churn — clean up, do NOT alert):
+//   410 Gone      — unsubscribed / expired
+//   404 Not Found — endpoint no longer exists
+//   403 Forbidden — VAPID key no longer matches the subscription (e.g. a sub
+//                   created against a rotated-away key; see WHISTLE-CONNECT-A/B)
+const WEB_PUSH_DEAD_CODES = new Set([403, 404, 410])
+
 async function sendWebPush(
     supabase: Awaited<ReturnType<typeof createClient>>,
     subscriptions: Array<{ id: string; endpoint: string; p256dh: string | null; auth: string | null }>,
@@ -158,14 +166,21 @@ async function sendWebPush(
             })
         )
 
-        // Log any failures and cleanup expired subscriptions (410 Gone)
+        // Triage failures. A "dead subscription" status (403/404/410) means the
+        // endpoint is permanently undeliverable and should be removed — expected
+        // churn, NOT an anomaly, so no Sentry event. 403 specifically is what a
+        // push service returns when the VAPID key no longer matches the
+        // subscription (a sub created against a rotated-away key — the
+        // WHISTLE-CONNECT-A/B alerts); a genuine global key mismatch is caught
+        // upstream by validateVapidKeys() before we ever send. Anything else is
+        // unexpected and worth surfacing.
+        let unexpectedFailures = 0
         results.forEach((result, index) => {
             if (result.status === 'rejected') {
                 const statusCode = (result.reason as { statusCode?: number })?.statusCode
                 console.error(`[WebPush] Failed to send to subscription ${subscriptions[index].id}:`, statusCode, result.reason)
-                // 410 = subscription expired, gets cleaned up below — not an
-                // anomaly, no Sentry event. Anything else is unexpected.
-                if (statusCode !== 410) {
+                if (statusCode == null || !WEB_PUSH_DEAD_CODES.has(statusCode)) {
+                    unexpectedFailures++
                     Sentry.captureException(result.reason, {
                         tags: {
                             'push.transport': 'web',
@@ -179,21 +194,26 @@ async function sendWebPush(
 
         const delivered = results.filter(r => r.status === 'fulfilled').length
         console.log(`[WebPush] delivered ${delivered}/${results.length}`)
-        // The premortem's silent-death signal: web subscriptions exist but NONE
-        // were delivered (validation passed yet every send failed). Surface it
-        // so "phones never buzz" can't hide behind in-app rows that write fine.
-        if (delivered === 0 && results.length > 0) {
+        // Silent-death signal: validation passed yet NOTHING delivered for an
+        // UNEXPECTED reason. Pure dead-subscription churn (403/404/410) is
+        // self-healing — it's cleaned up below and the client re-subscribes — so
+        // it must not page us (that was the WHISTLE-CONNECT-A false alarm).
+        if (delivered === 0 && unexpectedFailures > 0) {
             Sentry.captureMessage(`[WebPush] 0 of ${results.length} web deliveries succeeded`, {
                 level: 'error',
                 tags: { 'push.transport': 'web', 'push.delivered': 'false' },
             })
         }
 
+        // Delete dead subscriptions (403/404/410) so they don't fail forever and
+        // re-alert on every send. The client re-subscribes and POSTs a fresh row.
         const cleanupPromises = results
             .map((result, index) => {
-                if (result.status === 'rejected' &&
-                    (result.reason as { statusCode?: number })?.statusCode === 410) {
-                    return supabase.from('push_subscriptions').delete().eq('id', subscriptions[index].id)
+                if (result.status === 'rejected') {
+                    const statusCode = (result.reason as { statusCode?: number })?.statusCode
+                    if (statusCode != null && WEB_PUSH_DEAD_CODES.has(statusCode)) {
+                        return supabase.from('push_subscriptions').delete().eq('id', subscriptions[index].id)
+                    }
                 }
                 return null
             })
