@@ -10,7 +10,7 @@ import { ActionCard } from '@/components/app/ActionCard'
 import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
-import { BadgesSection } from '@/components/profile/BadgesSection'
+import { AchievementsHighlight } from '@/components/achievements/AchievementsHighlight'
 import { Modal } from '@/components/ui/Modal'
 import { updateFANumber, deleteMyAccount, exportMyData } from './actions'
 import { requestPasswordReset } from '@/lib/auth/actions'
@@ -21,13 +21,13 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import type { Profile, RefereeProfile, DBSStatus } from '@/lib/types'
-import type { UserBadge } from '@/lib/badges'
+import type { Achievements } from '@/lib/achievements'
 
 interface ProfileClientProps {
     user: { id: string; email?: string }
     profile: Profile
     refereeProfile: RefereeProfile | null
-    badges: UserBadge[]
+    achievements: Achievements
 }
 
 // ── Shared bits ──────────────────────────────────────────────────────────────
@@ -73,7 +73,7 @@ function credFromStatus(status: DBSStatus): { value: string; state: CredState } 
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
-export function ProfileClient({ user, profile: initialProfile, refereeProfile, badges }: ProfileClientProps) {
+export function ProfileClient({ user, profile: initialProfile, refereeProfile, achievements }: ProfileClientProps) {
     const router = useRouter()
     const [isEditing, setIsEditing] = useState(false)
     const [profile, setProfile] = useState(initialProfile)
@@ -202,7 +202,7 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile, b
             </div>
 
             {/* Achievements */}
-            <BadgesSection badges={badges} />
+            <AchievementsHighlight data={achievements} />
 
             {/* Security */}
             <SecurityCard email={user.email} />

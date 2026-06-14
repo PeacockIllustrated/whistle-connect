@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Card } from '@/components/ui/Card'
 import { ProfileClient } from './ProfileClient'
-import { getMyBadges } from '@/lib/badges'
+import { getMyAchievements } from '@/lib/achievements'
 import { SignOutButton } from '@/components/app/SignOutButton'
 import { Clock, ChevronRight, ShieldCheck } from 'lucide-react'
 import { NotificationTester } from '@/components/app/NotificationTester'
@@ -33,7 +33,7 @@ export default async function ProfilePage() {
         refereeProfile = data
     }
 
-    const badges = await getMyBadges()
+    const achievements = await getMyAchievements()
 
     return (
         <div className="px-4 py-6 max-w-[var(--content-max-width)] mx-auto pb-24">
@@ -41,7 +41,7 @@ export default async function ProfilePage() {
                 user={user}
                 profile={profile}
                 refereeProfile={refereeProfile}
-                badges={badges}
+                achievements={achievements}
             />
 
 
