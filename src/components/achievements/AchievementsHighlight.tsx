@@ -41,13 +41,14 @@ export function AchievementsHighlight({ data }: { data: Achievements }) {
                 <span className="h-4 w-1 rounded-full bg-[var(--brand-primary)]" />
                 <Trophy className="h-4 w-4 text-[var(--foreground-muted)]" />
                 <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--foreground-muted)]">Achievements</h2>
+                <span className="rounded-full bg-[var(--brand-primary)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--brand-primary)]">Lv {data.level}</span>
                 <ChevronRight className="ml-auto h-4 w-4 text-[var(--neutral-400)] transition-transform group-hover:translate-x-0.5" />
             </div>
 
             <div className="mt-3 flex items-center gap-4">
                 <div>
                     <div className="text-2xl font-bold leading-none">{data.totalTiersEarned}</div>
-                    <div className="text-[11px] text-[var(--foreground-muted)]">tiers earned</div>
+                    <div className="text-[11px] text-[var(--foreground-muted)]">tiers · {data.totalXp.toLocaleString('en-GB')} XP</div>
                 </div>
 
                 {/* earned medallions */}

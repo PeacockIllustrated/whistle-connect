@@ -1,5 +1,5 @@
 import { createElement, type ReactElement } from 'react'
-import { Flag, ShieldCheck, BadgeCheck, CalendarCheck, Award, type LucideIcon } from 'lucide-react'
+import { Flag, ShieldCheck, BadgeCheck, CalendarCheck, Zap, Star, Award, type LucideIcon } from 'lucide-react'
 import type { AchTier } from '@/lib/achievements'
 
 export const ICON: Record<string, LucideIcon> = {
@@ -7,6 +7,8 @@ export const ICON: Record<string, LucideIcon> = {
     shield: ShieldCheck,
     badge: BadgeCheck,
     calendar: CalendarCheck,
+    zap: Zap,
+    star: Star,
 }
 
 export function iconFor(key: string): LucideIcon {
