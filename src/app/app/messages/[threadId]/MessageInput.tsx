@@ -56,6 +56,8 @@ export function MessageInput({
                     longitude: null,
                     date_of_birth: null,
                     setup_complete: true,
+                    last_active_at: new Date().toISOString(),
+                    reengagement_opt_out: false,
                     created_at: '',
                     updated_at: '',
                 },

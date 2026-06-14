@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     if (user && request.nextUrl.pathname.startsWith('/app')) {
         const { data: profile } = await supabase
             .from('profiles')
-            .select('setup_complete')
+            .select('setup_complete, last_active_at')
             .eq('id', user.id)
             .maybeSingle()
 
@@ -67,6 +67,24 @@ export async function updateSession(request: NextRequest) {
             url.pathname = '/finish-setup'
             url.search = ''
             return NextResponse.redirect(url)
+        }
+
+        // Activity heartbeat for win-back targeting (migration 0173). Throttled
+        // to ~hourly so we don't write on every navigation; best-effort, never
+        // blocks the page on failure. Uses the user's own cookie client, so the
+        // existing self-update RLS on profiles covers it.
+        if (profile) {
+            const lastActive = profile.last_active_at ? new Date(profile.last_active_at).getTime() : 0
+            if (Date.now() - lastActive > 60 * 60 * 1000) {
+                try {
+                    await supabase
+                        .from('profiles')
+                        .update({ last_active_at: new Date().toISOString() })
+                        .eq('id', user.id)
+                } catch {
+                    // best-effort heartbeat — ignore
+                }
+            }
         }
     }
 

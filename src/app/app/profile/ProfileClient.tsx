@@ -10,6 +10,7 @@ import { ActionCard } from '@/components/app/ActionCard'
 import { ProfileEditForm } from './ProfileEditForm'
 import { AvatarUpload } from '@/components/profile/AvatarUpload'
 import { PrivacyToggleRow } from '@/components/profile/PrivacyToggleRow'
+import { NotificationPreferencesCard } from '@/components/profile/NotificationPreferencesCard'
 import { AchievementsHighlight } from '@/components/achievements/AchievementsHighlight'
 import { Modal } from '@/components/ui/Modal'
 import { updateFANumber, deleteMyAccount, exportMyData } from './actions'
@@ -185,6 +186,10 @@ export function ProfileClient({ user, profile: initialProfile, refereeProfile, a
                     )}
                 </div>
             </Card>
+
+            {/* Notification preferences — re-engagement opt-out (transactional
+                notifications are always delivered, regardless of this toggle). */}
+            <NotificationPreferencesCard initialOptOut={profile.reengagement_opt_out ?? false} />
 
             {/* Referee credentials */}
             {isReferee && refereeProfile && (

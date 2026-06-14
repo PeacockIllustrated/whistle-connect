@@ -46,6 +46,12 @@ export interface Profile {
      * and every normal coach/referee signup (migration 0168).
      */
     setup_complete: boolean
+    /** Last time the user was active under /app — throttled (~hourly) by
+     *  middleware. Drives win-back nudge targeting (migration 0173). */
+    last_active_at: string
+    /** Opted out of re-engagement / marketing nudges. Transactional
+     *  notifications are unaffected (migration 0173). */
+    reengagement_opt_out: boolean
     created_at: string
     updated_at: string
 }
