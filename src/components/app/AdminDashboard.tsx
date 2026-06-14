@@ -19,8 +19,9 @@ import {
     Target,
     TrendingUp,
     CalendarDays,
+    CalendarCheck,
     Wallet,
-    Banknote,
+    Siren,
     FileCheck,
     Flag,
     AlertOctagon,
@@ -37,9 +38,21 @@ interface AdminDashboardProps {
 
 function SectionHeading({ title, hint }: { title: string; hint?: string }) {
     return (
-        <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-base font-semibold text-[var(--foreground)]">{title}</h2>
+        <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+                <span className="h-4 w-1 rounded-full bg-[var(--brand-primary)]" />
+                <h2 className="text-base font-semibold text-[var(--foreground)]">{title}</h2>
+            </div>
             {hint && <span className="text-xs text-[var(--foreground-muted)]">{hint}</span>}
+        </div>
+    )
+}
+
+function HeroStat({ label, value }: { label: string; value: string }) {
+    return (
+        <div>
+            <div className="text-2xl font-bold leading-none tracking-tight text-white sm:text-3xl">{value}</div>
+            <div className="mt-1.5 text-[11px] font-medium uppercase tracking-wide text-white/60">{label}</div>
         </div>
     )
 }
@@ -63,36 +76,50 @@ export function AdminDashboard({ overview, triage }: AdminDashboardProps) {
 
     return (
         <div className="space-y-6">
+            {/* ── Hero band ─────────────────────────────────────────── */}
+            <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[var(--brand-primary)] via-[var(--brand-primary)] to-[var(--brand-primary-dark)] p-5 shadow-lg">
+                <div className="pointer-events-none absolute -right-10 -top-12 h-40 w-40 rounded-full bg-[var(--wc-red)]/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-16 -left-8 h-40 w-40 rounded-full bg-white/5 blur-2xl" />
+                <p className="relative text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">Admin overview</p>
+                <div className="relative mt-4 grid grid-cols-3 gap-4">
+                    <HeroStat label="Total users" value={fmtNum(t.users)} />
+                    <HeroStat label="Active bookings" value={fmtNum(t.activeBookings)} />
+                    <HeroStat label="Released · 30d" value={fmtPence(overview.money.escrowReleased30dPence)} />
+                </div>
+            </section>
+
             {/* ── KPIs ─────────────────────────────────────────────── */}
             <section>
-                <SectionHeading title="Overview" hint="Trends over the last 30 days" />
+                <SectionHeading title="Key metrics" hint="Trends · last 30 days" />
                 <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                    <KpiCard label="Total users" value={fmtNum(t.users)} icon={Users} deltaLabel={`${fmtNum(t.coaches)} coaches · ${fmtNum(t.referees)} refs`} />
                     <KpiCard
                         label="Referees"
                         value={fmtNum(t.referees)}
                         icon={ShieldCheck}
+                        tone="brand"
                         deltaLabel={`${fmtNum(t.availableReferees)} available · ${fmtNum(t.verifiedReferees)} FA-verified`}
                     />
-                    <KpiCard label="Fill rate" value={fmtPct(overview.fillRate)} icon={Target} deltaLabel="bookings that got a referee" />
-                    <KpiCard label="Active bookings" value={fmtNum(t.activeBookings)} icon={CalendarDays} deltaLabel={`${fmtNum(t.completedBookings)} completed all-time`} />
+                    <KpiCard label="Coaches" value={fmtNum(t.coaches)} icon={Users} tone="sky" deltaLabel={`${fmtNum(t.messages)} messages sent`} />
+                    <KpiCard label="Fill rate" value={fmtPct(overview.fillRate)} icon={Target} tone="violet" deltaLabel="bookings that got a referee" />
+                    <KpiCard label="Completed" value={fmtNum(t.completedBookings)} icon={CalendarCheck} tone="green" deltaLabel={`${fmtNum(totalBookings)} bookings all-time`} />
                     <KpiCard
                         label="New signups · 7d"
                         value={fmtNum(overview.deltas.signups7d)}
                         icon={TrendingUp}
+                        tone="green"
                         delta={overview.deltas.signupsDelta}
                         series={overview.signups30d.map((p) => p.value)}
-                        accent="var(--wc-green)"
                     />
                     <KpiCard
                         label="Bookings · 7d"
                         value={fmtNum(overview.deltas.bookings7d)}
                         icon={CalendarDays}
+                        tone="brand"
                         delta={overview.deltas.bookingsDelta}
                         series={overview.bookings30d.map((p) => p.value)}
                     />
-                    <KpiCard label="Escrow released · 30d" value={fmtPence(overview.money.escrowReleased30dPence)} icon={Banknote} deltaLabel={`${fmtPence(overview.money.escrowReleasedAllPence)} all-time`} />
-                    <KpiCard label="Escrow held" value={fmtPence(overview.money.escrowHeldPence)} icon={Wallet} deltaLabel="in flight" />
+                    <KpiCard label="Escrow held" value={fmtPence(overview.money.escrowHeldPence)} icon={Wallet} tone="amber" deltaLabel={`${fmtPence(overview.money.escrowReleasedAllPence)} released all-time`} />
+                    <KpiCard label="SOS bookings" value={fmtNum(t.sosBookings)} icon={Siren} tone="red" deltaLabel="emergency requests" />
                 </div>
             </section>
 
