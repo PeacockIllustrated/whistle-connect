@@ -32,12 +32,12 @@ export const resetPasswordRequestSchema = z.object({
 })
 
 export const updatePasswordSchema = z.object({
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string().min(12, 'Password must be at least 12 characters'),
 })
 
 export const signUpSchema = z.object({
     email: z.string().email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string().min(12, 'Password must be at least 12 characters'),
     full_name: z.string().min(2, 'Full name must be at least 2 characters').max(100, 'Full name is too long'),
     // 'admin' is deliberately NOT a self-signup option — admins are provisioned
     // out-of-band. Allowing it here (and in the handle_new_user allowlist) let
@@ -104,7 +104,7 @@ export const signUpSchema = z.object({
 
 export const signUpGenericSchema = z.object({
     email: z.string().email('Invalid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
+    password: z.string().min(12, 'Password must be at least 12 characters'),
     full_name: z.string().min(2, 'Full name must be at least 2 characters').max(100, 'Full name is too long'),
     terms_accepted: z.literal(true, {
         message: 'You must accept the Terms of Service to create an account',

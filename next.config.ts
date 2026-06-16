@@ -36,6 +36,34 @@ const nextConfig: NextConfig = {
         source: "/(.*)",
         headers: [
           {
+            // Content-Security-Policy. Deliberately permissive on script/style
+            // (Next.js injects un-nonced inline bootstrap + styled-jsx) and broad
+            // on connect/img (https:/wss:) so no third-party endpoint —
+            // Supabase realtime, Stripe, Mapbox tiles, the Sentry /monitoring
+            // tunnel — can be silently blocked. It still meaningfully hardens:
+            // object-src none, base-uri self, form-action self, frame-ancestors
+            // none (defence-in-depth alongside X-Frame-Options), and an explicit
+            // Stripe frame allowlist. Flip to Content-Security-Policy-Report-Only
+            // if a future change needs to observe violations before enforcing.
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "base-uri 'self'",
+              "object-src 'none'",
+              "frame-ancestors 'none'",
+              "form-action 'self'",
+              "script-src 'self' 'unsafe-inline' https://js.stripe.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https: wss:",
+              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com",
+              "worker-src 'self' blob:",
+              "manifest-src 'self'",
+              "media-src 'self'",
+            ].join("; "),
+          },
+          {
             key: "X-Content-Type-Options",
             value: "nosniff",
           },

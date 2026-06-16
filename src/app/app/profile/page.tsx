@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/Card'
 import { ProfileClient } from './ProfileClient'
 import { getMyAchievements } from '@/lib/achievements'
 import { SignOutButton } from '@/components/app/SignOutButton'
-import { Clock, ChevronRight, ShieldCheck } from 'lucide-react'
+import { Clock, ChevronRight, ShieldCheck, KeyRound } from 'lucide-react'
 import { NotificationTester } from '@/components/app/NotificationTester'
 
 export default async function ProfilePage() {
@@ -44,6 +44,24 @@ export default async function ProfilePage() {
                 achievements={achievements}
             />
 
+
+            {/* Security — available to every role. Authenticator-app 2FA is
+                optional for coaches/referees and mandatory for admins (enforced
+                by the admin layout). */}
+            <Card variant="default" padding="none" className="mt-6 overflow-hidden">
+                <Link
+                    href="/app/security/two-factor"
+                    className="flex items-center justify-between p-4 hover:bg-[var(--neutral-50)] transition-colors"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[var(--color-primary)]/10 flex items-center justify-center">
+                            <KeyRound className="w-5 h-5 text-[var(--color-primary)]" />
+                        </div>
+                        <span className="font-medium">Security &amp; two-factor</span>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-[var(--neutral-400)]" />
+                </Link>
+            </Card>
 
             {/* Quick Links — only render when there's actually a link to show.
                 Coaches match neither branch, so rendering the card for them left

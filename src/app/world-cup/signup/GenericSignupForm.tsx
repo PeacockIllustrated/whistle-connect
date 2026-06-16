@@ -55,7 +55,7 @@ export function GenericSignupForm({ claimToken, prefillName, returnTo }: { claim
 
             <Input label="Full name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Smith" required />
             <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
-            <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" hint="At least 8 characters" required />
+            <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" hint="At least 12 characters" required />
 
             <div className="space-y-3 pt-1">
                 <label className="flex items-start gap-3 cursor-pointer select-none">

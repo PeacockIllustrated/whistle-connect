@@ -38,8 +38,8 @@ export default function ResetPasswordPage() {
         e.preventDefault()
         setError('')
 
-        if (password.length < 8) {
-            setError('Password must be at least 8 characters')
+        if (password.length < 12) {
+            setError('Password must be at least 12 characters')
             return
         }
 
@@ -136,7 +136,7 @@ export default function ResetPasswordPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
-                                hint="Must be at least 8 characters"
+                                hint="Must be at least 12 characters"
                                 required
                             />
 
