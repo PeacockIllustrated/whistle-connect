@@ -345,7 +345,16 @@ const { data, error } = await supabase.from('table').select('*')
    - `postgis` extension + `spatial_ref_sys` live in `public`. `spatial_ref_sys` is a static SRID lookup (no sensitive data); the migration role can't `ALTER` extension-owned objects. Moving PostGIS to its own schema is an invasive, separately-tested migration. Accepted, same stance as `0138`.
 
 3. **Auth: leaked-password protection disabled** (advisor)
-   - HaveIBeenPwned check is off. Supabase **dashboard** setting (Auth → Policies), not a DDL change. NOTE: this feature requires **Supabase Pro** (separate from Vercel Pro) — if on Supabase Free, raise minimum password length instead.
+   - HaveIBeenPwned check is off. Supabase **dashboard** setting (Auth → Policies), not a DDL change. NOTE: this feature requires **Supabase Pro** (separate from Vercel Pro). **Mitigated in code:** password minimum is now **12 chars** (`src/lib/validation.ts` + client mirrors), which satisfies the Cyber Essentials password-strength rule without HIBP. Enabling HIBP on Pro remains a recommended extra.
+
+### Cyber Essentials hardening (do NOT regress)
+
+> Added for Cyber Essentials Plus readiness. See `docs/security-pack/cyber-essentials-plus.md` for the full control-by-control mapping + org-side evidence checklist.
+
+- **Admin MFA is enforced** — `src/app/app/admin/layout.tsx` requires an `aal2` (MFA-verified) Supabase session for every `/app/admin/*` route. Un-stepped-up admins are redirected to `/app/security/two-factor` to enrol (TOTP) or enter their code. Self-service enrolment/removal for all roles lives at `/app/security/two-factor` (linked from Profile → Security & two-factor). Don't remove the gate; it's the single admin-MFA chokepoint (pages keep their own role check as defence-in-depth).
+- **Password minimum is 12 chars** — server schemas + every client hint/validator. Don't drop back to 8.
+- **CSP header** — `next.config.ts` global header is enforcing but deliberately broad on `connect-src`/`img-src` (`https:`/`wss:`) so Supabase realtime, Stripe, Mapbox and the Sentry `/monitoring` tunnel are never blocked. If a change needs to observe violations first, switch the key to `Content-Security-Policy-Report-Only` rather than tightening blindly.
+- **SECDEF RPC grants (advisor 0029) intentionally NOT revoked** — the flagged money RPCs run *as* the `authenticated` role from server actions; a blanket revoke breaks booking confirm/complete/withdraw. Proper fix = per-function `auth.uid()` guards in a separately-tested PR (Roadmap Phase 1). Not a CE requirement.
 
 ### Stale branches & PRs — do NOT merge (post-trial triage)
 
