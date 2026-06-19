@@ -3,7 +3,7 @@
 import { motion, useReducedMotion, type Variants } from 'framer-motion'
 import { Crown } from 'lucide-react'
 import type { LeaderboardRow } from '@/lib/world-cup/types'
-import { FlagImage } from './TeamBits'
+import { FlagImage, formatGoalDiff } from './TeamBits'
 import { cn } from '@/lib/utils'
 
 function initials(name: string): string {
@@ -167,6 +167,11 @@ function PodiumPlayer({ row, place }: { row: LeaderboardRow; place: number }) {
                 </span>
                 <span className={cn('font-extrabold leading-none text-white', leader ? 'text-2xl' : 'text-lg')}>{row.points}</span>
                 <span className="text-[10px] uppercase tracking-wider text-white/45">pts</span>
+                {row.record.played > 0 && (
+                    <span className="mt-0.5 text-[10px] font-semibold tabular-nums text-white/55">
+                        {row.record.won}W·{row.record.drawn}D·{row.record.lost}L · GD {formatGoalDiff(row.record.goalDiff)}
+                    </span>
+                )}
             </div>
 
             <div

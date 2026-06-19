@@ -1,7 +1,14 @@
 import { Crown } from 'lucide-react'
 import { flagUrl } from '@/lib/world-cup/flags'
-import type { WcTeam } from '@/lib/world-cup/types'
+import type { WcTeam, TeamRecord } from '@/lib/world-cup/types'
 import { cn } from '@/lib/utils'
+
+/** "+3" / "0" / "−2" — a signed goal difference. */
+export function formatGoalDiff(gd: number): string {
+    if (gd > 0) return `+${gd}`
+    if (gd < 0) return `−${Math.abs(gd)}`
+    return '0'
+}
 
 /** A flag image with a code fallback. We render flag IMAGES, never emoji. */
 export function FlagImage({
@@ -37,13 +44,16 @@ export function FlagImage({
     )
 }
 
-/** A team chip: flag + code/name, greyed when eliminated, crowned for champion. */
+/** A team chip: flag + code/name, greyed when eliminated, crowned for champion.
+ *  Pass `record` to append a compact W-D-L · GD readout. */
 export function TeamPill({
     team,
+    record,
     showName = false,
     className,
 }: {
     team: WcTeam
+    record?: TeamRecord
     showName?: boolean
     className?: string
 }) {
@@ -55,13 +65,27 @@ export function TeamPill({
                 champion
                     ? 'bg-[var(--wc-blue)] text-white'
                     : team.eliminated
-                        ? 'bg-[var(--neutral-100)] text-[var(--neutral-400)] line-through'
+                        ? 'bg-[var(--neutral-100)] text-[var(--neutral-400)]'
                         : 'bg-[var(--neutral-100)] text-[var(--foreground)]',
                 className,
             )}
         >
             <FlagImage countryCode={team.country_code} code={team.code} height={14} />
-            <span>{showName ? team.name : team.code}</span>
+            <span className={cn(team.eliminated && !champion && 'line-through')}>
+                {showName ? team.name : team.code}
+            </span>
+            {record && record.played > 0 && (
+                <span
+                    className={cn(
+                        'rounded px-1 text-[11px] font-bold tabular-nums',
+                        champion ? 'bg-white/20 text-white' : 'bg-white/70 text-[var(--foreground-muted)]',
+                    )}
+                    title={`${record.won}W ${record.drawn}D ${record.lost}L · GF ${record.goalsFor} GA ${record.goalsAgainst}`}
+                >
+                    {record.won}-{record.drawn}-{record.lost}
+                    <span className="ml-1 opacity-70">{formatGoalDiff(record.goalDiff)}</span>
+                </span>
+            )}
             {champion && <Crown className="h-3.5 w-3.5 text-amber-300" aria-label="Champion" />}
         </span>
     )
