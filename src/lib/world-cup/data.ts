@@ -13,7 +13,7 @@ import type {
     WcSweepstakeEntry,
     LeaderboardRow,
 } from './types'
-import { buildLeaderboard } from './scoring'
+import { buildLeaderboard, computeTeamRecords } from './scoring'
 
 /** All 48 teams. */
 export async function getTeams(): Promise<WcTeam[]> {
@@ -196,7 +196,18 @@ async function buildDetail(
         teamsByEntry.set(row.entry_id, arr)
     }
 
-    const leaderboard = buildLeaderboard(entryList, teamsByEntry, sweepstake.scoring)
+    // Per-team W/D/L/GF/GA/GD across the whole tournament, derived from finished
+    // matches. Read-only here; it never touches wc_teams (which keeps GROUP-only
+    // standings for the tracker's group tables).
+    const { data: matchRows } = await db
+        .from('wc_matches')
+        .select('home_team_code, away_team_code, home_score, away_score, winner_team_code, status')
+        .eq('status', 'finished')
+    const recordsByCode = computeTeamRecords(
+        (matchRows as Parameters<typeof computeTeamRecords>[0] | null) ?? [],
+    )
+
+    const leaderboard = buildLeaderboard(entryList, teamsByEntry, recordsByCode, sweepstake.scoring)
 
     return {
         sweepstake,

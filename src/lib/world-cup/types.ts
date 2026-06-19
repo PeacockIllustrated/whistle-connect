@@ -82,22 +82,45 @@ export interface WcEntryTeam {
 
 /** Points configuration for a sweepstake. */
 export interface Scoring {
-    /** Points per group-stage win (keeps the board moving during the groups). */
-    groupWin: number
-    /** Bonus points awarded for reaching each stage. */
+    /** Points per match won (group or knockout). */
+    win: number
+    /** Points per match drawn. */
+    draw: number
+    /** Bonus points awarded for the furthest stage a team reaches. */
     stage: Record<TeamStage, number>
 }
 
 // ── Derived (computed) view models ──────────────────────────────────────────
+
+/** A team's tournament record across all finished matches (group + knockout). */
+export interface TeamRecord {
+    played: number
+    won: number
+    drawn: number
+    lost: number
+    goalsFor: number
+    goalsAgainst: number
+    /** goalsFor − goalsAgainst. */
+    goalDiff: number
+}
+
+/** One team's contribution to an entry: its record + the points it earned. */
+export interface TeamContribution {
+    team: WcTeam
+    record: TeamRecord
+    points: number
+}
 
 /** A participant with their drawn teams + computed standing. */
 export interface LeaderboardRow {
     entry: WcSweepstakeEntry
     teams: WcTeam[]
     points: number
-    /** Per-team point contribution, sorted highest first. Drives the podium
+    /** Aggregate record summed across all of the entry's teams. */
+    record: TeamRecord
+    /** Per-team contribution, sorted highest points first. Drives the podium
      *  flags-behind-the-name sizing (bigger contributor, bigger flag). */
-    contributions: { team: WcTeam; points: number }[]
+    contributions: TeamContribution[]
     /** True once every one of the entry's teams is eliminated. */
     knockedOut: boolean
     /** True if the entry holds the champion. */
