@@ -90,49 +90,62 @@ export default function TermsPage() {
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">7. Cancellations, Refunds &amp; Disputes</h2>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">7. Referee Status &amp; Platform Role</h2>
+                        <p className="text-[var(--neutral-600)] leading-relaxed mb-4">
+                            This section sets out the nature of the relationship between referees, clubs and coaches, and Whistle Connect.
+                        </p>
+                        <ul className="list-disc pl-5 space-y-2 text-[var(--neutral-600)]">
+                            <li>Referees provide match-officiating services as <strong>independent contractors</strong>. They are not employees, workers, agents or representatives of Whistle Connect, and nothing in these terms creates an employment, partnership, joint-venture or agency relationship between a referee and Whistle Connect.</li>
+                            <li>Whistle Connect is an <strong>introduction and booking platform</strong>. We connect clubs and coaches with referees and facilitate bookings and payments; we do not provide officiating services ourselves and are not a party to the officiating arrangement between a club or coach and a referee.</li>
+                            <li><strong>Responsibility for officiating a match remains with the referee</strong>, including the conduct of the match, decisions made, and compliance with the relevant laws of the game and competition rules.</li>
+                            <li><strong>Clubs and coaches are responsible for ensuring the suitability of any official they engage</strong>, including satisfying themselves as to qualifications, FA registration, DBS and safeguarding status, and fitness for the specific fixture and age group, before and at the time of engagement. While we surface verification information where available, we do not guarantee the suitability, qualifications or conduct of any referee.</li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">8. Cancellations, Refunds &amp; Disputes</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             If a booking is cancelled before completion, any escrow held is handled according to the in-app cancellation and refund process. If you have a problem with a booking, raise it through the in-app dispute flow, where we can review the booking and help resolve the matter.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">8. Referee Payouts</h2>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">9. Referee Payouts</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             Referees receive payouts via Stripe Connect. To receive payments, referees must complete Stripe&apos;s onboarding and provide the information Stripe requires. Payouts are subject to Stripe&apos;s terms and processing times.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">9. Account Deletion &amp; Termination</h2>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">10. Account Deletion &amp; Termination</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             You may delete your account at any time from within the app via Profile &gt; Delete account. We may suspend or terminate your access to the service, with or without notice, if you breach these terms or our policies, or where necessary to protect users or comply with the law. Certain transactional and financial records may be retained after deletion as described in our Privacy Policy.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">10. Disclaimers &amp; Limitation of Liability</h2>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">11. Disclaimers &amp; Limitation of Liability</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             The service is provided on an &quot;as is&quot; and &quot;as available&quot; basis without warranties of any kind, whether express or implied, to the fullest extent permitted by law. We are not responsible for the conduct of any user or for the performance of any match officiating arranged through the platform. To the maximum extent permitted by law, we will not be liable for any indirect, incidental or consequential loss arising from your use of the service. Nothing in these terms excludes or limits liability that cannot be excluded or limited under applicable law.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">11. Governing Law</h2>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">12. Governing Law</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             These terms are governed by the laws of England and Wales, and any disputes are subject to the exclusive jurisdiction of the courts of England and Wales.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">12. Changes</h2>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">13. Changes</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             We may modify or replace these terms from time to time at our discretion. By continuing to use the service after revised terms take effect, you agree to be bound by them.
                         </p>
                     </section>
 
                     <section>
-                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">13. Contact</h2>
+                        <h2 className="text-xl font-bold mb-3 text-[var(--brand-navy)]">14. Contact</h2>
                         <p className="text-[var(--neutral-600)] leading-relaxed">
                             If you have questions about these Terms of Service, please contact us at support@whistleconnect.co.uk.
                         </p>
